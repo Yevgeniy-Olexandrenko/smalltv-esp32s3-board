@@ -6,6 +6,7 @@ First production version, contains the following hardware:
 - Onboard programmable LED
 - Reset & Boot buttons
 - Expansion headers
+- Ready for up to 4 touch buttons
 - USB Type-C port
 - Micro SD Card connector
 - LCD ST7789 10p connector
