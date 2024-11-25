@@ -4,8 +4,8 @@
 #include <SettingsESP.h>
 #include <WiFiConnector.h>
 
-GyverDBFile db(&LittleFS, "/data.db");
-SettingsESP sett("Test settings", &db);
+GyverDBFile settingsDB(&LittleFS, "/settings.db");
+SettingsESP settings("SmallTV Settings", &settingsDB);
 
 DB_KEYS(
     kk,
@@ -20,9 +20,12 @@ void build(sets::Builder& b)
         b.Input(kk::wifi_ssid, "SSID");
         b.Pass(kk::wifi_pass, "Password");
 
-        if (b.Button(kk::apply, "Connect")) {
-            db.update();
-            WiFiConnector.connect(db[kk::wifi_ssid], db[kk::wifi_pass]);
+        if (b.Button(kk::apply, "Connect")) 
+        {
+            settingsDB.update();
+            WiFiConnector.connect(
+              settingsDB[kk::wifi_ssid],
+              settingsDB[kk::wifi_pass]);
         }
     }
 }
@@ -34,9 +37,9 @@ void setup()
 
     // базу данных запускаем до подключения к точке
     LittleFS.begin(true);
-    db.begin();
-    db.init(kk::wifi_ssid, "");
-    db.init(kk::wifi_pass, "");
+    settingsDB.begin();
+    settingsDB.init(kk::wifi_ssid, "");
+    settingsDB.init(kk::wifi_pass, "");
 
     // подключение и реакция на подключение или ошибку
     WiFiConnector.onConnect([]() 
@@ -51,15 +54,17 @@ void setup()
         Serial.println(WiFi.softAPIP());
     });
 
-    WiFiConnector.connect(db[kk::wifi_ssid], db[kk::wifi_pass]);
+    WiFiConnector.connect(
+      settingsDB[kk::wifi_ssid],
+      settingsDB[kk::wifi_pass]);
 
     // запускаем сервер после connect, иначе DNS не подхватится
-    sett.begin();
-    sett.onBuild(build);
+    settings.begin();
+    settings.onBuild(build);
 }
 
 void loop() 
 {
     WiFiConnector.tick();
-    sett.tick();
+    settings.tick();
 }
