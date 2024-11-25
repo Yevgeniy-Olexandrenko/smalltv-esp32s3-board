@@ -1,18 +1,65 @@
 #include <Arduino.h>
+#include <GyverDBFile.h>
+#include <LittleFS.h>
+#include <SettingsESP.h>
+#include <WiFiConnector.h>
 
-// put function declarations here:
-int myFunction(int, int);
+GyverDBFile db(&LittleFS, "/data.db");
+SettingsESP sett("Test settings", &db);
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+DB_KEYS(
+    kk,
+    wifi_ssid,
+    wifi_pass,
+    apply);
+
+void build(sets::Builder& b) 
+{
+    {
+        sets::Group g(b, "WiFi");
+        b.Input(kk::wifi_ssid, "SSID");
+        b.Pass(kk::wifi_pass, "Password");
+
+        if (b.Button(kk::apply, "Connect")) {
+            db.update();
+            WiFiConnector.connect(db[kk::wifi_ssid], db[kk::wifi_pass]);
+        }
+    }
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void setup() 
+{
+    Serial.begin(115200);
+    Serial.println();
+
+    // базу данных запускаем до подключения к точке
+    LittleFS.begin(true);
+    db.begin();
+    db.init(kk::wifi_ssid, "");
+    db.init(kk::wifi_pass, "");
+
+    // подключение и реакция на подключение или ошибку
+    WiFiConnector.onConnect([]() 
+    {
+        Serial.print("Connected! ");
+        Serial.println(WiFi.localIP());
+    });
+
+    WiFiConnector.onError([]() 
+    {
+        Serial.print("Error! start AP ");
+        Serial.println(WiFi.softAPIP());
+    });
+
+    WiFiConnector.connect(db[kk::wifi_ssid], db[kk::wifi_pass]);
+
+    // запускаем сервер после connect, иначе DNS не подхватится
+    sett.begin();
+    sett.onBuild(build);
 }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void loop() 
+{
+    WiFiConnector.tick();
+    sett.tick();
 }
