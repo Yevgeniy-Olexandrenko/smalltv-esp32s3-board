@@ -13,6 +13,7 @@
 void build(sets::Builder& b) 
 {
     NetworkConnectionService.settingsBuild(b);
+    DateAndTimeService.settingsBuild(b);
 
     // TODO
 }
@@ -20,6 +21,7 @@ void build(sets::Builder& b)
 void update(sets::Updater& u)
 {
     NetworkConnectionService.settingsUpdate(u);
+    DateAndTimeService.settingsUpdate(u);
 
     // TODO
 }
@@ -42,6 +44,7 @@ void loop()
 {
     SettingsService.update();
     NetworkConnectionService.update();
+    DateAndTimeService.update();
 
     // TODO
 }

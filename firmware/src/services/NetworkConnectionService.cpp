@@ -38,7 +38,7 @@ void NetworkConnectionServiceClass::begin()
 
 void NetworkConnectionServiceClass::settingsBuild(sets::Builder &b)
 {
-    b.beginGroup("WiFi");
+    sets::Group g(b, "WiFi");
     if (m_state == State::ConnectRequested)
         b.Label("Connecting...");
     else if (m_state == State::ScanRequested)
@@ -53,7 +53,6 @@ void NetworkConnectionServiceClass::settingsBuild(sets::Builder &b)
         }
         buildWiFiConnection(b);
     }
-    b.endGroup();
 }
 
 void NetworkConnectionServiceClass::settingsUpdate(sets::Updater &u)
