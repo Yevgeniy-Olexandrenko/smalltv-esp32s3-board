@@ -4,7 +4,8 @@
 
 class DateAndTimeServiceClass : public BackgroundService
 {
-    //
+public:
+    void begin();
 };
 
 extern DateAndTimeServiceClass DateAndTimeService;

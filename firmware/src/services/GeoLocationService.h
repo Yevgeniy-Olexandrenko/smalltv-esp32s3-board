@@ -4,7 +4,8 @@
 
 class GeoLocationServiceClass : public BackgroundService
 {
-    //
+public:
+    void begin();
 };
 
 extern GeoLocationServiceClass GeoLocationService;

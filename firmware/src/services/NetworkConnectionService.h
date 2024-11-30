@@ -9,7 +9,7 @@ class NetworkConnectionServiceClass : public BackgroundService
     enum class State { ConnectRequested, Connecting, Connected, NotConnected, ScanRequested, Scanning };
 
 public:
-    void begin(GyverDBFile& db, sets::SettingsBase& sets);
+    void begin();
     void update();
 
     void settingsBuild(sets::Builder& b);
@@ -20,8 +20,6 @@ private:
     void buildWiFiConnection(sets::Builder& b);
 
 private:
-    GyverDBFile* m_db = nullptr;
-    sets::SettingsBase* m_sets = nullptr;
     State m_state = State::NotConnected;
     String m_ssid;
     String m_pass;
