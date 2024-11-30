@@ -4,20 +4,21 @@
 #include <SettingsGyver.h>
 #include <WiFiConnector.h>
 
-GyverDBFile settingsDB(&LittleFS, "/settings.db");
-SettingsGyver settings("📺 SmallTV Settings", &settingsDB);
+#include "services/NetworkConnectionService.h"
+#include "services/DateAndTimeService.h"
+#include "services/GeoLocationService.h"
+#include "services/WeatherService.h"
 
-String _ssid;
-String _pass;
+GyverDBFile m_db(&LittleFS, "/settings.db");
+SettingsGyver m_sets("📺 SmallTV Settings", &m_db);
+
+String m_ssid;
+String m_pass;
 
 enum class State { ConnectRequested, Connecting, Connected, NotConnected, ScanRequested, Scanning };
 State _state = State::NotConnected;
 
-DB_KEYS(
-    kk,
-    wifi_ssid,
-    wifi_pass,
-    apply);
+DB_KEYS(wifi, ssid, pass);
 
 void buildWiFiScanResult(sets::Builder& b, int max)
 {
@@ -32,8 +33,8 @@ void buildWiFiScanResult(sets::Builder& b, int max)
             if (b.Button("Select"))
             {
                 WiFi.scanDelete();
-                _ssid = ssid;
-                _pass = "";
+                m_ssid = ssid;
+                m_pass = "";
                 b.reload();
             }
             b.endRow();
@@ -44,24 +45,24 @@ void buildWiFiScanResult(sets::Builder& b, int max)
 
 void buildWiFiConnection(sets::Builder& b)
 {
-    b.Input("SSID", &_ssid);
-    b.Pass ("Password", &_pass);
+    b.Input("SSID", &m_ssid);
+    b.Pass ("Password", &m_pass);
 
     if (b.beginButtons())
     {
         if (b.Button("Scan"))
         {
             _state = State::ScanRequested;
-            _ssid = settingsDB[kk::wifi_ssid];
-            _pass = settingsDB[kk::wifi_pass];
+            m_ssid = m_db[wifi::ssid];
+            m_pass = m_db[wifi::pass];
             b.reload();
         }
         if (b.Button("Connect")) 
         {
             _state = State::ConnectRequested;
-            settingsDB[kk::wifi_ssid] = _ssid;
-            settingsDB[kk::wifi_pass] = _pass;
-            settingsDB.update();
+            m_db[wifi::ssid] = m_ssid;
+            m_db[wifi::pass] = m_pass;
+            m_db.update();
             WiFi.scanDelete();
             b.reload();
         }
@@ -101,11 +102,11 @@ void setup()
 
     // базу данных запускаем до подключения к точке
     LittleFS.begin(true);
-    settingsDB.begin();
-    settingsDB.init(kk::wifi_ssid, "");
-    settingsDB.init(kk::wifi_pass, "");
-    _ssid = settingsDB[kk::wifi_ssid];
-    _pass = settingsDB[kk::wifi_pass];
+    m_db.begin();
+    m_db.init(wifi::ssid, "");
+    m_db.init(wifi::pass, "");
+    m_ssid = m_db[wifi::ssid];
+    m_pass = m_db[wifi::pass];
 
     // подключение и реакция на подключение или ошибку
     WiFiConnector.onConnect([]() 
@@ -123,25 +124,25 @@ void setup()
     Serial.println("WiFi Connect start!");
     WiFiConnector.setName("SmallTV");
     WiFiConnector.setTimeout(10);
-    WiFiConnector.connect(_ssid, _pass);
+    WiFiConnector.connect(m_ssid, m_pass);
     _state = State::Connecting;
 
     // запускаем сервер после connect, иначе DNS не подхватится
-    settings.begin();
-    settings.onBuild(build);
-    settings.onUpdate(update);
+    m_sets.begin();
+    m_sets.onBuild(build);
+    m_sets.onUpdate(update);
 }
 
 void loop() 
 {
     WiFiConnector.tick();
-    settings.tick();
+    m_sets.tick();
 
     switch(_state)
     {
         case State::ConnectRequested:
             Serial.println("WiFi Connect start!");
-            WiFiConnector.connect(_ssid, _pass);
+            WiFiConnector.connect(m_ssid, m_pass);
             _state = State::Connecting;
             break;
 
@@ -152,7 +153,7 @@ void loop()
                 _state = (WiFiConnector.connected() 
                     ? State::Connected 
                     : State::NotConnected);
-                settings.reload();
+                m_sets.reload();
             }
             break;
 
@@ -166,7 +167,7 @@ void loop()
             if (WiFi.scanComplete() != WIFI_SCAN_RUNNING)
             {
                 Serial.println("WiFi Scan finish!");
-                settings.reload();
+                m_sets.reload();
                 _state = State::Connecting;
             }
             break;
