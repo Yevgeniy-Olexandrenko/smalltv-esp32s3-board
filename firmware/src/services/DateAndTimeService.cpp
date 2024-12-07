@@ -23,26 +23,17 @@ void DateAndTimeServiceClass::update()
 
 void DateAndTimeServiceClass::settingsBuild(sets::Builder &b)
 {
-    sets::Group g(b, "Time");
-    b.Input(ntp::gmt, "Time zone");
-    b.Input(ntp::host, "NTP server");
+    sets::Group g(b, "Date & time");
+    if (b.Input(ntp::gmt, "Time zone")) NTP.setGMT(b.build.value);
+    if (b.Input(ntp::host, "NTP server")) NTP.setHost(b.build.value);
     b.LED("synced"_h, "Synced", NTP.synced());
-    b.Label("local_time"_h, "Local time", NTP.timeToString());
-
-    if (b.build.isAction()) 
-    {
-        switch (b.build.id) 
-        {
-            case ntp::gmt: NTP.setGMT(b.build.value); break;
-            case ntp::host: NTP.setHost(b.build.value); break;
-        }
-    }
+    b.Label("local_time"_h, "Local time", NTP.toString());
 }
 
 void DateAndTimeServiceClass::settingsUpdate(sets::Updater &u)
 {
     u.update("synced"_h, NTP.synced());
-    u.update("local_time"_h, NTP.timeToString());
+    u.update("local_time"_h, NTP.toString());
 }
 
 DateAndTimeServiceClass DateAndTimeService;

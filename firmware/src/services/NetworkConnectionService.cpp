@@ -3,7 +3,7 @@
 #include <WiFiConnector.h>
 #include "firmware.h"
 
-DB_KEYS(wifi, ssid, pass);
+DB_KEYS(wifi, ssid, pass, tout);
 
 void NetworkConnectionServiceClass::begin()
 {
@@ -12,12 +12,13 @@ void NetworkConnectionServiceClass::begin()
     // set default and get current settings
     SettingsService.data().init(wifi::ssid, "");
     SettingsService.data().init(wifi::pass, "");
+    SettingsService.data().init(wifi::tout, 20);
     m_ssid = SettingsService.data()[wifi::ssid];
     m_pass = SettingsService.data()[wifi::pass];
 
     // configure AP name and connection timeout
     WiFiConnector.setName(NETWORK_ACCESS_POINT);
-    WiFiConnector.setTimeout(NETWORK_CONN_TIMEOUT);
+    WiFiConnector.setTimeout(SettingsService.data()[wifi::tout]);
 
     // try to connect on firmware startup
     Serial.println("NetworkConnectionService: connect");
@@ -37,20 +38,25 @@ void NetworkConnectionServiceClass::begin()
 }
 
 void NetworkConnectionServiceClass::settingsBuild(sets::Builder &b)
-{
-    sets::Group g(b, "WiFi");
+{ 
     if (m_state == State::ConnectRequested)
+    {
+        sets::Group g(b, "WiFi");
         b.Label("Connecting...");
+    }
     else if (m_state == State::ScanRequested)
+    {
+        sets::Group g(b, "WiFi");
         b.Label("Scanning...");
+    }
     else
     {
         if (WiFi.scanComplete() > 0)
         {
+            sets::Group g(b, "WiFi stations");
             buildWiFiScanResult(b, 8);
-            b.endGroup();
-            b.beginGroup();
         }
+        sets::Group g(b, "WiFi connection");
         buildWiFiConnection(b);
     }
 }
@@ -69,8 +75,8 @@ void NetworkConnectionServiceClass::buildWiFiScanResult(sets::Builder &b, int ma
         if (ssid.length())
         {
             b.beginRow();
-            b.Label(ssid, WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? "🔒" : "");
-            if (b.Button("Select"))
+            b.Label(ssid, WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? "🔐" : "🔓");
+            if (b.Button("Select↩"))
             {
                 WiFi.scanDelete();
                 m_ssid = ssid;
@@ -87,7 +93,11 @@ void NetworkConnectionServiceClass::buildWiFiConnection(sets::Builder &b)
 {
     b.Input("SSID", &m_ssid);
     b.Pass ("Password", &m_pass);
-
+    b.Slider(
+        wifi::tout, "Connection timeout",
+        NETWORK_CON_TOUT_MIN, NETWORK_CON_TOUT_MAX, 5,
+        " seconds"
+    );
     if (b.beginButtons())
     {
         if (b.Button("Scan"))

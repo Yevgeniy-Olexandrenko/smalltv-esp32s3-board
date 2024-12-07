@@ -10,18 +10,41 @@
 #include "services/GeoLocationService.h"
 #include "services/WeatherService.h"
 
-void build(sets::Builder& b) 
+static bool m_restartRequested = false;
+
+void settingsBuild(sets::Builder& b) 
 {
     NetworkConnectionService.settingsBuild(b);
-    DateAndTimeService.settingsBuild(b);
+    {
+        sets::Group g(b, "Settings");
+        {
+            sets::Menu m(b, "Globals");
+            GeoLocationService.settingsBuild(b);
+            DateAndTimeService.settingsBuild(b);
+            WeatherService.settingsBuild(b);
+        }
+        {
+            sets::Menu m(b, "Applications");
+            b.Label("TODO");
+        }
+    }
 
     // TODO
+
+    if (b.Button("Restart"))
+    {
+        m_restartRequested = true;
+        SettingsService.data().update();
+        b.reload();
+    }
 }
     
-void update(sets::Updater& u)
+void settingsUpdate(sets::Updater& u)
 {
     NetworkConnectionService.settingsUpdate(u);
+    GeoLocationService.settingsUpdate(u);
     DateAndTimeService.settingsUpdate(u);
+    WeatherService.settingsUpdate(u);
 
     // TODO
 }
@@ -36,15 +59,19 @@ void setup()
     DateAndTimeService.begin();
     WeatherService.begin();
 
-    SettingsService.sets().onBuild(build);
-    SettingsService.sets().onUpdate(update);
+    SettingsService.sets().onBuild(settingsBuild);
+    SettingsService.sets().onUpdate(settingsUpdate);
 }
 
 void loop() 
 {
     SettingsService.update();
     NetworkConnectionService.update();
+    GeoLocationService.update();
     DateAndTimeService.update();
+    WeatherService.update();
 
     // TODO
+
+    if (m_restartRequested) ESP.restart();
 }
