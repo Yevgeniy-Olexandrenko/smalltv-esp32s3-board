@@ -10,6 +10,9 @@
 #include "services/GeoLocationService.h"
 #include "services/WeatherService.h"
 
+#define ONBOARD_LED GPIO_NUM_0
+#define DISPLAY_BACKLIGHT GPIO_NUM_14
+
 static bool m_restartRequested = false;
 
 void settingsBuild(sets::Builder& b) 
@@ -53,6 +56,14 @@ void setup()
 {
     Serial.begin(115200);
     Serial.println();
+
+    // turn on the onboard led
+    pinMode(ONBOARD_LED, OUTPUT);
+    digitalWrite(ONBOARD_LED, LOW);
+
+    // turn on the display backlight
+    pinMode(DISPLAY_BACKLIGHT, OUTPUT);
+    digitalWrite(DISPLAY_BACKLIGHT, HIGH);
 
     NetworkConnectionService.begin();
     GeoLocationService.begin();
