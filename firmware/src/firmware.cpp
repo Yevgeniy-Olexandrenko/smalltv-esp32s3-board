@@ -4,11 +4,11 @@
 #include <SettingsGyver.h>
 #include <WiFiConnector.h>
 
-#include "services/SettingsService.h"
-#include "services/NetworkConnectionService.h"
-#include "services/DateAndTimeService.h"
-#include "services/GeoLocationService.h"
-#include "services/WeatherService.h"
+#include "services/Settings/SettingsService.h"
+#include "services/NetworkConnection/NetworkConnectionService.h"
+#include "services/DateAndTime/DateAndTimeService.h"
+#include "services/GeoLocation/GeoLocationService.h"
+#include "services/Weather/WeatherService.h"
 
 #define ONBOARD_LED GPIO_NUM_0
 #define DISPLAY_BACKLIGHT GPIO_NUM_14
@@ -28,6 +28,10 @@ void settingsBuild(sets::Builder& b)
         }
         {
             sets::Menu m(b, "Applications");
+            b.Label("TODO");
+        }
+        {
+            sets::Menu m(b, "Hardware");
             b.Label("TODO");
         }
     }

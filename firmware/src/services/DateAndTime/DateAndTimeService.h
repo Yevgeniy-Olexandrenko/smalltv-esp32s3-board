@@ -1,9 +1,9 @@
 #pragma once
 
-#include <SettingsBase.h>
-#include "BackgroundService.h"
+#include "services/Service.h"
+#include "services/Settings/SettingsProvider.h"
 
-class DateAndTimeServiceClass : public BackgroundService
+class DateAndTimeServiceClass : public Service, public SettingsProvider
 {
 public:
     void begin();

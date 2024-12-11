@@ -2,9 +2,9 @@
 
 #include <GyverDBFile.h>
 #include <SettingsGyver.h>
-#include "BackgroundService.h"
+#include "services/Service.h"
 
-class SettingsServiceClass : public BackgroundService
+class SettingsServiceClass : public Service
 {
 public:
     SettingsServiceClass();

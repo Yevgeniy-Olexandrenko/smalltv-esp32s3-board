@@ -1,5 +1,5 @@
 #include "NetworkConnectionService.h"
-#include "SettingsService.h"
+#include "services/Settings/SettingsService.h"
 #include <WiFiConnector.h>
 #include "firmware.h"
 

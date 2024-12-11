@@ -1,9 +1,9 @@
 #pragma once
 
-#include <SettingsBase.h>
-#include "BackgroundService.h"
+#include "services/Service.h"
+#include "services/Settings/SettingsProvider.h"
 
-class NetworkConnectionServiceClass : public BackgroundService
+class NetworkConnectionServiceClass : public Service, public SettingsProvider
 {
     enum class State { ConnectRequested, Connecting, Connected, NotConnected, ScanRequested, Scanning };
 
@@ -11,8 +11,8 @@ public:
     void begin();
     void update();
 
-    void settingsBuild(sets::Builder& b);
-    void settingsUpdate(sets::Updater& u);
+    void settingsBuild(sets::Builder& b) override;
+    void settingsUpdate(sets::Updater& u) override;
 
 private:
     void buildWiFiScanResult(sets::Builder& b, int max);
