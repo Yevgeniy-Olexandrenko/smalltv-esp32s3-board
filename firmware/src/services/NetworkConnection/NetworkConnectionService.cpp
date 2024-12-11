@@ -109,6 +109,7 @@ void NetworkConnectionServiceClass::buildWiFiConnection(sets::Builder &b)
         }
         if (b.Button("Connect")) 
         {
+            m_ssid.trim();
             m_state = State::ConnectRequested;
             SettingsService.data()[wifi::ssid] = m_ssid;
             SettingsService.data()[wifi::pass] = m_pass;

@@ -10,6 +10,8 @@
 #include "services/GeoLocation/GeoLocationService.h"
 #include "services/Weather/WeatherService.h"
 
+#include "hardware/HardwareInfo.h"
+
 #define ONBOARD_LED GPIO_NUM_0
 #define DISPLAY_BACKLIGHT GPIO_NUM_14
 
@@ -30,11 +32,8 @@ void settingsBuild(sets::Builder& b)
             sets::Menu m(b, "Applications");
             b.Label("TODO");
         }
-        {
-            sets::Menu m(b, "Hardware");
-            b.Label("TODO");
-        }
     }
+    HardwareInfo.settingsBuild(b);
 
     // TODO
 
