@@ -14,6 +14,7 @@
 
 #define ONBOARD_LED GPIO_NUM_0
 #define DISPLAY_BACKLIGHT GPIO_NUM_14
+#define POWER_SOURCE_VOLTAGE GPIO_NUM_3
 
 static bool m_restartRequested = false;
 
@@ -58,7 +59,7 @@ void settingsUpdate(sets::Updater& u)
 void setup() 
 {
     Serial.begin(115200);
-    Serial.println();
+    delay(1500);
 
     // turn on the onboard led
     pinMode(ONBOARD_LED, OUTPUT);
@@ -67,6 +68,12 @@ void setup()
     // turn on the display backlight
     pinMode(DISPLAY_BACKLIGHT, OUTPUT);
     digitalWrite(DISPLAY_BACKLIGHT, HIGH);
+
+    // print power source voltage
+    analogSetPinAttenuation(POWER_SOURCE_VOLTAGE, ADC_11db);
+    auto voltage = 0.002f * analogReadMilliVolts(POWER_SOURCE_VOLTAGE);
+    Serial.print("Power source voltage: ");
+    Serial.println(voltage);
 
     NetworkConnectionService.begin();
     GeoLocationService.begin();
