@@ -10,6 +10,7 @@
 #include "services/GeoLocation/GeoLocationService.h"
 #include "services/Weather/WeatherService.h"
 
+#include "hardware/PowerSource.h"
 #include "hardware/HardwareInfo.h"
 
 #define ONBOARD_LED GPIO_NUM_0
@@ -52,6 +53,7 @@ void settingsUpdate(sets::Updater& u)
     GeoLocationService.settingsUpdate(u);
     DateAndTimeService.settingsUpdate(u);
     WeatherService.settingsUpdate(u);
+    HardwareInfo.settingsUpdate(u);
 
     // TODO
 }
@@ -69,12 +71,10 @@ void setup()
     pinMode(DISPLAY_BACKLIGHT, OUTPUT);
     digitalWrite(DISPLAY_BACKLIGHT, HIGH);
 
-    // print power source voltage
-    analogSetPinAttenuation(POWER_SOURCE_VOLTAGE, ADC_11db);
-    auto voltage = 0.002f * analogReadMilliVolts(POWER_SOURCE_VOLTAGE);
-    Serial.print("Power source voltage: ");
-    Serial.println(voltage);
+    // start hardware
+    PowerSource.beging();
 
+    // start services
     NetworkConnectionService.begin();
     GeoLocationService.begin();
     DateAndTimeService.begin();
