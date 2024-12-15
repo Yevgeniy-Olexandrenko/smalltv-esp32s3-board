@@ -7,7 +7,7 @@ namespace service
 {
     DB_KEYS(wifi, ssid, pass, tout);
 
-    void NetworkConnectionClass::begin()
+    void NetworkConnection::begin()
     {
         Serial.println("NetworkConnection: begin");
 
@@ -19,6 +19,7 @@ namespace service
         m_pass = webserver::Settings.data()[wifi::pass];
 
         // configure AP name and connection timeout
+        WiFi.setHostname(NETWORK_HOST_NAME);
         WiFiConnector.setName(NETWORK_ACCESS_POINT);
         WiFiConnector.setTimeout(webserver::Settings.data()[wifi::tout]);
 
@@ -39,7 +40,7 @@ namespace service
         m_state = State::Connecting;
     }
 
-    void NetworkConnectionClass::settingsBuild(sets::Builder &b)
+    void NetworkConnection::settingsBuild(sets::Builder &b)
     { 
         if (m_state == State::ConnectRequested)
         {
@@ -63,12 +64,26 @@ namespace service
         }
     }
 
-    void NetworkConnectionClass::settingsUpdate(sets::Updater &u)
+    void NetworkConnection::settingsUpdate(sets::Updater &u)
     {
         // do nothing for now
     }
 
-    void NetworkConnectionClass::buildWiFiScanResult(sets::Builder &b, int max)
+    int NetworkConnection::getSignalRSSI() const
+    {
+        return WiFi.RSSI();
+    }
+
+    NetworkConnection::Signal NetworkConnection::getSignalStrength() const
+    {
+        const int rssi = getSignalRSSI();
+        if (rssi >= -50) return Signal::Excellent;
+        if (rssi >= -70) return Signal::Good;
+        if (rssi >= -80) return Signal::Fair;
+        return Signal::Bad;
+    }
+
+    void NetworkConnection::buildWiFiScanResult(sets::Builder &b, int max)
     {
         const int16_t found = WiFi.scanComplete();
         for (int i = 0, count = 0; i < found && count < max; i++) 
@@ -78,7 +93,7 @@ namespace service
             {
                 b.beginRow();
                 b.Label(ssid, WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? "🔐" : "🔓");
-                if (b.Button("Select↩"))
+                if (b.Button("Set"))
                 {
                     WiFi.scanDelete();
                     m_ssid = ssid;
@@ -91,7 +106,7 @@ namespace service
         }
     }
 
-    void NetworkConnectionClass::buildWiFiConnection(sets::Builder &b)
+    void NetworkConnection::buildWiFiConnection(sets::Builder &b)
     {
         b.Input("SSID", &m_ssid);
         b.Pass ("Password", &m_pass);
@@ -123,7 +138,7 @@ namespace service
         }
     }
 
-    void NetworkConnectionClass::update()
+    void NetworkConnection::update()
     {
         WiFiConnector.tick();
         switch(m_state)
@@ -161,5 +176,5 @@ namespace service
         }
     }
 
-    NetworkConnectionClass NetworkConnection;
+    NetworkConnection networkConnection;
 }

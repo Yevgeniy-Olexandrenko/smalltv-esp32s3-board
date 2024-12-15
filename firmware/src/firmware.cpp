@@ -32,7 +32,7 @@ void setup()
     driver::PowerSource.beging();
 
     // start services
-    service::NetworkConnection.begin();
+    service::networkConnection.begin();
     service::GeoLocation.begin();
     service::DateAndTime.begin();
     service::Weather.begin();
@@ -44,7 +44,7 @@ void setup()
 void loop() 
 {
     // update services
-    service::NetworkConnection.update();
+    service::networkConnection.update();
     service::GeoLocation.update();
     service::DateAndTime.update();
     service::Weather.update();

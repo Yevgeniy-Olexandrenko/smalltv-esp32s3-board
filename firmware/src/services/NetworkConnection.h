@@ -4,16 +4,21 @@
 
 namespace service
 {
-    class NetworkConnectionClass : public webserver::SettingsProvider
+    class NetworkConnection : public webserver::SettingsProvider
     {
         enum class State { ConnectRequested, Connecting, Connected, NotConnected, ScanRequested, Scanning };
 
     public:
+        enum class Signal { Excellent, Good, Fair, Bad };
+
         void begin();
         void update();
 
         void settingsBuild(sets::Builder& b) override;
         void settingsUpdate(sets::Updater& u) override;
+
+        int getSignalRSSI() const;
+        Signal getSignalStrength() const;
 
     private:
         void buildWiFiScanResult(sets::Builder& b, int max);
@@ -25,5 +30,5 @@ namespace service
         String m_pass;
     };
 
-    extern NetworkConnectionClass NetworkConnection;
+    extern NetworkConnection networkConnection;
 }

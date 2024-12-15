@@ -14,10 +14,7 @@ namespace webserver
         void fillESPModuleInfo(String& moduleChip, String& moduleMemory);
         void fillHeapUsageInfo(String& heapUsage);
         void fillPowerSourceInfo(String& powerSource);
-
-    private:
-        String m_moduleChip;
-        String m_moduleMemory;
+        void fillWiFiSignalInfo(String& wifiSignal);
     };
 
     extern HardwareInfoClass HardwareInfo;

@@ -1,56 +1,60 @@
 #include "HardwareInfo.h"
 #include "drivers/PowerSource.h"
+#include "services/NetworkConnection.h"
 
 namespace webserver
 {
     void HardwareInfoClass::settingsBuild(sets::Builder &b)
     {
+        Serial.println("settings_build");
+
         String moduleChip, moduleMemory;
-        String heapUsage, powerSource;
+        String heapUsage, powerSource, wifiSignal;
         fillESPModuleInfo(moduleChip, moduleMemory);
         fillHeapUsageInfo(heapUsage);
         fillPowerSourceInfo(powerSource);
+        fillWiFiSignalInfo(wifiSignal);
         
         sets::Group g(b, "Hardware");
         b.Label("Chip", moduleChip);
         b.Label("Memory", moduleMemory);
         b.Label("heap_usage"_h, "Heap usage", heapUsage);
         b.Label("power_source"_h, "Power source", powerSource);
+        b.Label("wifi_signal"_h, "WiFi signal", wifiSignal);
     }
 
     void HardwareInfoClass::settingsUpdate(sets::Updater &u)
     {
-        String heapUsage, powerSource;
+        Serial.println("settings_update");
+
+        String heapUsage, powerSource, wifiSignal;
         fillHeapUsageInfo(heapUsage);
         fillPowerSourceInfo(powerSource);
+        fillWiFiSignalInfo(wifiSignal);
 
         u.update("heap_usage"_h, heapUsage);
         u.update("power_source"_h, powerSource);
+        u.update("wifi_signal"_h, wifiSignal);
     }
 
     void HardwareInfoClass::fillESPModuleInfo(String &moduleChip, String &moduleMemory)
     {
-        if (m_moduleChip.isEmpty())
+        esp_chip_info_t chip_info;
+        esp_chip_info(&chip_info);
+
+        moduleChip = String(ESP.getChipModel()) + " / " + String(ESP.getCpuFreqMHz()) + "MHz";
+        if (ESP.getChipCores() > 1) moduleChip += " / 2 Cores";
+
+        auto flashSize = (ESP.getFlashChipSize() / uint32_t(1024 * 1024));
+        auto flashEmbedded = (chip_info.features & CHIP_FEATURE_EMB_FLASH);
+        moduleMemory = "FLASH " + String(flashSize) + "MB " + (flashEmbedded ? "emb" : "ext");
+
+        if (psramFound())
         {
-            esp_chip_info_t chip_info;
-            esp_chip_info(&chip_info);
-
-            m_moduleChip = String(ESP.getChipModel()) + " / " + String(ESP.getCpuFreqMHz()) + "MHz";
-            if (ESP.getChipCores() > 1) m_moduleChip += " / 2 Cores";
-
-            auto flashSize = (ESP.getFlashChipSize() / uint32_t(1024 * 1024));
-            auto flashEmbedded = (chip_info.features & CHIP_FEATURE_EMB_FLASH);
-            m_moduleMemory = "FLASH " + String(flashSize) + "MB " + (flashEmbedded ? "emb" : "ext");
-
-            if (psramFound())
-            {
-                auto psramSize = (esp_spiram_get_size() / uint32_t(1024 * 1024));
-                auto psramEmbedded = (chip_info.features & CHIP_FEATURE_EMB_PSRAM);
-                m_moduleMemory += " / PSRAM " + String(psramSize) + "MB " + (psramEmbedded ? "emb" : "ext");
-            }
+            auto psramSize = (esp_spiram_get_size() / uint32_t(1024 * 1024));
+            auto psramEmbedded = (chip_info.features & CHIP_FEATURE_EMB_PSRAM);
+            moduleMemory += " / PSRAM " + String(psramSize) + "MB " + (psramEmbedded ? "emb" : "ext");
         }
-        moduleChip = m_moduleChip;
-        moduleMemory = m_moduleMemory;
     }
 
     void HardwareInfoClass::fillHeapUsageInfo(String &heapUsage)
@@ -83,6 +87,18 @@ namespace webserver
             {   auto usbVolts = driver::PowerSource.getInputVoltage();
                 powerSource = "USB " + String(usbVolts) + "V";
             }   break;
+        }
+    }
+
+    void HardwareInfoClass::fillWiFiSignalInfo(String &wifiSignal)
+    {
+        wifiSignal = String(service::networkConnection.getSignalRSSI()) + "dBm";
+        switch (service::networkConnection.getSignalStrength())
+        {
+            case service::NetworkConnection::Signal::Excellent: wifiSignal += " Exelent"; break;
+            case service::NetworkConnection::Signal::Good: wifiSignal += " Good"; break;
+            case service::NetworkConnection::Signal::Fair: wifiSignal += " Fair"; break;
+            case service::NetworkConnection::Signal::Bad: wifiSignal += " Bad"; break;
         }
     }
 

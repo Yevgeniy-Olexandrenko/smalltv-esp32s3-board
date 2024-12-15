@@ -57,7 +57,7 @@ namespace webserver
 
     void SettingsWebAppClass::settingsBuild(sets::Builder& b) 
     {
-        service::NetworkConnection.settingsBuild(b);
+        service::networkConnection.settingsBuild(b);
         {
             sets::Group g(b, "Settings");
             {
@@ -71,7 +71,7 @@ namespace webserver
                 b.Label("TODO");
             }
         }
-        webserver::HardwareInfo.settingsBuild(b);
+        HardwareInfo.settingsBuild(b);
 
         // TODO
 
@@ -86,12 +86,12 @@ namespace webserver
     void SettingsWebAppClass::settingsUpdate(sets::Updater& u)
     {
         // handle services
-        service::NetworkConnection.settingsUpdate(u);
+        service::networkConnection.settingsUpdate(u);
         service::GeoLocation.settingsUpdate(u);
         service::DateAndTime.settingsUpdate(u);
         service::Weather.settingsUpdate(u);
 
-        webserver::HardwareInfo.settingsUpdate(u);
+        HardwareInfo.settingsUpdate(u);
 
         // TODO
     }
