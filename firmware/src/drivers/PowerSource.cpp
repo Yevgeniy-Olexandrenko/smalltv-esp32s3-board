@@ -55,6 +55,7 @@ namespace driver
 
     PowerSourceClass::MilliVolt PowerSourceClass::getInputMilliVoltsRaw()
     {
+        pinMode(POWER_SOURCE_VOLTAGE_PIN, INPUT_PULLDOWN);
         analogSetPinAttenuation(POWER_SOURCE_VOLTAGE_PIN, ADC_11db);
         return (2 * analogReadMilliVolts(POWER_SOURCE_VOLTAGE_PIN));
     }
