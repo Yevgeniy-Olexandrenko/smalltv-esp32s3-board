@@ -1,7 +1,8 @@
-#include "NetworkConnection.h"
-#include "webserver/SettingsWebApp.h"
 #include <WiFiConnector.h>
 #include "firmware.h"
+#include "NetworkConnection.h"
+#include "webserver/SettingsWebApp.h"
+#include "drivers/LedAndButton.h"
 
 namespace service
 {
@@ -24,18 +25,22 @@ namespace service
         WiFiConnector.setTimeout(webserver::Settings.data()[wifi::tout]);
 
         // try to connect on firmware startup
-        Serial.println("NetworkConnection: connect");
         WiFiConnector.onConnect([]() 
         {
             Serial.print("NetworkConnection: connected: ");
             Serial.println(WiFi.localIP());
+            driver::ledAndButton.setLedMode(driver::LedAndButton::LedMode::On);
         });
 
         WiFiConnector.onError([]() 
         {
             Serial.print("NetworkConnection: failed, start AP: ");
             Serial.println(WiFi.softAPIP());
+            driver::ledAndButton.setLedMode(driver::LedAndButton::LedMode::Blink);
         });
+
+        Serial.println("NetworkConnection: connect on boot");
+        driver::ledAndButton.setLedMode(driver::LedAndButton::LedMode::Off);
         WiFiConnector.connect(m_ssid, m_pass);
         m_state = State::Connecting;
     }
@@ -145,6 +150,7 @@ namespace service
         {
             case State::ConnectRequested:
                 Serial.println("NetworkConnection: connect");
+                driver::ledAndButton.setLedMode(driver::LedAndButton::LedMode::Off);
                 WiFiConnector.connect(m_ssid, m_pass);
                 m_state = State::Connecting;
                 break;

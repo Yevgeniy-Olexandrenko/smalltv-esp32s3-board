@@ -7,9 +7,7 @@
 
 namespace driver
 {
-    enum class PowerSourceType { Unknown, Battery, USB };
-
-    class PowerSourceClass
+    class PowerSource
     {
         enum
         {
@@ -21,10 +19,11 @@ namespace driver
 
         using Timestamp = unsigned long;
         using MilliVolt = uint32_t;
-        using Type = PowerSourceType;
 
     public:
-        void  beging();
+        enum class Type { Unknown, Battery, USB };
+
+        void  begin();
         Type  getType();
         float getInputVoltage();
         float getBatteryLevel();
@@ -39,5 +38,5 @@ namespace driver
         MilliVolt m_measurement;
     };
     
-    extern PowerSourceClass PowerSource;
+    extern PowerSource powerSource;
 }

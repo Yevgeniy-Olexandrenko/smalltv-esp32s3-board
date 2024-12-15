@@ -71,22 +71,21 @@ namespace webserver
 
     void HardwareInfoClass::fillPowerSourceInfo(String &powerSource)
     {
-        switch(driver::PowerSource.getType())
+        auto voltage = driver::powerSource.getInputVoltage();
+        switch(driver::powerSource.getType())
         {
-            case driver::PowerSourceType::Unknown:
-            {    powerSource = String(driver::PowerSource.getInputVoltage()) + "V";
-            }    break;
+            case driver::PowerSource::Type::Unknown:
+                powerSource = String(voltage) + "V";
+                break;
 
-            case driver::PowerSourceType::Battery:
-            {   auto batVolts = driver::PowerSource.getInputVoltage();
-                auto batLevel = driver::PowerSource.getPatteryLevelPercents();
-                powerSource = "BAT " + String(batVolts) + "V / " + String(batLevel) + "%";
+            case driver::PowerSource::Type::Battery:
+            {   auto level = driver::powerSource.getPatteryLevelPercents();
+                powerSource = "BAT " + String(voltage) + "V / " + String(level) + "%";
             }   break;
 
-            case driver::PowerSourceType::USB:
-            {   auto usbVolts = driver::PowerSource.getInputVoltage();
-                powerSource = "USB " + String(usbVolts) + "V";
-            }   break;
+            case driver::PowerSource::Type::USB:
+                powerSource = "USB " + String(voltage) + "V";
+                break;
         }
     }
 
@@ -95,7 +94,7 @@ namespace webserver
         wifiSignal = String(service::networkConnection.getSignalRSSI()) + "dBm";
         switch (service::networkConnection.getSignalStrength())
         {
-            case service::NetworkConnection::Signal::Excellent: wifiSignal += " Exelent"; break;
+            case service::NetworkConnection::Signal::Excellent: wifiSignal += " Excellent"; break;
             case service::NetworkConnection::Signal::Good: wifiSignal += " Good"; break;
             case service::NetworkConnection::Signal::Fair: wifiSignal += " Fair"; break;
             case service::NetworkConnection::Signal::Bad: wifiSignal += " Bad"; break;

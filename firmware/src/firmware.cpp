@@ -2,6 +2,7 @@
 
 // hardware drivers
 #include "drivers/PowerSource.h"
+#include "drivers/LedAndButton.h"
 
 // background services
 #include "services/NetworkConnection.h"
@@ -14,6 +15,8 @@
 
 #define ONBOARD_LED GPIO_NUM_0
 #define DISPLAY_BACKLIGHT GPIO_NUM_14
+
+static bool s_buttonState = false;
 
 void setup() 
 {
@@ -29,7 +32,8 @@ void setup()
     digitalWrite(DISPLAY_BACKLIGHT, HIGH);
 
     // start hardware
-    driver::PowerSource.beging();
+    driver::powerSource.begin();
+    driver::ledAndButton.begin();
 
     // start services
     service::networkConnection.begin();
@@ -43,6 +47,9 @@ void setup()
 
 void loop() 
 {
+    // update hardware
+    driver::ledAndButton.update();
+
     // update services
     service::networkConnection.update();
     service::GeoLocation.update();
@@ -51,4 +58,15 @@ void loop()
 
     // update webserver app
     webserver::SettingsWebApp.update();
+
+    // test
+    bool buttonState = driver::ledAndButton.getButtonState();
+    if (buttonState != s_buttonState)
+    {
+        s_buttonState = buttonState;
+        if (buttonState)
+            Serial.println("Button pressed!");
+        else
+            Serial.println("Button released!");
+    }
 }
