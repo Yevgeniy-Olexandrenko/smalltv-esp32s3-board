@@ -6,8 +6,6 @@ namespace webserver
 {
     void HardwareInfoClass::settingsBuild(sets::Builder &b)
     {
-        Serial.println("settings_build");
-
         String moduleChip, moduleMemory;
         String heapUsage, powerSource, wifiSignal;
         fillESPModuleInfo(moduleChip, moduleMemory);
@@ -25,8 +23,6 @@ namespace webserver
 
     void HardwareInfoClass::settingsUpdate(sets::Updater &u)
     {
-        Serial.println("settings_update");
-
         String heapUsage, powerSource, wifiSignal;
         fillHeapUsageInfo(heapUsage);
         fillPowerSourceInfo(powerSource);

@@ -1,6 +1,8 @@
 #include "SettingsWebApp.h"
 #include "firmware.h"
 
+#include "drivers/Storage.h"
+
 #include "services/NetworkConnection.h"
 #include "services/GeoLocation.h"
 #include "services/DateAndTime.h"
@@ -11,7 +13,8 @@
 namespace webserver
 {
     SettingsClass::SettingsClass()
-        : m_database(&LittleFS, "/settings.db")
+        // only internal storage is supported
+        : m_database(&driver::storage.spiffs(), "/settings.db")
         , m_settings(SETTINGS_TITLE, &m_database)
         , m_databaseReady(false)
         , m_settingsReady(false)
@@ -24,7 +27,6 @@ namespace webserver
         {
             Serial.println("Settings: begin database");
             m_databaseReady = true;
-            LittleFS.begin(true);
             m_database.begin();
         }
         return m_database;
