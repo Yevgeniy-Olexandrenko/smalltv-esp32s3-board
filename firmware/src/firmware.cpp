@@ -89,13 +89,17 @@ void setup()
     // Serial.print("SD Card availavle: ");
     // Serial.println(driver::storage.isSDCardAvailable() ? "YES" : "NO");
 
+    // driver::sdcard.begin(
+    //     SDCARD_MMC_CLK,
+    //     SDCARD_MMC_CMD,
+    //     SDCARD_MMC_D0,
+    //     SDCARD_MMC_D1,
+    //     SDCARD_MMC_D2,
+    //     SDCARD_MMC_D3);
     driver::sdcard.begin(
         SDCARD_MMC_CLK,
         SDCARD_MMC_CMD,
-        SDCARD_MMC_D0,
-        SDCARD_MMC_D1,
-        SDCARD_MMC_D2,
-        SDCARD_MMC_D3);
+        SDCARD_MMC_D0);
     Serial.print("SD Card type: ");
     auto ct = driver::sdcard.getType();
     if (ct == CARD_NONE) Serial.println("NONE");
