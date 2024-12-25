@@ -17,26 +17,9 @@ namespace driver
         SDCard();
         ~SDCard();
 
-        bool begin(
-            gpio_num_t clk,
-            gpio_num_t cmd,
-            gpio_num_t d0,
-            gpio_num_t d1 = GPIO_NUM_NC,
-            gpio_num_t d2 = GPIO_NUM_NC, 
-            gpio_num_t d3 = GPIO_NUM_NC);
-
-        bool begin(
-            const char* mountPoint, 
-            gpio_num_t clk,
-            gpio_num_t cmd, 
-            gpio_num_t d0,
-            gpio_num_t d1 = GPIO_NUM_NC,
-            gpio_num_t d2 = GPIO_NUM_NC,
-            gpio_num_t d3 = GPIO_NUM_NC);
-
-//        void begin(gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs);
-//        void begin(const char *mountPoint, gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs);
-        
+        bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0);
+        bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpio_num_t d2, gpio_num_t d3);
+        bool begin(const char* mountPoint, gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs);
         void end();
 
         bool isMounted() const;
@@ -52,6 +35,7 @@ namespace driver
         bool readSectors(uint8_t *dst, size_t startSector, size_t sectorCount);
 
     private:
+        int _spi_slot; 
         sdmmc_card_t* _card;
         SemaphoreHandle_t _mutex;
     };

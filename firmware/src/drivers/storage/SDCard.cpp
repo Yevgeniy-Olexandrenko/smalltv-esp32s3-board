@@ -18,12 +18,21 @@ namespace driver
         end();
     }
 
-    bool SDCard::begin(gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpio_num_t d2, gpio_num_t d3)
+    // SDIO 1 bit mode
+    bool SDCard::begin(const char *mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0)
     {
-        return begin(DEFAULT_MOUNT_POINT, clk, cmd, d0, d1, d2, d3);
+        return begin(mountPoint, clk, cmd, d0, GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC);
     }
 
-    bool SDCard::begin(const char *mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpio_num_t d2, gpio_num_t d3)
+    // SDIO 4 bit mode
+    bool SDCard::begin(
+        const char *mountPoint,
+        gpio_num_t clk,
+        gpio_num_t cmd,
+        gpio_num_t d0,
+        gpio_num_t d1,
+        gpio_num_t d2,
+        gpio_num_t d3)
     {
         if (_card) return true;
         log_i("Initializing SD card");
@@ -52,7 +61,7 @@ namespace driver
         {
             .format_if_mount_failed = false,
             .max_files = 5,
-            .allocation_unit_size = 0
+            .allocation_unit_size = 16384
         };
 
         esp_err_t ret = esp_vfs_fat_sdmmc_mount(mountPoint, &m_host, &slot_config, &mount_config, &_card);
@@ -71,68 +80,70 @@ namespace driver
         return true;
     }
 
-    // void SDCard::begin(gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs)
-    // {
-    //     begin(DEFAULT_MOUNT_POINT, miso, mosi, clk, cs);
-    // }
+    // SPI mode
+    bool SDCard::begin(
+        const char *mountPoint,
+        gpio_num_t miso,
+        gpio_num_t mosi,
+        gpio_num_t clk,
+        gpio_num_t cs)
+    {
+        if (_card) return true;
+        log_i("Initializing SD card");
 
-//     void SDCard::begin(const char *mountPoint, gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs)
-//     {
-//         log_i("Initializing SD card");
-//
-//         m_host = SDSPI_HOST_DEFAULT();
-//         m_host.max_freq_khz = SDMMC_FREQ_52M;
-// #ifdef SD_CARD_SPI_HOST
-//         // only enable on ESP32
-//         m_host.slot = SD_CARD_SPI_HOST;
-// #endif
-//         spi_bus_config_t bus_cfg = 
-//         {
-//             .mosi_io_num = mosi,
-//             .miso_io_num = miso,
-//             .sclk_io_num = clk,
-//             .quadwp_io_num = GPIO_NUM_NC,
-//             .quadhd_io_num = GPIO_NUM_NC,
-//             .max_transfer_sz = 16384,
-//             .flags = 0,
-//             .intr_flags = 0
-//         };
-//
-//         esp_err_t ret = spi_bus_initialize(spi_host_device_t(m_host.slot), &bus_cfg, SPI_DMA_CH_AUTO);
-//         if (ret != ESP_OK)
-//         {
-//             log_e("Initializing SD card failed: %s\n", esp_err_to_name(ret));
-//             return;
-//         }
-//
-//         esp_vfs_fat_sdmmc_mount_config_t mount_config = 
-//         {
-//             .format_if_mount_failed = false,
-//             .max_files = 5,
-//             .allocation_unit_size = 16384
-//         };
-//
-//         // This initializes the slot without card detect (CD) and write protect (WP) signals.
-//         // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
-//         sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-//         slot_config.gpio_cs = cs;
-//         slot_config.host_id = spi_host_device_t(m_host.slot);
-//
-//         ret = esp_vfs_fat_sdspi_mount(mountPoint, &m_host, &slot_config, &mount_config, &_card);
-//         if (ret != ESP_OK)
-//         {
-//             log_e("Initializing SD card failed: %s\n", esp_err_to_name(ret));
-//             return;
-//         }
-//
-//         log_i("SD card mounted at: %s\n", mountPoint);
-//         sdmmc_card_print_info(stdout, _card);
-//
-//         _impl->mountpoint(mountPoint);
-//         _mutex = xSemaphoreCreateMutex();
-//     }
+        sdmmc_host_t m_host = SDSPI_HOST_DEFAULT();
+        m_host.max_freq_khz = SDMMC_FREQ_52M; 
+        #ifdef SD_CARD_SPI_HOST
+        // only enable on ESP32
+        m_host.slot = SD_CARD_SPI_HOST;
+        #endif
+        _spi_slot = m_host.slot;
 
-    
+        spi_bus_config_t bus_cfg = 
+        {
+            .mosi_io_num = mosi,
+            .miso_io_num = miso,
+            .sclk_io_num = clk,
+            .quadwp_io_num = GPIO_NUM_NC,
+            .quadhd_io_num = GPIO_NUM_NC,
+            .max_transfer_sz = 16384,
+            .flags = 0,
+            .intr_flags = 0
+        };
+
+        esp_err_t ret = spi_bus_initialize(spi_host_device_t(_spi_slot), &bus_cfg, SPI_DMA_CH_AUTO);
+        if (ret != ESP_OK)
+        {
+            log_e("Initializing SD card failed: %s\n", esp_err_to_name(ret));
+            return false;
+        }
+
+        sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+        slot_config.gpio_cs = cs;
+        slot_config.host_id = spi_host_device_t(_spi_slot);
+
+        esp_vfs_fat_sdmmc_mount_config_t mount_config = 
+        {
+            .format_if_mount_failed = false,
+            .max_files = 5,
+            .allocation_unit_size = 16384
+        };
+
+        ret = esp_vfs_fat_sdspi_mount(mountPoint, &m_host, &slot_config, &mount_config, &_card);
+        if (ret != ESP_OK)
+        {
+            log_e("Initializing SD card failed: %s\n", esp_err_to_name(ret));
+            _card = nullptr;
+            return false;
+        }
+
+        log_i("SD card mounted at: %s\n", mountPoint);
+        sdmmc_card_print_info(stdout, _card);
+        
+        _mutex = xSemaphoreCreateMutex();
+        _impl->mountpoint(mountPoint);
+        return true;
+    }
 
     void SDCard::end()
     {
@@ -140,7 +151,7 @@ namespace driver
         {
             xSemaphoreTake(_mutex, portMAX_DELAY);
             esp_vfs_fat_sdcard_unmount(_impl->mountpoint(), _card);
-            //spi_bus_free(spi_host_device_t(m_host.slot)); // TODO
+            spi_bus_free(spi_host_device_t(_spi_slot));
             _impl->mountpoint(nullptr);
             _card = nullptr;
             xSemaphoreGive(_mutex);
@@ -165,9 +176,7 @@ namespace driver
 
     uint64_t SDCard::getSize() const
     {
-        uint64_t sectorSize = getSectorSize();
-        uint64_t sectorCount = getSectorCount();
-        return (sectorSize * sectorSize);
+        return (getSectorSize() * getSectorCount());
     }
 
     size_t SDCard::getSectorCount() const

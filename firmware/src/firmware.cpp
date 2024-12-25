@@ -22,6 +22,7 @@
 #define ONBOARD_LED GPIO_NUM_0
 #define DISPLAY_BACKLIGHT GPIO_NUM_14
 
+// mmc
 #define SDCARD_MMC_DET GPIO_NUM_47
 #define SDCARD_MMC_CLK GPIO_NUM_41
 #define SDCARD_MMC_CMD GPIO_NUM_38
@@ -30,46 +31,57 @@
 #define SDCARD_MMC_D2  GPIO_NUM_40
 #define SDCARD_MMC_D3  GPIO_NUM_39
 
+// spi
+#define SDCARD_SPI_MISO SDCARD_MMC_D0
+#define SDCARD_SPI_MOSI SDCARD_MMC_CMD
+#define SDCARD_SPI_CLK  SDCARD_MMC_CLK
+#define SDCARD_SPI_CS   SDCARD_MMC_D3
 
 static bool s_buttonState = false;
 
-void listDir(fs::FS& fs, const char *dirname, uint8_t levels)
-{
-    Serial.printf("Listing directory: %s\n", dirname);
+#include <stdio.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <string.h>
 
-    File root = fs.open(dirname);
-    if (!root)
-    {
-        Serial.println("Failed to open directory");
-        return;
-    }
-    if (!root.isDirectory())
-    {
-        Serial.println("Not a directory");
+void list_dir(const char *path, int level) {
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        printf("Could not open dir: %s\n", path);
         return;
     }
 
-    File file = root.openNextFile();
-    while (file)
-    {
-        if (file.isDirectory())
-        {
-            Serial.print("  DIR : ");
-            Serial.println(file.name());
-            if (levels)
-            {
-                listDir(fs, file.path(), levels - 1);
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        // Пропускаем "." и ".."
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        // Формируем полный путь к файлу/каталогу
+        char full_path[256];
+        snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
+
+        // Получаем информацию о файле/каталоге
+        struct stat entry_info;
+        if (stat(full_path, &entry_info) == 0) {
+            // Выводим отступы для подкаталогов
+            for (int i = 0; i < level; i++) {
+                printf("  ");
             }
+
+            if (S_ISDIR(entry_info.st_mode)) {
+                printf("[DIR]  %s\n", entry->d_name);
+                // Рекурсивно обходим подкаталог
+                list_dir(full_path, level + 1);
+            } else {
+                printf("[FILE] %s\n", entry->d_name);
+            }
+        } else {
+            printf("Could not get file info: %s\n", full_path);
         }
-        else
-        {
-            Serial.print("  FILE: ");
-            Serial.print(file.name());
-            Serial.print("  SIZE: ");
-            Serial.println(file.size());
-        }
-        file = root.openNextFile();
     }
+    closedir(dir);
 }
 
 
@@ -94,23 +106,34 @@ void setup()
     // Serial.print("SD Card availavle: ");
     // Serial.println(driver::storage.isSDCardAvailable() ? "YES" : "NO");
 
-    driver::sdcard.begin
-    (
-        SDCARD_MMC_CLK,
-        SDCARD_MMC_CMD,
-        SDCARD_MMC_D0,
-        SDCARD_MMC_D1,
-        SDCARD_MMC_D2,
-        SDCARD_MMC_D3
-    );
     // driver::sdcard.begin
     // (
+    //     driver::SDCard::DEFAULT_MOUNT_POINT,
+    //     SDCARD_MMC_CLK,
+    //     SDCARD_MMC_CMD,
+    //     SDCARD_MMC_D0,
+    //     SDCARD_MMC_D1,
+    //     SDCARD_MMC_D2,
+    //     SDCARD_MMC_D3
+    // );
+    // driver::sdcard.begin
+    // (
+    //     driver::SDCard::DEFAULT_MOUNT_POINT,
     //     SDCARD_MMC_CLK,
     //     SDCARD_MMC_CMD,
     //     SDCARD_MMC_D0
     // );
+    driver::sdcard.begin
+    (
+        driver::SDCard::DEFAULT_MOUNT_POINT,
+        SDCARD_SPI_MISO,
+        SDCARD_SPI_MOSI,
+        SDCARD_SPI_CLK,
+        SDCARD_SPI_CS
+    );
     Serial.print("SD Card size: ");
-    Serial.println((driver::sdcard.getSectorSize() * driver::sdcard.getSectorCount()) / (1024.f * 1024.f));
+    // Serial.println((driver::sdcard.getSectorSize() * driver::sdcard.getSectorCount()) / (1024.f * 1024.f));
+    Serial.println(driver::sdcard.getSize() / (1024.f * 1024.f));
     Serial.print("SD Card sector size: ");
     Serial.println(driver::sdcard.getSectorSize());
     Serial.print("SD Card sector count: ");
@@ -135,7 +158,9 @@ void setup()
     webserver::SettingsWebApp.begin();
 
     // test
-//    listDir(driver::sdcard, "/", 10);
+    // list_dir("/sdcard", 0);
+    // list_dir("/littlefs", 0);
+    // list_dir("/ffat", 0);
 }
 
 void loop() 
