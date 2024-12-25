@@ -138,10 +138,12 @@ namespace driver
     {
         if (_card) 
         {
+            xSemaphoreTake(_mutex, portMAX_DELAY);
             esp_vfs_fat_sdcard_unmount(_impl->mountpoint(), _card);
             //spi_bus_free(spi_host_device_t(m_host.slot)); // TODO
             _impl->mountpoint(nullptr);
             _card = nullptr;
+            xSemaphoreGive(_mutex);
         }
     }
 
