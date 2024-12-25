@@ -22,15 +22,17 @@ namespace driver
         bool begin(const char* mountPoint, gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs);
         void end();
 
+        sdcard_type_t getCardType() const;
+
         bool isMounted() const;
         const char* getMountPoint() const;
-
-        sdcard_type_t getType() const;
-        uint64_t getSize() const;
-
+        uint64_t getPartitionSize() const;
         size_t getSectorCount() const;
         size_t getSectorSize() const;
-        
+
+        uint64_t getTotalBytes() const;
+        uint64_t getUsedBytes() const;
+
         bool writeSectors(uint8_t *src, size_t startSector, size_t sectorCount);
         bool readSectors(uint8_t *dst, size_t startSector, size_t sectorCount);
 

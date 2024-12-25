@@ -7,8 +7,8 @@ namespace driver
     class SDCardMSC
     {
     public:
-        void begin();
-        void end();
+        void startMSC(bool useExtStorage);
+        void stopMSC();
 
         bool isRunning() const;
 

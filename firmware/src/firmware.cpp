@@ -5,6 +5,7 @@
 #include "drivers/LedAndButton.h"
 #include "drivers/storage/SDCard.h"
 #include "drivers/storage/SDCardMSC.h"
+#include "drivers/storage/Flash.h"
 
 // background services
 #include "services/NetworkConnection.h"
@@ -17,7 +18,6 @@
 
 // test
 #include <LittleFS.h>
-#include <FFat.h>
 
 #define ONBOARD_LED GPIO_NUM_0
 #define DISPLAY_BACKLIGHT GPIO_NUM_14
@@ -133,7 +133,7 @@ void setup()
     // );
     Serial.print("SD Card size: ");
     // Serial.println((driver::sdcard.getSectorSize() * driver::sdcard.getSectorCount()) / (1024.f * 1024.f));
-    Serial.println(driver::sdcard.getSize() / (1024.f * 1024.f));
+    Serial.println(driver::sdcard.getPartitionSize() / (1024.f * 1024.f));
     Serial.print("SD Card sector size: ");
     Serial.println(driver::sdcard.getSectorSize());
     Serial.print("SD Card sector count: ");
@@ -144,9 +144,9 @@ void setup()
     Serial.print("LittleFS size: ");
     Serial.println(LittleFS.totalBytes() / (1024.f * 1024.f));
 
-    FFat.begin(true);
-    Serial.print("FFat size: ");
-    Serial.println(FFat.totalBytes() / (1024.f * 1024.f));
+    driver::flash.begin(driver::Flash::DEFAULT_MOUNT_POINT);
+    Serial.print("Flash FAT size: ");
+    Serial.println(driver::flash.getTotalBytes() / (1024.f * 1024.f));
 
     // start services
     service::networkConnection.begin();
@@ -160,7 +160,7 @@ void setup()
     // test
     // list_dir("/sdcard", 0);
     // list_dir("/littlefs", 0);
-    // list_dir("/ffat", 0);
+    list_dir("/flash", 0);
 }
 
 void loop() 
@@ -186,9 +186,9 @@ void loop()
         {
             Serial.println("Button pressed!");
             if (driver::sdcardmsc.isRunning())
-                driver::sdcardmsc.end();
+                driver::sdcardmsc.stopMSC();
             else
-                driver::sdcardmsc.begin();
+                driver::sdcardmsc.startMSC(true);
         }
         else
         {

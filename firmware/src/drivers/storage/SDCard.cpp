@@ -10,13 +10,9 @@ namespace driver
     SDCard::SDCard()
         : FS(FSImplPtr(new VFSImpl()))
         , _card(nullptr)
-    {
-    }
+    {}
 
-    SDCard::~SDCard()
-    {
-        end();
-    }
+    SDCard::~SDCard() { end(); }
 
     // SDIO 1 bit mode
     bool SDCard::begin(const char *mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0)
@@ -34,7 +30,7 @@ namespace driver
         gpio_num_t d2,
         gpio_num_t d3)
     {
-        if (_card) return true;
+        if (isMounted()) return true;
         log_i("Initializing SD card");
         bool is1BitMode = (d1 == GPIO_NUM_NC || d2 == GPIO_NUM_NC || d3 == GPIO_NUM_NC);
 
@@ -88,7 +84,7 @@ namespace driver
         gpio_num_t clk,
         gpio_num_t cs)
     {
-        if (_card) return true;
+        if (isMounted()) return true;
         log_i("Initializing SD card");
 
         sdmmc_host_t m_host = SDSPI_HOST_DEFAULT();
@@ -147,7 +143,7 @@ namespace driver
 
     void SDCard::end()
     {
-        if (_card) 
+        if (isMounted()) 
         {
             xSemaphoreTake(_mutex, portMAX_DELAY);
             esp_vfs_fat_sdcard_unmount(_impl->mountpoint(), _card);
@@ -158,9 +154,15 @@ namespace driver
         }
     }
 
+    sdcard_type_t SDCard::getCardType() const
+    {
+        if(!_card) return CARD_NONE;
+        return (_card->ocr & SD_OCR_SDHC_CAP ? CARD_SDHC : CARD_SD);
+    }
+
     bool SDCard::isMounted() const
     {
-        return (getMountPoint() != nullptr);
+        return (_card != nullptr);
     }
 
     const char *SDCard::getMountPoint() const
@@ -168,13 +170,7 @@ namespace driver
         return _impl->mountpoint();
     }
 
-    sdcard_type_t SDCard::getType() const
-    {
-        if(!_card) return CARD_NONE;
-        return (_card->ocr & SD_OCR_SDHC_CAP ? CARD_SDHC : CARD_SD);
-    }
-
-    uint64_t SDCard::getSize() const
+    uint64_t SDCard::getPartitionSize() const
     {
         return (uint64_t(getSectorSize()) * uint64_t(getSectorCount()));
     }
@@ -189,12 +185,30 @@ namespace driver
         return (_card ? _card->csd.sector_size : 0);
     }
 
+    uint64_t SDCard::getTotalBytes() const
+    {
+        FATFS *fs;
+        DWORD free_clust;
+        if (f_getfree("0:", &free_clust, &fs) != FR_OK) return 0;
+        uint64_t tota_sect = (fs->n_fatent - 2) * fs->csize;
+        uint64_t sect_size = fs->ssize;
+        return (tota_sect * sect_size);
+    }
+
+    uint64_t SDCard::getUsedBytes() const
+    {
+        FATFS *fs;
+        DWORD free_clust;
+        if (f_getfree("0:", &free_clust, &fs) != FR_OK) return 0;
+        uint64_t used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
+        uint64_t sect_size = fs->ssize;
+        return (used_sect * sect_size);
+    }
+
     bool SDCard::writeSectors(uint8_t *src, size_t startSector, size_t sectorCount)
     {
         xSemaphoreTake(_mutex, portMAX_DELAY);
-        //digitalWrite(GPIO_NUM_2, HIGH);
         esp_err_t res = sdmmc_write_sectors(_card, src, startSector, sectorCount);
-        //digitalWrite(GPIO_NUM_2, LOW);
         xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
@@ -202,9 +216,7 @@ namespace driver
     bool SDCard::readSectors(uint8_t *dst, size_t startSector, size_t sectorCount)
     {
         xSemaphoreTake(_mutex, portMAX_DELAY);
-        //digitalWrite(GPIO_NUM_2, HIGH);
         esp_err_t res = sdmmc_read_sectors(_card, dst, startSector, sectorCount);
-        //digitalWrite(GPIO_NUM_2, LOW);
         xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
