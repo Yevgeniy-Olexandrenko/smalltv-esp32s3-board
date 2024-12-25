@@ -176,7 +176,7 @@ namespace driver
 
     uint64_t SDCard::getSize() const
     {
-        return (getSectorSize() * getSectorCount());
+        return (uint64_t(getSectorSize()) * uint64_t(getSectorCount()));
     }
 
     size_t SDCard::getSectorCount() const

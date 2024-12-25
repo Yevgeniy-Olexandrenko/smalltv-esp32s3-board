@@ -106,16 +106,16 @@ void setup()
     // Serial.print("SD Card availavle: ");
     // Serial.println(driver::storage.isSDCardAvailable() ? "YES" : "NO");
 
-    // driver::sdcard.begin
-    // (
-    //     driver::SDCard::DEFAULT_MOUNT_POINT,
-    //     SDCARD_MMC_CLK,
-    //     SDCARD_MMC_CMD,
-    //     SDCARD_MMC_D0,
-    //     SDCARD_MMC_D1,
-    //     SDCARD_MMC_D2,
-    //     SDCARD_MMC_D3
-    // );
+    driver::sdcard.begin
+    (
+        driver::SDCard::DEFAULT_MOUNT_POINT,
+        SDCARD_MMC_CLK,
+        SDCARD_MMC_CMD,
+        SDCARD_MMC_D0,
+        SDCARD_MMC_D1,
+        SDCARD_MMC_D2,
+        SDCARD_MMC_D3
+    );
     // driver::sdcard.begin
     // (
     //     driver::SDCard::DEFAULT_MOUNT_POINT,
@@ -123,14 +123,14 @@ void setup()
     //     SDCARD_MMC_CMD,
     //     SDCARD_MMC_D0
     // );
-    driver::sdcard.begin
-    (
-        driver::SDCard::DEFAULT_MOUNT_POINT,
-        SDCARD_SPI_MISO,
-        SDCARD_SPI_MOSI,
-        SDCARD_SPI_CLK,
-        SDCARD_SPI_CS
-    );
+    // driver::sdcard.begin
+    // (
+    //     driver::SDCard::DEFAULT_MOUNT_POINT,
+    //     SDCARD_SPI_MISO,
+    //     SDCARD_SPI_MOSI,
+    //     SDCARD_SPI_CLK,
+    //     SDCARD_SPI_CS
+    // );
     Serial.print("SD Card size: ");
     // Serial.println((driver::sdcard.getSectorSize() * driver::sdcard.getSectorCount()) / (1024.f * 1024.f));
     Serial.println(driver::sdcard.getSize() / (1024.f * 1024.f));
