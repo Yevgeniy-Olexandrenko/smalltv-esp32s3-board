@@ -3,9 +3,7 @@
 // hardware drivers
 #include "drivers/PowerSource.h"
 #include "drivers/LedAndButton.h"
-#include "drivers/storage/SDCard.h"
-#include "drivers/storage/SDCardMSC.h"
-#include "drivers/storage/Flash.h"
+#include "drivers/storage/Storage.h"
 
 // background services
 #include "services/NetworkConnection.h"
@@ -22,20 +20,11 @@
 #define ONBOARD_LED GPIO_NUM_0
 #define DISPLAY_BACKLIGHT GPIO_NUM_14
 
-// mmc
-#define SDCARD_MMC_DET GPIO_NUM_47
-#define SDCARD_MMC_CLK GPIO_NUM_41
-#define SDCARD_MMC_CMD GPIO_NUM_38
-#define SDCARD_MMC_D0  GPIO_NUM_42
-#define SDCARD_MMC_D1  GPIO_NUM_21
-#define SDCARD_MMC_D2  GPIO_NUM_40
-#define SDCARD_MMC_D3  GPIO_NUM_39
-
 // spi
-#define SDCARD_SPI_MISO SDCARD_MMC_D0
-#define SDCARD_SPI_MOSI SDCARD_MMC_CMD
-#define SDCARD_SPI_CLK  SDCARD_MMC_CLK
-#define SDCARD_SPI_CS   SDCARD_MMC_D3
+// #define SDCARD_SPI_MISO SDCARD_MMC_D0
+// #define SDCARD_SPI_MOSI SDCARD_MMC_CMD
+// #define SDCARD_SPI_CLK  SDCARD_MMC_CLK
+// #define SDCARD_SPI_CS   SDCARD_MMC_D3
 
 static bool s_buttonState = false;
 
@@ -101,52 +90,7 @@ void setup()
     // start hardware
     driver::powerSource.begin();
     driver::ledAndButton.begin();
-
-    // driver::storage.begin();
-    // Serial.print("SD Card availavle: ");
-    // Serial.println(driver::storage.isSDCardAvailable() ? "YES" : "NO");
-
-    driver::sdcard.begin
-    (
-        driver::SDCard::DEFAULT_MOUNT_POINT,
-        SDCARD_MMC_CLK,
-        SDCARD_MMC_CMD,
-        SDCARD_MMC_D0,
-        SDCARD_MMC_D1,
-        SDCARD_MMC_D2,
-        SDCARD_MMC_D3
-    );
-    // driver::sdcard.begin
-    // (
-    //     driver::SDCard::DEFAULT_MOUNT_POINT,
-    //     SDCARD_MMC_CLK,
-    //     SDCARD_MMC_CMD,
-    //     SDCARD_MMC_D0
-    // );
-    // driver::sdcard.begin
-    // (
-    //     driver::SDCard::DEFAULT_MOUNT_POINT,
-    //     SDCARD_SPI_MISO,
-    //     SDCARD_SPI_MOSI,
-    //     SDCARD_SPI_CLK,
-    //     SDCARD_SPI_CS
-    // );
-    Serial.print("SD Card size: ");
-    // Serial.println((driver::sdcard.getSectorSize() * driver::sdcard.getSectorCount()) / (1024.f * 1024.f));
-    Serial.println(driver::sdcard.getPartitionSize() / (1024.f * 1024.f));
-    Serial.print("SD Card sector size: ");
-    Serial.println(driver::sdcard.getSectorSize());
-    Serial.print("SD Card sector count: ");
-    Serial.println(driver::sdcard.getSectorCount());
-
-    // test
-    LittleFS.begin(false);
-    Serial.print("LittleFS size: ");
-    Serial.println(LittleFS.totalBytes() / (1024.f * 1024.f));
-
-    driver::flash.begin(driver::Flash::DEFAULT_MOUNT_POINT);
-    Serial.print("Flash FAT size: ");
-    Serial.println(driver::flash.getTotalBytes() / (1024.f * 1024.f));
+    driver::storage.begin(driver::Storage::Type::Auto);
 
     // start services
     service::networkConnection.begin();
@@ -158,9 +102,7 @@ void setup()
     webserver::SettingsWebApp.begin();
 
     // test
-    // list_dir("/sdcard", 0);
-    // list_dir("/littlefs", 0);
-    list_dir("/flash", 0);
+    list_dir(driver::storage.getFSMountPoint(), 0);
 }
 
 void loop() 
@@ -185,10 +127,10 @@ void loop()
         if (buttonState)
         {
             Serial.println("Button pressed!");
-            if (driver::sdcardmsc.isRunning())
-                driver::sdcardmsc.stopMSC();
-            else
-                driver::sdcardmsc.startMSC(true);
+            if (!driver::storage.isMSCRunning())
+            {
+                driver::storage.startMSC();
+            }
         }
         else
         {
