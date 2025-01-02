@@ -1,7 +1,8 @@
-#include "Storage.h"
+#include <USB.h>
 #include "Flash.h"
 #include "SDCard.h"
-#include <USB.h>
+#include "Storage.h"
+#include "firmware.h"
 
 namespace driver
 {
@@ -43,20 +44,6 @@ namespace driver
 
     ////////////////////////////////////////////////////////////////////////////
 
-    fs::FS &Storage::getFS() const
-    {
-        if (isSDCardStorage()) return sdcard;
-        else if (isFlashStorage()) return flash;
-        return _invalidFS;
-    }
-
-    const char* Storage::getFSMountPoint() const
-    {
-        if (isSDCardStorage()) return sdcard.getMountPoint();
-        else if (isFlashStorage()) return flash.getMountPoint();
-        return nullptr;
-    }
-
     Storage::Type Storage::getType() const
     {
         if (isSDCardStorage()) return Type::SDCard;
@@ -69,6 +56,57 @@ namespace driver
         return (getType() == Type::SDCard);
     }
 
+    uint64_t Storage::getPartitionSize() const
+    {
+        if (isSDCardStorage()) return sdcard.getPartitionSize();
+        else if (isFlashStorage()) return flash.getPartitionSize();
+        return 0;
+    }
+
+    size_t Storage::getSectorCount() const
+    {
+        if (isSDCardStorage()) return sdcard.getSectorCount();
+        else if (isFlashStorage()) return flash.getSectorCount();
+        return 0;
+    }
+
+    size_t Storage::getSectorSize() const
+    {
+        if (isSDCardStorage()) return sdcard.getSectorSize();
+        else if (isFlashStorage()) return flash.getSectorCount();
+        return 0;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    const char* Storage::getFSMountPoint() const
+    {
+        if (isSDCardStorage()) return sdcard.getMountPoint();
+        else if (isFlashStorage()) return flash.getMountPoint();
+        return nullptr;
+    }
+
+    uint64_t Storage::getFSTotalBytes() const
+    {
+        if (isSDCardStorage()) return sdcard.getTotalBytes();
+        else if (isFlashStorage()) return flash.getTotalBytes();
+        return 0;
+    }
+
+    uint64_t Storage::getFSUsedBytes() const
+    {
+        if (isSDCardStorage()) return sdcard.getUsedBytes();
+        else if (isFlashStorage()) return flash.getUsedBytes();
+        return 0;
+    }
+
+    fs::FS& Storage::getFS() const
+    {
+        if (isSDCardStorage()) return sdcard;
+        else if (isFlashStorage()) return flash;
+        return _invalidFS;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
     bool Storage::startMSC()
@@ -76,9 +114,9 @@ namespace driver
         if (!_runMSC && (isSDCardStorage() || isFlashStorage()))
         {
             _runMSC = USB.begin();
-            _usbMSC.vendorID("ESP32-S3");
-            _usbMSC.productID("SmallTV");
-            _usbMSC.productRevision("1.0");
+            _usbMSC.vendorID(STORAGE_MSC_VENDORID);
+            _usbMSC.productID(STORAGE_MSC_PRODUCTID);
+            _usbMSC.productRevision(STORAGE_MSC_PRODUCTREV);
             _usbMSC.mediaPresent(true);
             _usbMSC.onStartStop([](uint8_t power_condition, bool start, bool load_eject) -> bool
             {
@@ -106,12 +144,12 @@ namespace driver
                 // Mass Storage Class device for Flash FAT
                 _usbMSC.onRead([](uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) -> int32_t
                 {
-                    flash.readSectors((uint8_t *)buffer, lba, bufsize / flash.getSectorSize());
+                    flash.readBuffer(lba, offset, buffer, bufsize);
                     return bufsize;
                 });
                 _usbMSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) -> int32_t
                 {
-                    flash.writeSectors(buffer, lba, bufsize / flash.getSectorSize());
+                    flash.writeBuffer(lba, offset, buffer, bufsize);
                     return bufsize;
                 });
                 _runMSC &= _usbMSC.begin(flash.getSectorCount(), flash.getSectorSize());

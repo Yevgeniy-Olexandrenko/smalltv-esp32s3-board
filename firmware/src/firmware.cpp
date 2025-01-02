@@ -102,7 +102,10 @@ void setup()
     webserver::SettingsWebApp.begin();
 
     // test
-    list_dir(driver::storage.getFSMountPoint(), 0);
+    // list_dir(driver::storage.getFSMountPoint(), 0);
+    Serial.printf("Strorage mount point: %s\n", driver::storage.getFSMountPoint());
+    Serial.printf("Storage total bytes:  %d\n", driver::storage.getFSTotalBytes());
+    Serial.printf("Storage used bytes:   %d\n", driver::storage.getFSUsedBytes());
 }
 
 void loop() 

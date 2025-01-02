@@ -26,8 +26,8 @@ namespace driver
         size_t getTotalBytes();
         size_t getUsedBytes();
 
-        bool writeSectors(uint8_t *src, size_t startSector, size_t sectorCount);
-        bool readSectors(uint8_t *dst, size_t startSector, size_t sectorCount);
+        bool writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
+        bool readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
 
     private:
         wl_handle_t _wl_handle;

@@ -110,23 +110,21 @@ namespace driver
         return (used_sect * sect_size);
     }
 
-    bool Flash::writeSectors(uint8_t *src, size_t startSector, size_t sectorCount)
+    bool Flash::writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
         xSemaphoreTake(_mutex, portMAX_DELAY);
-        size_t addr = wl_sector_size(_wl_handle) * startSector;
-        size_t size = wl_sector_size(_wl_handle) * sectorCount;
-        esp_err_t res = wl_erase_range(_wl_handle, addr, size);
-        if (res == ESP_OK) res = wl_write(_wl_handle, addr, src, size);
+        size_t start_addr = (wl_sector_size(_wl_handle) * lba + offset);
+        esp_err_t res = wl_erase_range(_wl_handle, start_addr, bufsize);
+        if (res == ESP_OK) res = wl_write(_wl_handle, start_addr, buffer, bufsize);
         xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
 
-    bool Flash::readSectors(uint8_t *dst, size_t startSector, size_t sectorCount)
+    bool Flash::readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
         xSemaphoreTake(_mutex, portMAX_DELAY);
-        size_t addr = wl_sector_size(_wl_handle) * startSector;
-        size_t size = wl_sector_size(_wl_handle) * sectorCount;
-        esp_err_t res = wl_read(_wl_handle, addr, dst, size);
+        size_t start_addr = (wl_sector_size(_wl_handle) * lba + offset);
+        esp_err_t res = wl_read(_wl_handle, start_addr, buffer, bufsize);
         xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }

@@ -22,12 +22,19 @@ namespace driver
         void begin(Type type);
         void end();
 
-        // get storage and its properties
-        fs::FS& getFS() const;
-        const char* getFSMountPoint() const;
+        // get storage properties
         Type getType() const;
         bool isLarge() const;
+        uint64_t getPartitionSize() const;
+        size_t getSectorCount() const;
+        size_t getSectorSize() const;
 
+        // get file system and its properties 
+        const char* getFSMountPoint() const;
+        uint64_t getFSTotalBytes() const;
+        uint64_t getFSUsedBytes() const;
+        fs::FS& getFS() const;
+        
         // start Mass Storage Controller
         bool startMSC();
         void onStopMSC();
