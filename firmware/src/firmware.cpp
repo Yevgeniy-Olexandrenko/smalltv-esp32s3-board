@@ -13,6 +13,7 @@
 
 // webserver app
 #include "webserver/SettingsWebApp.h"
+#include "webserver/StorageSettings.h"
 
 // test
 #include <LittleFS.h>
@@ -73,7 +74,6 @@ void list_dir(const char *path, int level) {
     closedir(dir);
 }
 
-
 void setup() 
 {
     Serial.begin(115200);
@@ -90,7 +90,7 @@ void setup()
     // start hardware
     driver::powerSource.begin();
     driver::ledAndButton.begin();
-    driver::storage.begin(driver::Storage::Type::Auto);
+    driver::storage.begin(webserver::StorageSettings.getStorageType());
 
     // start services
     service::networkConnection.begin();
@@ -103,9 +103,12 @@ void setup()
 
     // test
     // list_dir(driver::storage.getFSMountPoint(), 0);
-    Serial.printf("Strorage mount point: %s\n", driver::storage.getFSMountPoint());
-    Serial.printf("Storage total bytes:  %d\n", driver::storage.getFSTotalBytes());
-    Serial.printf("Storage used bytes:   %d\n", driver::storage.getFSUsedBytes());
+    if (driver::storage.getFSMountPoint())
+    {
+        Serial.printf("Strorage mount point: %s\n", driver::storage.getFSMountPoint());
+        Serial.printf("Storage total bytes: %f\n", driver::storage.getFSTotalBytes() / (1024.f * 1024.f));
+        Serial.printf("Storage used bytes: %f\n", driver::storage.getFSUsedBytes() / (1024.f * 1024.f));
+    }
 }
 
 void loop() 

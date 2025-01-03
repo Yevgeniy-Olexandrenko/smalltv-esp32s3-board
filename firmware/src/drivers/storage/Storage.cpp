@@ -13,6 +13,11 @@ namespace driver
         , _runMSC(false)
     {}
 
+    Storage::~Storage()
+    {
+        end();
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
     void Storage::begin(Type type)
@@ -98,6 +103,11 @@ namespace driver
         if (isSDCardStorage()) return sdcard.getUsedBytes();
         else if (isFlashStorage()) return flash.getUsedBytes();
         return 0;
+    }
+
+    uint64_t Storage::getFSFreeBytes() const
+    {
+        return (getFSTotalBytes() - getFSUsedBytes());
     }
 
     fs::FS& Storage::getFS() const

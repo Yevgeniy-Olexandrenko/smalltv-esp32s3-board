@@ -24,6 +24,8 @@ namespace webserver
     public:
         void begin();
         void update();
+        
+        void requestDeviceRestart();
 
     private:
         void settingsBuild(sets::Builder& b);

@@ -10,11 +10,12 @@ namespace driver
     {
     public:
         static constexpr const char* DEFAULT_MOUNT_POINT = "/flash";
+        static constexpr const char* DEFAULT_PARTITION_LABEL = "ffat";
 
         Flash();
         ~Flash();
 
-        bool begin(const char* mountPoint, const char* partitionLabel = "ffat");
+        bool begin(const char* mountPoint, const char* partitionLabel = DEFAULT_PARTITION_LABEL);
         void end();
 
         bool isMounted() const;
@@ -23,8 +24,8 @@ namespace driver
         size_t getSectorCount() const;
         size_t getSectorSize() const;
 
-        size_t getTotalBytes();
-        size_t getUsedBytes();
+        size_t getTotalBytes() const;
+        size_t getUsedBytes() const;
 
         bool writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
         bool readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);

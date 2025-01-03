@@ -8,6 +8,7 @@
 #include "services/DateAndTime.h"
 #include "services/Weather.h"
 
+#include "StorageSettings.h"
 #include "HardwareInfo.h"
 
 namespace webserver
@@ -58,6 +59,13 @@ namespace webserver
         if (m_restartRequested) ESP.restart();
     }
 
+    void SettingsWebAppClass::requestDeviceRestart()
+    {
+        m_restartRequested = true;
+        Settings.data().update();
+        Settings.sets().reload();
+    }
+
     void SettingsWebAppClass::settingsBuild(sets::Builder& b) 
     {
         service::networkConnection.settingsBuild(b);
@@ -74,15 +82,15 @@ namespace webserver
                 b.Label("TODO");
             }
         }
+
+        StorageSettings.settingsBuild(b);
         HardwareInfo.settingsBuild(b);
 
         // TODO
 
         if (b.Button("Restart"))
         {
-            m_restartRequested = true;
-            Settings.data().update();
-            b.reload();
+            requestDeviceRestart();
         }
     }
         
@@ -94,6 +102,7 @@ namespace webserver
         service::DateAndTime.settingsUpdate(u);
         service::Weather.settingsUpdate(u);
 
+        StorageSettings.settingsUpdate(u);
         HardwareInfo.settingsUpdate(u);
 
         // TODO

@@ -16,7 +16,9 @@ namespace driver
     {
     public:
         enum class Type { None, Flash, SDCard, Auto };
+
         Storage();
+        ~Storage();
 
         // start and stop the storage
         void begin(Type type);
@@ -33,6 +35,7 @@ namespace driver
         const char* getFSMountPoint() const;
         uint64_t getFSTotalBytes() const;
         uint64_t getFSUsedBytes() const;
+        uint64_t getFSFreeBytes() const;
         fs::FS& getFS() const;
         
         // start Mass Storage Controller
@@ -49,7 +52,7 @@ namespace driver
     private:
         Type _type;
         bool _runMSC;
-        USBMSC _usbMSC;
+      USBMSC _usbMSC;
     };
 
     extern Storage storage;

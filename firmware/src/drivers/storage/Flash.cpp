@@ -86,7 +86,7 @@ namespace driver
         return wl_sector_size(_wl_handle);
     }
 
-    size_t Flash::getTotalBytes()
+    size_t Flash::getTotalBytes() const
     {
         FATFS *fs;
         DWORD free_clust;
@@ -98,7 +98,7 @@ namespace driver
         return (tot_sect * sect_size);
     }
 
-    size_t Flash::getUsedBytes()
+    size_t Flash::getUsedBytes() const
     {
         FATFS *fs;
         DWORD free_clust;
