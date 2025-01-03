@@ -29,6 +29,8 @@
 
 static bool s_buttonState = false;
 
+////////////////////////////////////////////////////////////////////////////////
+
 #include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -74,6 +76,62 @@ void list_dir(const char *path, int level) {
     closedir(dir);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+#include <driver/i2s.h>
+#include <math.h>
+
+#define I2S_PORT        I2S_NUM_0 // Используемый I2S порт
+#define I2S_BCK_PIN     16
+#define I2S_WS_PIN      17
+#define I2S_DO_PIN      15
+#define SAMPLE_RATE     44100     // Частота дискретизации
+#define TONE_FREQUENCY  2000      // Частота генерируемого тона в Гц
+
+void sound_setup() {
+    // Конфигурация I2S
+    i2s_config_t i2s_config = {
+        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+        .sample_rate = SAMPLE_RATE,
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+        .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S, // Обновленное значение
+        .intr_alloc_flags = 0,
+        .dma_buf_count = 8,
+        .dma_buf_len = 64,
+        .use_apll = false,
+        .tx_desc_auto_clear = true,
+        .fixed_mclk = 0
+    };
+
+    // Конфигурация пинов I2S
+    i2s_pin_config_t pin_config = {
+        .bck_io_num = I2S_BCK_PIN,
+        .ws_io_num = I2S_WS_PIN,
+        .data_out_num = I2S_DO_PIN,
+        .data_in_num = I2S_PIN_NO_CHANGE
+    };
+
+    // Установка драйвера I2S
+    i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+    i2s_set_pin(I2S_PORT, &pin_config);
+    i2s_set_clk(I2S_PORT, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
+}
+
+void sound_loop() {
+    const int amplitude = 10000; // Амплитуда сигнала
+    const int samples_per_cycle = SAMPLE_RATE / TONE_FREQUENCY;
+    int16_t sample;
+    size_t bytes_written;
+
+    for (int i = 0; i < samples_per_cycle; ++i) {
+        sample = (int16_t)(amplitude * sinf((2.0f * M_PI * i) / samples_per_cycle));
+        i2s_write(I2S_PORT, &sample, sizeof(sample), &bytes_written, portMAX_DELAY);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void setup() 
 {
     Serial.begin(115200);
@@ -109,6 +167,9 @@ void setup()
         Serial.printf("Storage total bytes: %f\n", driver::storage.getFSTotalBytes() / (1024.f * 1024.f));
         Serial.printf("Storage used bytes: %f\n", driver::storage.getFSUsedBytes() / (1024.f * 1024.f));
     }
+
+    // test sound
+    sound_setup();
 }
 
 void loop() 
@@ -143,4 +204,7 @@ void loop()
             Serial.println("Button released!");
         }
     }
+
+    // test sound
+    sound_loop();
 }
