@@ -21,12 +21,6 @@
 #define ONBOARD_LED GPIO_NUM_0
 #define DISPLAY_BACKLIGHT GPIO_NUM_14
 
-// spi
-// #define SDCARD_SPI_MISO SDCARD_MMC_D0
-// #define SDCARD_SPI_MOSI SDCARD_MMC_CMD
-// #define SDCARD_SPI_CLK  SDCARD_MMC_CLK
-// #define SDCARD_SPI_CS   SDCARD_MMC_D3
-
 static bool s_buttonState = false;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,9 +96,9 @@ void sound_setup()
     dir = driver::storage.getFS().open("/mods");
     bool setPinoutOK = output->SetPinout(I2S_BCK_PIN, I2S_WS_PIN, I2S_DO_PIN);
 
-    decoder->SetBufferSize(3*1024);
+    decoder->SetBufferSize(1024);
     decoder->SetSampleRate(44100);
-    decoder->SetStereoSeparation(0);
+    decoder->SetStereoSeparation(64);
 
     Serial.printf("openDirOK: %d\n", bool(dir));
     Serial.printf("setPinoutOK: %d\n", setPinoutOK);
@@ -146,11 +140,11 @@ void sound_loop()
                 }
             }
         }
-        else
-        {
-            Serial.println("Playback done!");
-            delay(1000);
-        }
+        // else
+        // {
+        //     Serial.println("Playback done!");
+        //     delay(1000);
+        // }
     }
 }
 
