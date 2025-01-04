@@ -197,9 +197,13 @@ namespace driver
 
     bool Storage::initSDCardStorage()
     {
+        #if USE_SDSPI
         if (sdcard.begin(SDCard::DEFAULT_MOUNT_POINT,
-            SDCARD_CLK, SDCARD_CMD, SDCARD_D0,
-            SDCARD_D1,  SDCARD_D2,  SDCARD_D3))
+            SDSPI_MISO, SDSPI_MOSI, SDSPI_CLK, SDSPI_CS))
+        #else
+        if (sdcard.begin(SDCard::DEFAULT_MOUNT_POINT,
+            SDMMC_CLK, SDMMC_CMD, SDMMC_D0, SDMMC_D1, SDMMC_D2, SDMMC_D3))
+        #endif
         {
             _type = Type::SDCard;
             return true;

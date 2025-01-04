@@ -53,11 +53,11 @@ namespace driver
         slot_config.d7 = GPIO_NUM_NC;
         #endif
 
-        esp_vfs_fat_sdmmc_mount_config_t mount_config = 
+        esp_vfs_fat_mount_config_t mount_config = 
         {
             .format_if_mount_failed = false,
             .max_files = 5,
-            .allocation_unit_size = 16384
+            .allocation_unit_size = 0
         };
 
         esp_err_t ret = esp_vfs_fat_sdmmc_mount(mountPoint, &m_host, &slot_config, &mount_config, &_card);
@@ -88,11 +88,6 @@ namespace driver
         log_i("Initializing SD card");
 
         sdmmc_host_t m_host = SDSPI_HOST_DEFAULT();
-        m_host.max_freq_khz = SDMMC_FREQ_52M; 
-        #ifdef SD_CARD_SPI_HOST
-        // only enable on ESP32
-        m_host.slot = SD_CARD_SPI_HOST;
-        #endif
         _spi_slot = m_host.slot;
 
         spi_bus_config_t bus_cfg = 
@@ -102,27 +97,27 @@ namespace driver
             .sclk_io_num = clk,
             .quadwp_io_num = GPIO_NUM_NC,
             .quadhd_io_num = GPIO_NUM_NC,
-            .max_transfer_sz = 16384,
+            .max_transfer_sz = 0,
             .flags = 0,
             .intr_flags = 0
         };
 
         esp_err_t ret = spi_bus_initialize(spi_host_device_t(_spi_slot), &bus_cfg, SPI_DMA_CH_AUTO);
-        if (ret != ESP_OK)
+        if (ret != ESP_OK) 
         {
-            log_e("Initializing SD card failed: %s\n", esp_err_to_name(ret));
+            log_e("Initializing SPI bus failed: %s\n", esp_err_to_name(ret));
             return false;
         }
 
         sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-        slot_config.gpio_cs = cs;
         slot_config.host_id = spi_host_device_t(_spi_slot);
+        slot_config.gpio_cs = cs;
 
-        esp_vfs_fat_sdmmc_mount_config_t mount_config = 
+        esp_vfs_fat_mount_config_t mount_config = 
         {
             .format_if_mount_failed = false,
             .max_files = 5,
-            .allocation_unit_size = 16384
+            .allocation_unit_size = 0
         };
 
         ret = esp_vfs_fat_sdspi_mount(mountPoint, &m_host, &slot_config, &mount_config, &_card);
