@@ -30,25 +30,25 @@ namespace driver
         Storage();
         ~Storage();
 
-        // start and stop the storage
         void begin(Type type);
         void end();
 
-        // get storage properties
+        // storage properties
         Type getType() const;
         bool isLarge() const;
+        bool isFast()  const;
+        uint64_t getSectorSize() const;
+        uint64_t getSectorCount() const;
         uint64_t getPartitionSize() const;
-        size_t getSectorCount() const;
-        size_t getSectorSize() const;
-
-        // get file system and its properties 
+        
+        // file system and its properties
+        fs::FS& getFS() const;
         const char* getFSMountPoint() const;
         uint64_t getFSTotalBytes() const;
         uint64_t getFSUsedBytes() const;
         uint64_t getFSFreeBytes() const;
-        fs::FS& getFS() const;
         
-        // start Mass Storage Controller
+        // start MSC device mode
         bool startMSC();
         void onStopMSC();
         bool isMSCRunning() const;

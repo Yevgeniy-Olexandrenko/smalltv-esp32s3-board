@@ -61,6 +61,25 @@ namespace driver
         return (getType() == Type::SDCard);
     }
 
+    bool Storage::isFast() const
+    {
+        return (getType() == Type::Flash);
+    }
+
+    uint64_t Storage::getSectorSize() const
+    {
+        if (isSDCardStorage()) return sdcard.getSectorSize();
+        else if (isFlashStorage()) return flash.getSectorCount();
+        return 0;
+    }
+
+    uint64_t Storage::getSectorCount() const
+    {
+        if (isSDCardStorage()) return sdcard.getSectorCount();
+        else if (isFlashStorage()) return flash.getSectorCount();
+        return 0;
+    }
+
     uint64_t Storage::getPartitionSize() const
     {
         if (isSDCardStorage()) return sdcard.getPartitionSize();
@@ -68,21 +87,14 @@ namespace driver
         return 0;
     }
 
-    size_t Storage::getSectorCount() const
-    {
-        if (isSDCardStorage()) return sdcard.getSectorCount();
-        else if (isFlashStorage()) return flash.getSectorCount();
-        return 0;
-    }
-
-    size_t Storage::getSectorSize() const
-    {
-        if (isSDCardStorage()) return sdcard.getSectorSize();
-        else if (isFlashStorage()) return flash.getSectorCount();
-        return 0;
-    }
-
     ////////////////////////////////////////////////////////////////////////////
+
+    fs::FS& Storage::getFS() const
+    {
+        if (isSDCardStorage()) return sdcard;
+        else if (isFlashStorage()) return flash;
+        return _invalidFS;
+    }
 
     const char* Storage::getFSMountPoint() const
     {
@@ -108,13 +120,6 @@ namespace driver
     uint64_t Storage::getFSFreeBytes() const
     {
         return (getFSTotalBytes() - getFSUsedBytes());
-    }
-
-    fs::FS& Storage::getFS() const
-    {
-        if (isSDCardStorage()) return sdcard;
-        else if (isFlashStorage()) return flash;
-        return _invalidFS;
     }
 
     ////////////////////////////////////////////////////////////////////////////

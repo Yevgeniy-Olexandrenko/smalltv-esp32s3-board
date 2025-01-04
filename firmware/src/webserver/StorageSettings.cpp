@@ -22,7 +22,7 @@ namespace webserver
         {
             String specs;
             fillStorageSpecs(specs);
-            b.Label("specs"_h, "Specs", specs);
+            b.Label("Specs", specs);
 
             bool msc_run = driver::storage.isMSCRunning();
             if (b.Switch("msc_run"_h, "Connect to PC", &msc_run) && msc_run)
@@ -42,12 +42,7 @@ namespace webserver
 
     void StorageSettingsClass::settingsUpdate(sets::Updater &u)
     {
-        String specs;
-        fillStorageSpecs(specs);
-        u.update("specs"_h, specs);
-
         u.update("msc_run"_h, driver::storage.isMSCRunning());
-
         if (_typeChanged)
         {
             u.update("confirm"_h);
@@ -68,18 +63,19 @@ namespace webserver
             auto size = driver::sdcard.getPartitionSize() / (1000.f * 1000.f);
             specs = (driver::sdcard.getCardType() == CARD_SDHC ? "SDHC" : "SDSC");
             specs += " " + (size > 1000 ? String(size / 1000.f, 0) + "Gb" : String(size, 0) + "Mb");
+            switch(driver::sdcard.getCardInterface())
+            {
+                case driver::SDCard::Interface::SPI: specs += " / SPI"; break;
+                case driver::SDCard::Interface::SDIO1 : specs += " / SDIO 1B"; break;
+                case driver::SDCard::Interface::SDIO4 : specs += " / SDIO 4B"; break;
+            }
         }
         else if (driver::storage.getType() == driver::Storage::Type::Flash)
         {
             auto size = driver::flash.getPartitionSize() / (1024.f * 1024.f);
-            specs = "FLASH " + String(size, 0) + "Mb";
+            specs = "FLASH " + String(size, 0) + "Mb / SPI";
             
         }
-
-        // TODO: this does not update in real time, just after reset
-        auto free = float(driver::storage.getFSFreeBytes());
-        auto total = float(driver::storage.getFSTotalBytes());
-        specs += " / Free " + String(100.f * free / total, 1) + "%";
     }
 
     StorageSettingsClass StorageSettings;

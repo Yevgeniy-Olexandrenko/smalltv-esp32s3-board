@@ -2,17 +2,22 @@
 #include <vfs_api.h>
 #include <esp_vfs_fat.h>
 #include <driver/sdmmc_defs.h>
+#include <driver/sdmmc_host.h>
+#include <driver/sdspi_host.h>
 #include <sdmmc_cmd.h>
-#include <esp32-hal-log.h>
 
 namespace driver
 {
     SDCard::SDCard()
         : FS(FSImplPtr(new VFSImpl()))
+        , _spi_slot(-1)
+        , _onebit_mode(false)
         , _card(nullptr)
     {}
 
     SDCard::~SDCard() { end(); }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     // SDIO 1 bit mode
     bool SDCard::begin(const char *mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0)
@@ -32,15 +37,15 @@ namespace driver
     {
         if (isMounted()) return true;
         log_i("Initializing SD card");
-        bool is1BitMode = (d1 == GPIO_NUM_NC || d2 == GPIO_NUM_NC || d3 == GPIO_NUM_NC);
+        _onebit_mode = (d1 == GPIO_NUM_NC || d2 == GPIO_NUM_NC || d3 == GPIO_NUM_NC);
 
         sdmmc_host_t m_host = SDMMC_HOST_DEFAULT();
         m_host.max_freq_khz = SDMMC_FREQ_52M;
-        m_host.flags = (is1BitMode ? SDMMC_HOST_FLAG_1BIT : SDMMC_HOST_FLAG_4BIT);
+        m_host.flags = (_onebit_mode ? SDMMC_HOST_FLAG_1BIT : SDMMC_HOST_FLAG_4BIT);
 
         sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
         #ifdef SOC_SDMMC_USE_GPIO_MATRIX
-        slot_config.width = (is1BitMode ? 1 : 4);
+        slot_config.width = (_onebit_mode ? 1 : 4);
         slot_config.clk = clk;
         slot_config.cmd = cmd;
         slot_config.d0 = d0;
@@ -142,18 +147,45 @@ namespace driver
         {
             xSemaphoreTake(_mutex, portMAX_DELAY);
             esp_vfs_fat_sdcard_unmount(_impl->mountpoint(), _card);
-            spi_bus_free(spi_host_device_t(_spi_slot));
+            if (_spi_slot >= 0) spi_bus_free(spi_host_device_t(_spi_slot));
             _impl->mountpoint(nullptr);
             _card = nullptr;
             xSemaphoreGive(_mutex);
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+
     sdcard_type_t SDCard::getCardType() const
     {
         if(!_card) return CARD_NONE;
         return (_card->ocr & SD_OCR_SDHC_CAP ? CARD_SDHC : CARD_SD);
     }
+
+    SDCard::Interface SDCard::getCardInterface() const
+    {
+        if(!_card) return Interface::NONE;
+        return (_spi_slot >= 0 ? Interface::SPI : (_onebit_mode ? Interface::SDIO1 : Interface::SDIO4));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    uint64_t SDCard::getSectorSize() const
+    {
+        return (_card ? _card->csd.sector_size : 0);
+    }
+
+    uint64_t SDCard::getSectorCount() const
+    {
+        return (_card ? _card->csd.capacity : 0);
+    }
+
+    uint64_t SDCard::getPartitionSize() const
+    {
+        return (getSectorSize() * getSectorCount());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     bool SDCard::isMounted() const
     {
@@ -163,21 +195,6 @@ namespace driver
     const char *SDCard::getMountPoint() const
     {
         return _impl->mountpoint();
-    }
-
-    uint64_t SDCard::getPartitionSize() const
-    {
-        return (uint64_t(getSectorSize()) * uint64_t(getSectorCount()));
-    }
-
-    size_t SDCard::getSectorCount() const
-    {
-        return (_card ? _card->csd.capacity : 0);
-    }
-
-    size_t SDCard::getSectorSize() const
-    {
-        return (_card ? _card->csd.sector_size : 0);
     }
 
     uint64_t SDCard::getTotalBytes() const
@@ -200,6 +217,8 @@ namespace driver
         return (used_sect * sect_size);
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+
     bool SDCard::writeSectors(uint8_t *src, size_t startSector, size_t sectorCount)
     {
         xSemaphoreTake(_mutex, portMAX_DELAY);
@@ -215,6 +234,8 @@ namespace driver
         xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     SDCard sdcard;
 }

@@ -1,9 +1,7 @@
 #include "Flash.h"
 #include <vfs_api.h>
-//extern "C" {
 #include <esp_vfs_fat.h>
 #include <diskio_wl.h>
-//}
 
 namespace driver
 {
@@ -13,6 +11,8 @@ namespace driver
     {}
 
     Flash::~Flash() { end(); }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     bool Flash::begin(const char* mountPoint, const char* partitionLabel)
     {
@@ -59,19 +59,12 @@ namespace driver
         }
     }
 
-    bool Flash::isMounted() const
-    {
-        return (_wl_handle != WL_INVALID_HANDLE);
-    }
+    ////////////////////////////////////////////////////////////////////////////
 
-    const char *Flash::getMountPoint() const
+    size_t Flash::getSectorSize() const
     {
-        return _impl->mountpoint();
-    }
-
-    size_t Flash::getPartitionSize() const
-    {
-        return (getSectorSize() * getSectorCount());
+        if (_wl_handle == WL_INVALID_HANDLE) return 0;
+        return wl_sector_size(_wl_handle);
     }
 
     size_t Flash::getSectorCount() const
@@ -80,10 +73,21 @@ namespace driver
         return (wl_size(_wl_handle) / wl_sector_size(_wl_handle));
     }
 
-    size_t Flash::getSectorSize() const
+    size_t Flash::getPartitionSize() const
     {
-        if (_wl_handle == WL_INVALID_HANDLE) return 0;
-        return wl_sector_size(_wl_handle);
+        return (getSectorSize() * getSectorCount());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    bool Flash::isMounted() const
+    {
+        return (_wl_handle != WL_INVALID_HANDLE);
+    }
+
+    const char *Flash::getMountPoint() const
+    {
+        return _impl->mountpoint();
     }
 
     size_t Flash::getTotalBytes() const
@@ -110,6 +114,8 @@ namespace driver
         return (used_sect * sect_size);
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+
     bool Flash::writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
         xSemaphoreTake(_mutex, portMAX_DELAY);
@@ -128,6 +134,8 @@ namespace driver
         xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     Flash flash;
 }
