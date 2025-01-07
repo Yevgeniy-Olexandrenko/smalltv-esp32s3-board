@@ -72,13 +72,77 @@ void list_dir(const char *path, int level) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#define I2S_BCK_PIN 16
+#define I2S_WS_PIN  17
+#define I2S_DO_PIN  15
+
+#if 1
+#include "audio/source/SourceMemory.h"
+#include "audio/decode/DecodeMOD.h"
+#include "audio/output/OutputI2S.h"
+
+audio::Source* source = nullptr;
+audio::Decode* decode = nullptr;
+audio::Output* output = nullptr;
+
+bool s_forceNext = false;
+fs::File dir;
+
+void sound_setup()
+{
+    source = new audio::SourceMemory();
+    decode = new audio::DecodeMOD();
+    output = new audio::OutputI2S();
+
+    static_cast<audio::OutputI2S*>(output)->SetPinout(I2S_BCK_PIN, I2S_WS_PIN, I2S_DO_PIN);
+    dir = driver::storage.getFS().open("/mods");
+
+    static_cast<audio::DecodeMOD*>(decode)->setBufferSize(1024);
+    static_cast<audio::DecodeMOD*>(decode)->setSampleRate(44100);
+    static_cast<audio::DecodeMOD*>(decode)->setStereoSeparation(64);
+}
+
+void sound_loop()
+{
+    if (s_forceNext && decode)
+    {
+        decode->stop();
+        s_forceNext = false;
+    }
+
+    if (decode && decode->isRunning())
+    {
+        if (!decode->loop()) decode->stop();
+    }
+    else
+    {
+        s_forceNext = false;
+        File file = dir.openNextFile();
+        if (file)
+        {
+            String filename(file.name());
+            filename.toLowerCase();
+
+            if (!filename.startsWith(".") && filename.endsWith(".mod"))
+            {
+                source->close();
+                if (static_cast<audio::SourceMemory*>(source)->open(driver::storage.getFS(), file.path()))
+                {
+                    Serial.printf("Playing file: %s\n", file.path());
+                    decode->begin(source, output);
+                }
+                else
+                {
+                    Serial.printf("Error opening: %s\n", file.path());
+                }
+            }
+        }
+    }
+}
+#else
 #include <AudioFileSourceFS.h>
 #include <AudioGeneratorMOD.h>
 #include <AudioOutputI2S.h>
-
-#define I2S_BCK_PIN     16
-#define I2S_WS_PIN      17
-#define I2S_DO_PIN      15
 
 AudioFileSourceFS* source = nullptr;
 AudioGeneratorMOD* decoder = nullptr;
@@ -147,6 +211,7 @@ void sound_loop()
         // }
     }
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 

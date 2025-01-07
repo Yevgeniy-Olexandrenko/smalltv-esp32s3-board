@@ -38,6 +38,28 @@ namespace audio
         virtual bool loop() { return true; }
 
     protected:
+        void MakeSampleStereo16(int16_t sample[2]) 
+        {
+            // Mono to "stereo" conversion
+            if (channels == 1)
+                sample[RIGHTCHANNEL] = sample[LEFTCHANNEL];
+            if (bps == 8) 
+            {
+                // Upsample from unsigned 8 bits to signed 16 bits
+                sample[LEFTCHANNEL] = (((int16_t)(sample[LEFTCHANNEL]&0xff)) - 128) << 8;
+                sample[RIGHTCHANNEL] = (((int16_t)(sample[RIGHTCHANNEL]&0xff)) - 128) << 8;
+            }
+        };
+
+        inline int16_t Amplify(int16_t s) 
+        {
+            int32_t v = (s * gainF2P6) >> 6;
+            if (v < -32767) return -32767;
+            else if (v > 32767) return 32767;
+            else return (int16_t)(v & 0xffff);
+        }
+
+    protected:
         uint16_t hertz;
         uint8_t bps;
         uint8_t channels;
