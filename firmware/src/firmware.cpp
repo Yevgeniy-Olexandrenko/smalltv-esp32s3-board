@@ -76,7 +76,7 @@ void list_dir(const char *path, int level) {
 #define I2S_WS_PIN  17
 #define I2S_DO_PIN  15
 
-#if 0
+#if 1
 #include "audio/source/SourceFile.h"
 #include "audio/decode/DecodeMP3.h"
 #include "audio/output/OutputI2S.h"
@@ -95,6 +95,7 @@ void sound_setup()
     output = new audio::OutputI2S();
 
     static_cast<audio::OutputI2S*>(output)->SetPinout(I2S_BCK_PIN, I2S_WS_PIN, I2S_DO_PIN);
+    output->SetGain(0.5f);
     dir = driver::storage.getFS().open("/mp3");
 
     // static_cast<audio::DecodeMOD*>(decode)->setBufferSize(1024);
@@ -141,11 +142,11 @@ void sound_loop()
 }
 #else
 #include <AudioFileSourceFS.h>
-#include <AudioGeneratorMP3.h>
+#include <AudioGeneratorMP3a.h>
 #include <AudioOutputI2S.h>
 
 AudioFileSourceFS* source = nullptr;
-AudioGeneratorMP3* decoder = nullptr;
+AudioGeneratorMP3a* decoder = nullptr;
 AudioOutputI2S* output = nullptr;
 fs::File dir;
 bool s_forceNext = false;
@@ -154,7 +155,7 @@ void sound_setup()
 {
     //audioLogger = &Serial;
     source = new AudioFileSourceFS(driver::storage.getFS());
-    decoder = new AudioGeneratorMP3();
+    decoder = new AudioGeneratorMP3a();
     output = new AudioOutputI2S();
 
     dir = driver::storage.getFS().open("/mp3");

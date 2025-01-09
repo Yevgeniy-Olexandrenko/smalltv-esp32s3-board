@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Decode.h"
-#include "libhelix-mp3/mp3dec.h"
+#include "libmad/config.h"
+#include "libmad/mad.h"
 
 namespace audio
 {
@@ -9,29 +10,54 @@ namespace audio
     {
     public:
         DecodeMP3();
+        DecodeMP3(void *preallocateSpace, int preallocateSize);
+        DecodeMP3(void *buff, int buffSize, void *stream, int streamSize, void *frame, int frameSize, void *synth, int synthSize);
         ~DecodeMP3() override;
 
-        bool begin(Source* source, Output* output) override;
+        bool begin(Source *source, Output *output) override;
         bool loop() override;
         bool stop() override;
+        void desync () override;
+
+        static constexpr int preAllocSize () { return preAllocBuffSize() + preAllocStreamSize() + preAllocFrameSize() + preAllocSynthSize(); }
+        static constexpr int preAllocBuffSize () { return ((buffLen + 7) & ~7); }
+        static constexpr int preAllocStreamSize () { return ((sizeof(struct mad_stream) + 7) & ~7); }
+        static constexpr int preAllocFrameSize () { return (sizeof(struct mad_frame) + 7) & ~7; }
+        static constexpr int preAllocSynthSize () { return (sizeof(struct mad_synth) + 7) & ~7; }
 
     protected:
-        // Helix MP3 decoder
-        HMP3Decoder hMP3Decoder;
+        void *preallocateSpace = nullptr;
+        int preallocateSize = 0;
+        void *preallocateStreamSpace = nullptr;
+        int preallocateStreamSize = 0;
+        void *preallocateFrameSpace = nullptr;
+        int preallocateFrameSize = 0;
+        void *preallocateSynthSpace = nullptr;
+        int preallocateSynthSize = 0;
 
-        // Input buffering
-        uint8_t buff[1600]; // File buffer required to store at least a whole compressed frame
-        int16_t buffValid;
-        int16_t lastFrameEnd;
-        bool FillBufferWithValidFrame(); // Read until we get a valid syncword and min(feof, 2048) butes in the buffer
-
-        // Output buffering
-        int16_t outSample[1152 * 2]; // Interleaved L/R
-        int16_t validSamples;
-        int16_t curSample;
-
-        // Each frame may change this if they're very strange, I guess
+        static constexpr int buffLen = 0x600; // Slightly larger than largest MP3 frame
+        unsigned char *buff;
+        int lastReadPos;
+        int lastBuffLen;
         unsigned int lastRate;
         int lastChannels;
+        
+        // Decoding bits
+        bool madInitted;
+        struct mad_stream *stream;
+        struct mad_frame *frame;
+        struct mad_synth *synth;
+        int samplePtr;
+        int nsCount;
+        int nsCountMax;
+
+        // The internal helpers
+        enum mad_flow ErrorToFlow();
+        enum mad_flow Input();
+        bool DecodeNextFrame();
+        bool GetOneSample(int16_t sample[2]);
+
+    private:
+        int unrecoverable = 0;
     };
 }
