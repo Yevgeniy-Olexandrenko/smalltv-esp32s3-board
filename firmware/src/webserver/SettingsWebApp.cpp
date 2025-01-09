@@ -28,7 +28,7 @@ namespace webserver
         {
             Serial.println("Settings: begin database");
             m_databaseReady = true;
-            LittleFS.begin();
+            LittleFS.begin(true);
             m_database.begin();
         }
         return m_database;

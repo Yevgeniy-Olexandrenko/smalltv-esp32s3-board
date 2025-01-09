@@ -13,7 +13,6 @@ namespace audio
         bool begin(Source *source, Output *output) override;
         bool loop() override;
         bool stop() override;
-        bool isRunning() override;
         bool setSampleRate(int hz);
         bool setBufferSize(int sz);
         bool setStereoSeparation(int sep);

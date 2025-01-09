@@ -175,11 +175,6 @@ namespace audio
         return true;
     }
 
-    bool DecodeMOD::isRunning()
-    {
-        return _run;
-    }
-
     bool DecodeMOD::setSampleRate(int hz)
     {
         if (_run || hz < 1 || hz > 96000) return false;

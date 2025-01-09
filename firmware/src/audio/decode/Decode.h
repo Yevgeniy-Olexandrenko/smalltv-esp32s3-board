@@ -14,7 +14,7 @@ namespace audio
         virtual bool begin(Source* source, Output* output) { return false; };
         virtual bool loop() { return false; };
         virtual bool stop() { return false; };
-        virtual bool isRunning() { return false;};
+        virtual bool isRunning() { return _run; };
         virtual void desync () {};
 
     protected:
