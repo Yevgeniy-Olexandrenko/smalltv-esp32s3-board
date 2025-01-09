@@ -2,14 +2,12 @@
 
 namespace audio
 {
-    SourceFile::SourceFile(fs::FS& fs)
-        : _fs(&fs)
+    SourceFile::SourceFile()
     {}
 
-    SourceFile::SourceFile(fs::FS &fs, const char* path)
-        : SourceFile(fs)
+    SourceFile::SourceFile(fs::FS &fs, const char *path)
     {
-        open(path);
+        open(fs, path);
     }
 
     SourceFile::~SourceFile()
@@ -17,16 +15,16 @@ namespace audio
         close();
     }
 
-    bool SourceFile::open(const char* path)
+    bool SourceFile::open(fs::FS &fs, const char *path)
     {
         if (!_file && path)
         {
-            _file = _fs->open(path, "r");
+            _file = fs.open(path, "r");
         }
         return _file;
     }
 
-    uint32_t SourceFile::read(void* data, uint32_t size)
+    uint32_t SourceFile::read(void *data, uint32_t size)
     {
         return _file.read(reinterpret_cast<uint8_t*>(data), size);
     }

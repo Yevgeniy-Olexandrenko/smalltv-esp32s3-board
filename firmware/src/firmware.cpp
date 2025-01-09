@@ -76,9 +76,9 @@ void list_dir(const char *path, int level) {
 #define I2S_WS_PIN  17
 #define I2S_DO_PIN  15
 
-#if 1
-#include "audio/source/SourceMemory.h"
-#include "audio/decode/DecodeMOD.h"
+#if 0
+#include "audio/source/SourceFile.h"
+#include "audio/decode/DecodeMP3.h"
 #include "audio/output/OutputI2S.h"
 
 audio::Source* source = nullptr;
@@ -90,16 +90,16 @@ fs::File dir;
 
 void sound_setup()
 {
-    source = new audio::SourceMemory();
-    decode = new audio::DecodeMOD();
+    source = new audio::SourceFile();
+    decode = new audio::DecodeMP3();
     output = new audio::OutputI2S();
 
     static_cast<audio::OutputI2S*>(output)->SetPinout(I2S_BCK_PIN, I2S_WS_PIN, I2S_DO_PIN);
-    dir = driver::storage.getFS().open("/mods");
+    dir = driver::storage.getFS().open("/mp3");
 
-    static_cast<audio::DecodeMOD*>(decode)->setBufferSize(1024);
-    static_cast<audio::DecodeMOD*>(decode)->setSampleRate(44100);
-    static_cast<audio::DecodeMOD*>(decode)->setStereoSeparation(64);
+    // static_cast<audio::DecodeMOD*>(decode)->setBufferSize(1024);
+    // static_cast<audio::DecodeMOD*>(decode)->setSampleRate(44100);
+    // static_cast<audio::DecodeMOD*>(decode)->setStereoSeparation(64);
 }
 
 void sound_loop()
@@ -123,10 +123,10 @@ void sound_loop()
             String filename(file.name());
             filename.toLowerCase();
 
-            if (!filename.startsWith(".") && filename.endsWith(".mod"))
+            if (!filename.startsWith(".") && filename.endsWith(".mp3"))
             {
                 source->close();
-                if (static_cast<audio::SourceMemory*>(source)->open(driver::storage.getFS(), file.path()))
+                if (static_cast<audio::SourceFile*>(source)->open(driver::storage.getFS(), file.path()))
                 {
                     Serial.printf("Playing file: %s\n", file.path());
                     decode->begin(source, output);
@@ -141,11 +141,11 @@ void sound_loop()
 }
 #else
 #include <AudioFileSourceFS.h>
-#include <AudioGeneratorMOD.h>
+#include <AudioGeneratorMP3.h>
 #include <AudioOutputI2S.h>
 
 AudioFileSourceFS* source = nullptr;
-AudioGeneratorMOD* decoder = nullptr;
+AudioGeneratorMP3* decoder = nullptr;
 AudioOutputI2S* output = nullptr;
 fs::File dir;
 bool s_forceNext = false;
@@ -154,15 +154,16 @@ void sound_setup()
 {
     //audioLogger = &Serial;
     source = new AudioFileSourceFS(driver::storage.getFS());
-    decoder = new AudioGeneratorMOD();
+    decoder = new AudioGeneratorMP3();
     output = new AudioOutputI2S();
 
-    dir = driver::storage.getFS().open("/mods");
+    dir = driver::storage.getFS().open("/mp3");
     bool setPinoutOK = output->SetPinout(I2S_BCK_PIN, I2S_WS_PIN, I2S_DO_PIN);
+    output->SetGain(0.5f);
 
-    decoder->SetBufferSize(1024);
-    decoder->SetSampleRate(44100);
-    decoder->SetStereoSeparation(64);
+    // decoder->SetBufferSize(1024);
+    // decoder->SetSampleRate(44100);
+    // decoder->SetStereoSeparation(64);
 
     Serial.printf("openDirOK: %d\n", bool(dir));
     Serial.printf("setPinoutOK: %d\n", setPinoutOK);
@@ -190,7 +191,7 @@ void sound_loop()
             String filename(file.name());
             filename.toLowerCase();
 
-            if (!filename.startsWith(".") && filename.endsWith(".mod"))
+            if (!filename.startsWith(".") && filename.endsWith(".mp3"))
             {
                 source->close();
                 if (source->open(file.path()))
@@ -204,11 +205,6 @@ void sound_loop()
                 }
             }
         }
-        // else
-        // {
-        //     Serial.println("Playback done!");
-        //     delay(1000);
-        // }
     }
 }
 #endif
