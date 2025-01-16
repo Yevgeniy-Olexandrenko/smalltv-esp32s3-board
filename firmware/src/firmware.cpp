@@ -78,8 +78,12 @@ void list_dir(const char *path, int level) {
 
 #if 1
 #include "audio/source/SourceFile.h"
+#include "audio/source/SourceMemory.h"
+#include "audio/decode/DecodeMOD.h"
 #include "audio/decode/DecodeMP3.h"
 #include "audio/output/OutputI2S.h"
+
+#define PLAY_MOD
 
 audio::Source* source = nullptr;
 audio::Decode* decode = nullptr;
@@ -90,22 +94,30 @@ fs::File dir;
 
 void sound_setup()
 {
+#ifdef PLAY_MOD
+    source = new audio::SourceMemory();
+    decode = new audio::DecodeMOD();
+    dir = driver::storage.getFS().open("/audio/mod");
+    #define FILE_EXT ".mod"
+    #define SOURCE_P static_cast<audio::SourceMemory*>(source)
+#endif
+
+#ifdef PLAY_MP3
     source = new audio::SourceFile();
     decode = new audio::DecodeMP3();
-    output = new audio::OutputI2S();
+    dir = driver::storage.getFS().open("/audio/mp3");
+    #define FILE_EXT ".mp3"
+    #define SOURCE_P static_cast<audio::SourceFile*>(source) 
+#endif
 
+    output = new audio::OutputI2S();
     static_cast<audio::OutputI2S*>(output)->SetPinout(I2S_BCK_PIN, I2S_WS_PIN, I2S_DO_PIN);
     output->SetGain(0.5f);
-    dir = driver::storage.getFS().open("/mp3");
-
-    // static_cast<audio::DecodeMOD*>(decode)->setBufferSize(1024);
-    // static_cast<audio::DecodeMOD*>(decode)->setSampleRate(44100);
-    // static_cast<audio::DecodeMOD*>(decode)->setStereoSeparation(64);
 }
 
 void sound_loop()
 {
-    if (s_forceNext && decode)
+    if (s_forceNext && decode && decode->isRunning())
     {
         decode->stop();
         s_forceNext = false;
@@ -124,10 +136,10 @@ void sound_loop()
             String filename(file.name());
             filename.toLowerCase();
 
-            if (!filename.startsWith(".") && filename.endsWith(".mp3"))
+            if (!filename.startsWith(".") && filename.endsWith(FILE_EXT))
             {
                 source->close();
-                if (static_cast<audio::SourceFile*>(source)->open(driver::storage.getFS(), file.path()))
+                if (SOURCE_P->open(driver::storage.getFS(), file.path()))
                 {
                     Serial.printf("Playing file: %s\n", file.path());
                     decode->begin(source, output);
