@@ -62,18 +62,18 @@ namespace webserver
         {
             auto size = driver::sdcard.getPartitionSize() / (1000.f * 1000.f);
             specs = (driver::sdcard.getCardType() == CARD_SDHC ? "SDHC" : "SDSC");
-            specs += " " + (size > 1000 ? String(size / 1000.f, 0) + "Gb" : String(size, 0) + "Mb");
+            specs += " " + (size > 1000 ? String(size / 1000.f, 0) + "GB" : String(size, 0) + "MB");
             switch(driver::sdcard.getCardInterface())
             {
                 case driver::SDCard::Interface::SPI: specs += " / SPI"; break;
-                case driver::SDCard::Interface::SDIO1 : specs += " / SDIO 1B"; break;
-                case driver::SDCard::Interface::SDIO4 : specs += " / SDIO 4B"; break;
+                case driver::SDCard::Interface::SDIO1 : specs += " / SDIO-1B"; break;
+                case driver::SDCard::Interface::SDIO4 : specs += " / SDIO-4B"; break;
             }
         }
         else if (driver::storage.getType() == driver::Storage::Type::Flash)
         {
             auto size = driver::flash.getPartitionSize() / (1024.f * 1024.f);
-            specs = "FLASH " + String(size, 0) + "Mb / SPI";
+            specs = "FLASH " + String(size, 0) + "MB / SPI";
             
         }
     }
