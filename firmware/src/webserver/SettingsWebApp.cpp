@@ -1,15 +1,12 @@
+#include <LittleFS.h>
 #include "SettingsWebApp.h"
-#include "firmware.h"
-
-#include "LittleFS.h"
-
 #include "services/NetworkConnection.h"
 #include "services/GeoLocation.h"
 #include "services/DateAndTime.h"
 #include "services/Weather.h"
-
 #include "StorageSettings.h"
 #include "HardwareInfo.h"
+#include "defines.h"
 
 namespace webserver
 {

@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include "defines.h"
+#include "hardware.h"
 
 // hardware drivers
 #include "drivers/PowerSource.h"
@@ -14,12 +16,6 @@
 // webserver app
 #include "webserver/SettingsWebApp.h"
 #include "webserver/StorageSettings.h"
-
-// test
-#include <LittleFS.h>
-
-#define ONBOARD_LED GPIO_NUM_0
-#define DISPLAY_BACKLIGHT GPIO_NUM_14
 
 static bool s_buttonState = false;
 
@@ -72,10 +68,6 @@ void list_dir(const char *path, int level) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define I2S_BCK_PIN 16
-#define I2S_WS_PIN  17
-#define I2S_DO_PIN  15
-
 #if 1
 #include "audio/source/SourceFile.h"
 #include "audio/source/SourceMemory.h"
@@ -111,7 +103,7 @@ void sound_setup()
 #endif
 
     output = new audio::OutputI2S();
-    static_cast<audio::OutputI2S*>(output)->SetPinout(I2S_BCK_PIN, I2S_WS_PIN, I2S_DO_PIN);
+    static_cast<audio::OutputI2S*>(output)->SetPinout(PIN_SND_BCLK, PIN_SND_RLCLK, PIN_SND_DIN);
     output->SetGain(0.5f);
 }
 
@@ -230,12 +222,14 @@ void setup()
     delay(1500);
 
     // turn on the onboard led
-    pinMode(ONBOARD_LED, OUTPUT);
-    digitalWrite(ONBOARD_LED, LOW);
+    #ifdef PIN_LED_CAT
+    pinMode(PIN_LED_CAT, OUTPUT);
+    digitalWrite(PIN_LED_CAT, LOW);
+    #endif
 
     // turn on the display backlight
-    pinMode(DISPLAY_BACKLIGHT, OUTPUT);
-    digitalWrite(DISPLAY_BACKLIGHT, HIGH);
+    pinMode(PIN_LCD_BL, OUTPUT);
+    digitalWrite(PIN_LCD_BL, HIGH);
 
     // start hardware
     driver::powerSource.begin();

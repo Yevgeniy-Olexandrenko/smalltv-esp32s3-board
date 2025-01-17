@@ -2,7 +2,8 @@
 #include "Flash.h"
 #include "SDCard.h"
 #include "Storage.h"
-#include "firmware.h"
+#include "defines.h"
+#include "hardware.h"
 
 namespace driver
 {
@@ -202,17 +203,22 @@ namespace driver
 
     bool Storage::initSDCardStorage()
     {
-        #if USE_SDSPI
+    #ifndef NO_SDCARD
+    #if defined(SDCARD_SPI)
+        if (sdcard.begin(SDCard::DEFAULT_MOUNT_POINT, 
+            PIN_SD_MISO, PIN_SD_MOSI, PIN_SD_CLK, PIN_SD_CS))
+    #elif defined(SDCARD_SDIO1)
         if (sdcard.begin(SDCard::DEFAULT_MOUNT_POINT,
-            SDSPI_MISO, SDSPI_MOSI, SDSPI_CLK, SDSPI_CS))
-        #else
+            PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0))
+    #else // SDCARD_SDIO4
         if (sdcard.begin(SDCard::DEFAULT_MOUNT_POINT,
-            SDMMC_CLK, SDMMC_CMD, SDMMC_D0, SDMMC_D1, SDMMC_D2, SDMMC_D3))
-        #endif
+            PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0, PIN_SD_D1, PIN_SD_D2, PIN_SD_D3))
+    #endif
         {
             _type = Type::SDCard;
             return true;
         }
+    #endif
         _type = Type::None;
         return false;
     }

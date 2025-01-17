@@ -1,5 +1,7 @@
-#include <Arduino.h>
 #include "PowerSource.h"
+#include "hardware.h"
+
+#define READ_PERIOD 1000
 
 namespace driver
 {
@@ -45,19 +47,27 @@ namespace driver
 
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsCached()
     {
-        if ((millis() - m_timestamp) >= POWER_SOURCE_READ_PERIOD)
+    #ifndef NO_VINSENSE
+        if ((millis() - m_timestamp) >= READ_PERIOD)
         {
             m_measurement = getInputMilliVoltsRaw();
             m_timestamp = millis();
         }
         return m_measurement;
+    #else
+        return 0;
+    #endif
     }
 
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsRaw()
     {
-        pinMode(POWER_SOURCE_VOLTAGE_PIN, INPUT_PULLDOWN);
-        analogSetPinAttenuation(POWER_SOURCE_VOLTAGE_PIN, ADC_11db);
-        return (2 * analogReadMilliVolts(POWER_SOURCE_VOLTAGE_PIN));
+    #ifndef NO_VINSENSE
+        pinMode(PIN_VIN_SEN, INPUT_PULLDOWN);
+        analogSetPinAttenuation(PIN_VIN_SEN, ADC_11db);
+        return (2 * analogReadMilliVolts(PIN_VIN_SEN));
+    #else
+        return 0;
+    #endif
     }
 
     PowerSource powerSource;

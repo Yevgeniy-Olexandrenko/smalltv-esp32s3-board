@@ -1,8 +1,8 @@
 #include <WiFiConnector.h>
-#include "firmware.h"
 #include "NetworkConnection.h"
 #include "webserver/SettingsWebApp.h"
 #include "drivers/LedAndButton.h"
+#include "defines.h"
 
 namespace service
 {

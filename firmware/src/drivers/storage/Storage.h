@@ -3,23 +3,6 @@
 #include <FS.h>
 #include <USBMSC.h>
 
-// sdmmc
-#define SDMMC_CLK GPIO_NUM_41
-#define SDMMC_CMD GPIO_NUM_38
-#define SDMMC_D0  GPIO_NUM_42
-#define SDMMC_D1  GPIO_NUM_21
-#define SDMMC_D2  GPIO_NUM_40
-#define SDMMC_D3  GPIO_NUM_39
-
-// sdspi
-#define SDSPI_MISO SDMMC_D0
-#define SDSPI_MOSI SDMMC_CMD
-#define SDSPI_CLK  SDMMC_CLK
-#define SDSPI_CS   SDMMC_D3
-
-// chose mmc or spi interface
-#define USE_SDSPI 1
-
 namespace driver
 {
     class Storage

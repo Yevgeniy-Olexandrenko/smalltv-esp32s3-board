@@ -2,9 +2,6 @@
 
 #include <stdint.h>
 
-#define POWER_SOURCE_VOLTAGE_PIN GPIO_NUM_3
-#define POWER_SOURCE_READ_PERIOD 1000
-
 namespace driver
 {
     class PowerSource
