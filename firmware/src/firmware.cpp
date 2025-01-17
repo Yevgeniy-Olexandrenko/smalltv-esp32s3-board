@@ -75,7 +75,7 @@ void list_dir(const char *path, int level) {
 #include "audio/decode/DecodeMP3.h"
 #include "audio/output/OutputI2S.h"
 
-#define PLAY_MOD
+#define PLAY_MP3
 
 audio::Source* source = nullptr;
 audio::Decode* decode = nullptr;

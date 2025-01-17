@@ -12,7 +12,7 @@
 #endif
 
 // Self reset
-#if defined(NO_SELFRES) || ARDUINO_SMALLTV_BOARD_VER == 1
+#if defined(NO_SELFRES) || ARDUINO_SMALLTV_BOARD_VER == 10
     #undef  PIN_ESP_RES
 #else
     #ifndef PIN_ESP_RES
@@ -34,7 +34,7 @@
     #undef PIN_LED_CAT
     #undef PIN_LED_DIN
 #else
-    #if ARDUINO_SMALLTV_BOARD_VER == 1
+    #if ARDUINO_SMALLTV_BOARD_VER == 10
     // simple LED, shares the same 
     // PIN as the built-in button,
     // connected to PIN via cathode
