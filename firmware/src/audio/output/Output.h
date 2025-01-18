@@ -1,11 +1,14 @@
 #pragma once
 
 #include <stdint.h>
+#include "audio/Status.h"
 
 namespace audio
 {
     class Output
     {
+        friend class Decode;
+
     public:
         enum SampleIndex { LEFTCHANNEL = 0, RIGHTCHANNEL = 1 };
 
@@ -65,5 +68,6 @@ namespace audio
         uint8_t channels;
         uint8_t gainF2P6; // Fixed point 2.6
   
+        Status _status;
     };
 }

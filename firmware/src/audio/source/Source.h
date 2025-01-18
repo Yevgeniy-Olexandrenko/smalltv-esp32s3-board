@@ -1,11 +1,15 @@
 #pragma once
 
 #include <stdint.h>
+#include "audio/Status.h"
+#include "audio/Metadata.h"
 
 namespace audio
 {
     class Source
     {
+        friend class Decode;
+
     public:
         Source() {};
         virtual ~Source() {};
@@ -18,5 +22,9 @@ namespace audio
         virtual uint32_t getSize() { return 0; };
         virtual uint32_t getPos() { return 0; };
         virtual bool loop() { return true; };
+
+    protected:
+        Status _status;
+        Metadata _metadata;
     };
 }

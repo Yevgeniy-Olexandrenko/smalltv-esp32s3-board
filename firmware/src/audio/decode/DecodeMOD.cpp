@@ -88,11 +88,7 @@ namespace audio
 
     bool DecodeMOD::begin(Source* source, Output* output)
     {
-        if (_run) stop();
-        if (!source || !output) return false;
-        _source = source;
-        _output = output;
-        if (!_source->isOpen()) return false;
+        if (!Decode::begin(source, output)) return false;
 
         // Set the output values properly
         if (!output->SetRate(sampleRate)) return false;

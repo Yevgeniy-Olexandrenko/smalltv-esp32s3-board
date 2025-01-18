@@ -65,18 +65,14 @@ namespace audio
         }
     }
 
-    bool DecodeMP3::begin(Source *__source, Output *__output)
+    bool DecodeMP3::begin(Source *source, Output *output)
     {
-        if (!__source) return false;
-        _source = __source;
-        if (!__output) return false;
-        _output = __output;
-
-        if (!_source->isOpen()) 
-        {
-        //@@    audioLogger->printf_P(PSTR("MP3 source file not open\n"));
-            return false; // Error
-        }
+        if (!Decode::begin(source, output)) return false;
+    //@@    if (!_source->isOpen()) 
+    //@@    {
+    //@@        audioLogger->printf_P(PSTR("MP3 source file not open\n"));
+    //@@        return false; // Error
+    //@@    }
 
         // Reset error count from previous file
         unrecoverable = 0;

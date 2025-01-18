@@ -68,9 +68,33 @@ void list_dir(const char *path, int level) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
+{
+    (void)cbData;
+    Serial.printf("ID3 callback for: %s = '", type);
+
+    if (isUnicode)
+    {
+        string += 2;
+    }
+
+    while (*string)
+    {
+        char a = *(string++);
+        if (isUnicode)
+        {
+            string++;
+        }
+        Serial.printf("%c", a);
+    }
+    Serial.printf("'\n");
+    Serial.flush();
+}
+
 #if 1
 #include "audio/source/SourceFile.h"
 #include "audio/source/SourceMemory.h"
+#include "audio/source/SourceFilterID3.h"
 #include "audio/decode/DecodeMOD.h"
 #include "audio/decode/DecodeMP3.h"
 #include "audio/output/OutputI2S.h"
@@ -78,6 +102,7 @@ void list_dir(const char *path, int level) {
 #define PLAY_MP3
 
 audio::Source* source = nullptr;
+audio::Source* filter = nullptr;
 audio::Decode* decode = nullptr;
 audio::Output* output = nullptr;
 
@@ -96,10 +121,14 @@ void sound_setup()
 
 #ifdef PLAY_MP3
     source = new audio::SourceFile();
+    filter = new audio::SourceFilterID3(source);
     decode = new audio::DecodeMP3();
+    decode->setCallback(MDCallback, (void*)"ID3TAG");
     dir = driver::storage.getFS().open("/audio/mp3");
+
     #define FILE_EXT ".mp3"
-    #define SOURCE_P static_cast<audio::SourceFile*>(source) 
+    #define SOURCE_P static_cast<audio::SourceFile*>(source)
+    #define FILTER_P static_cast<audio::SourceFilterID3*>(filter)
 #endif
 
     output = new audio::OutputI2S();
@@ -134,7 +163,7 @@ void sound_loop()
                 if (SOURCE_P->open(driver::storage.getFS(), file.path()))
                 {
                     Serial.printf("Playing file: %s\n", file.path());
-                    decode->begin(source, output);
+                    decode->begin(FILTER_P, output);
                 }
                 else
                 {
@@ -146,12 +175,15 @@ void sound_loop()
 }
 #else
 #include <AudioFileSourceFS.h>
+#include <AudioFileSourceID3.h>
 #include <AudioGeneratorMP3a.h>
 #include <AudioOutputI2S.h>
 
 AudioFileSourceFS* source = nullptr;
-AudioGeneratorMP3a* decoder = nullptr;
+AudioFileSourceID3* filter = nullptr;
+AudioGeneratorMP3a* decode = nullptr;
 AudioOutputI2S* output = nullptr;
+
 fs::File dir;
 bool s_forceNext = false;
 
@@ -159,33 +191,28 @@ void sound_setup()
 {
     //audioLogger = &Serial;
     source = new AudioFileSourceFS(driver::storage.getFS());
-    decoder = new AudioGeneratorMP3a();
+    filter = new AudioFileSourceID3(source);
+    decode = new AudioGeneratorMP3a();
     output = new AudioOutputI2S();
 
-    dir = driver::storage.getFS().open("/mp3");
-    bool setPinoutOK = output->SetPinout(I2S_BCK_PIN, I2S_WS_PIN, I2S_DO_PIN);
+    filter->RegisterMetadataCB(MDCallback, (void*)"ID3TAG");
+    dir = driver::storage.getFS().open("/audio/mp3");
+    
+    output->SetPinout(PIN_SND_BCLK, PIN_SND_RLCLK, PIN_SND_DIN);
     output->SetGain(0.5f);
-
-    // decoder->SetBufferSize(1024);
-    // decoder->SetSampleRate(44100);
-    // decoder->SetStereoSeparation(64);
-
-    Serial.printf("openDirOK: %d\n", bool(dir));
-    Serial.printf("setPinoutOK: %d\n", setPinoutOK);
 }
 
 void sound_loop()
 {
-    if (s_forceNext && decoder)
+    if (s_forceNext && decode && decode->isRunning())
     {
-        decoder->stop();
+        decode->stop();
         s_forceNext = false;
     }
 
-    if (decoder && decoder->isRunning())
+    if (decode && decode->isRunning())
     {
-        if (!decoder->loop())
-            decoder->stop();
+        if (!decode->loop()) decode->stop();
     }
     else
     {
@@ -202,7 +229,7 @@ void sound_loop()
                 if (source->open(file.path()))
                 {
                     Serial.printf("Playing file: %s\n", file.path());
-                    decoder->begin(source, output);
+                    decode->begin(filter, output);
                 }
                 else
                 {
