@@ -5,9 +5,24 @@
 // Input voltage sense
 #ifdef NO_VINSENSE
     #undef  PIN_VIN_SEN
+    #undef  VIN_SEN_ADC1
+    #undef  VIN_SEN_VOL1
+    #undef  VIN_SEN_ADC2
+    #undef  VIN_SEN_VOL2
 #else
     #ifndef PIN_VIN_SEN
     #define PIN_VIN_SEN GPIO_NUM_3
+    #endif
+    #if !defined(VIN_SEN_ADC1) \
+     || !defined(VIN_SEN_VOL1) \
+     || !defined(VIN_SEN_ADC2) \
+     || !defined(VIN_SEN_VOL2)
+    // calibrated linear dependence of vol-
+    // tage on the value read from the ADC
+    #define VIN_SEN_ADC1 2580
+    #define VIN_SEN_VOL1 4330
+    #define VIN_SEN_ADC2 3660
+    #define VIN_SEN_VOL2 5830
     #endif
 #endif
 

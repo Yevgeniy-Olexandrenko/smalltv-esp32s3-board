@@ -22,17 +22,18 @@ namespace driver
 
         void  begin();
         Type  getType();
+        bool  isOutOfRange();
         float getInputVoltage();
         float getBatteryLevel();
-        int   getPatteryLevelPercents();
+        int   getBatteryLevelPercents();
 
     private:
         MilliVolt getInputMilliVoltsCached();
         MilliVolt getInputMilliVoltsRaw();
 
     private:
-        Timestamp m_timestamp;
-        MilliVolt m_measurement;
+        Timestamp _timestamp;
+        MilliVolt _millivolts;
     };
     
     extern PowerSource powerSource;

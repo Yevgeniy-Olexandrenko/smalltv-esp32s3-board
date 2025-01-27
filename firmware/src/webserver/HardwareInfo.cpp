@@ -75,7 +75,7 @@ namespace webserver
                 break;
 
             case driver::PowerSource::Type::Battery:
-            {   auto level = driver::powerSource.getPatteryLevelPercents();
+            {   auto level = driver::powerSource.getBatteryLevelPercents();
                 powerSource = "BAT " + String(voltage) + "V / " + String(level) + "%";
             }   break;
 
