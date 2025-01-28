@@ -1,10 +1,9 @@
 #include <Arduino.h>
 #include "defines.h"
-#include "hardware.h"
 
 // hardware drivers
-#include "drivers/PowerSource.h"
 #include "drivers/LedAndButton.h"
+#include "drivers/onboard/PowerSource.h"
 #include "drivers/storage/Storage.h"
 
 // background services

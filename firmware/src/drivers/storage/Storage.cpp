@@ -3,7 +3,6 @@
 #include "SDCard.h"
 #include "Storage.h"
 #include "defines.h"
-#include "hardware.h"
 
 namespace driver
 {

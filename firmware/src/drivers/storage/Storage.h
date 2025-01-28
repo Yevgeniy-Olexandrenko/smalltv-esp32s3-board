@@ -2,6 +2,7 @@
 
 #include <FS.h>
 #include <USBMSC.h>
+#include "board.h"
 
 namespace driver
 {

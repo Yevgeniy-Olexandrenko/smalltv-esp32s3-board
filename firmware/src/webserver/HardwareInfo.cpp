@@ -1,5 +1,5 @@
 #include "HardwareInfo.h"
-#include "drivers/PowerSource.h"
+#include "drivers/onboard/PowerSource.h"
 #include "services/NetworkConnection.h"
 
 namespace webserver

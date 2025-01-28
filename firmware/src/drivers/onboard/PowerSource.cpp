@@ -1,5 +1,3 @@
-#include <esp_log.h>
-#include "hardware.h"
 #include "PowerSource.h"
 
 #define UPDATE_PERIOD 5000
