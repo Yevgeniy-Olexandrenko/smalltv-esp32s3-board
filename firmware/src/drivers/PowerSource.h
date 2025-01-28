@@ -15,7 +15,7 @@ namespace driver
         };
 
         using Timestamp = unsigned long;
-        using MilliVolt = uint32_t;
+        using MilliVolt = uint16_t;
 
     public:
         enum class Type { Unknown, Battery, USB };
@@ -33,7 +33,7 @@ namespace driver
 
     private:
         Timestamp _timestamp;
-        MilliVolt _millivolts;
+        MilliVolt _milliVolts;
     };
     
     extern PowerSource powerSource;

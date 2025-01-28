@@ -1,14 +1,15 @@
-#include "PowerSource.h"
+#include <esp_log.h>
 #include "hardware.h"
+#include "PowerSource.h"
 
-#define READ_PERIOD 1000
+#define UPDATE_PERIOD 5000
 
 namespace driver
 {
     void PowerSource::begin()
     {
-        _millivolts = getInputMilliVoltsRaw();
-        _timestamp  = millis();
+        _timestamp = millis();
+        _milliVolts = getInputMilliVoltsRaw();
     }
 
     PowerSource::Type PowerSource::getType()
@@ -57,12 +58,13 @@ namespace driver
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsCached()
     {
     #ifndef NO_VINSENSE
-        if ((millis() - _timestamp) >= READ_PERIOD)
+        if (millis() - _timestamp >= UPDATE_PERIOD)
         {
-            _millivolts = getInputMilliVoltsRaw();
-            _timestamp  = millis();
+            _timestamp = millis();
+            _milliVolts += getInputMilliVoltsRaw();
+            _milliVolts /= 2;
         }
-        return _millivolts;
+        return _milliVolts;
     #else
         return 0;
     #endif
@@ -71,7 +73,7 @@ namespace driver
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsRaw()
     {
     #ifndef NO_VINSENSE
-        pinMode(PIN_VIN_SEN, INPUT_PULLDOWN);
+        pinMode(PIN_VIN_SEN, INPUT);
         analogSetPinAttenuation(PIN_VIN_SEN, ADC_11db);
 
         // calculation of the coefficients of 
@@ -81,8 +83,10 @@ namespace driver
 
         // calculation of voltage based on 
         // a calibrated dependence line
-        uint16_t x = analogReadRaw(PIN_VIN_SEN);
-        return MilliVolt(k * x + b);
+        auto x = analogReadRaw(PIN_VIN_SEN);
+        auto y = MilliVolt(k * x + b);
+        log_i("%d - %d", x, y);
+        return y;
     #else
         return 0;
     #endif
