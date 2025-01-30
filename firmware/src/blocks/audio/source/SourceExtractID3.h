@@ -4,11 +4,11 @@
 
 namespace audio
 {
-    class SourceFilterID3 : public Source
+    class SourceExtractID3 : public Source
     {
     public:
-        SourceFilterID3(Source* source) : _source(source), _checked(false) {}
-        ~SourceFilterID3() override {}
+        SourceExtractID3(Source* source) : _source(source), _checked(false) {}
+        ~SourceExtractID3() override {}
         
         uint32_t read(void* data, uint32_t len) override;
         bool seek(int32_t pos, int dir) override { return _source->seek(pos, dir); }

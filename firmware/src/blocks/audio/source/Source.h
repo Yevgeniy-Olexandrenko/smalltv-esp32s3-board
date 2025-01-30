@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include "audio/Status.h"
-#include "audio/Metadata.h"
+#include "blocks/audio/Status.h"
+#include "blocks/audio/Metadata.h"
 
 namespace audio
 {

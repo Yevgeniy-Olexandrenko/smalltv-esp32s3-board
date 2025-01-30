@@ -1,5 +1,5 @@
 #include <string.h>
-#include "SourceFilterID3.h"
+#include "SourceExtractID3.h"
 
 namespace audio
 {
@@ -104,7 +104,7 @@ namespace audio
         int _savedByte;
     };
 
-    uint32_t SourceFilterID3::read(void *data, uint32_t len)
+    uint32_t SourceExtractID3::read(void *data, uint32_t len)
     {
         if (_checked)
         {

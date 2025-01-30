@@ -91,12 +91,12 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
 }
 
 #if 1
-#include "audio/source/SourceFile.h"
-#include "audio/source/SourceMemory.h"
-#include "audio/source/SourceFilterID3.h"
-#include "audio/decode/DecodeMOD.h"
-#include "audio/decode/DecodeMP3.h"
-#include "audio/output/OutputI2S.h"
+#include "blocks/audio/source/SourceFile.h"
+#include "blocks/audio/source/SourceMemory.h"
+#include "blocks/audio/source/SourceExtractID3.h"
+#include "blocks/audio/decode/DecodeMOD.h"
+#include "blocks/audio/decode/DecodeMP3.h"
+#include "blocks/audio/output/OutputI2S.h"
 
 #define PLAY_MP3
 
@@ -116,18 +116,19 @@ void sound_setup()
     dir = driver::storage.getFS().open("/audio/mod");
     #define FILE_EXT ".mod"
     #define SOURCE_P static_cast<audio::SourceMemory*>(source)
+    #define FILTER_P static_cast<audio::SourceMemory*>(source)
 #endif
 
 #ifdef PLAY_MP3
     source = new audio::SourceFile();
-    filter = new audio::SourceFilterID3(source);
+    filter = new audio::SourceExtractID3(source);
     decode = new audio::DecodeMP3();
     decode->setCallback(MDCallback, (void*)"ID3TAG");
     dir = driver::storage.getFS().open("/audio/mp3");
 
     #define FILE_EXT ".mp3"
     #define SOURCE_P static_cast<audio::SourceFile*>(source)
-    #define FILTER_P static_cast<audio::SourceFilterID3*>(filter)
+    #define FILTER_P static_cast<audio::SourceExtractID3*>(filter)
 #endif
 
     output = new audio::OutputI2S();
