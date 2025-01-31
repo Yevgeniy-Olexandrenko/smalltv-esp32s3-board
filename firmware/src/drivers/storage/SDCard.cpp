@@ -1,10 +1,12 @@
-#include "SDCard.h"
 #include <vfs_api.h>
 #include <esp_vfs_fat.h>
 #include <driver/sdmmc_defs.h>
 #include <driver/sdmmc_host.h>
 #include <driver/sdspi_host.h>
 #include <sdmmc_cmd.h>
+
+#include "SDCard.h"
+#include "codebase/tasks/MutexLockGuard.h"
 
 namespace driver
 {
@@ -13,9 +15,14 @@ namespace driver
         , _spi_slot(-1)
         , _onebit_mode(false)
         , _card(nullptr)
+        , _mutex(xSemaphoreCreateMutex())
     {}
 
-    SDCard::~SDCard() { end(); }
+    SDCard::~SDCard() 
+    { 
+        end();
+        vSemaphoreDelete(_mutex);
+    }
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -76,7 +83,6 @@ namespace driver
         log_i("SD card mounted at: %s\n", mountPoint);
         sdmmc_card_print_info(stdout, _card);
         
-        _mutex = xSemaphoreCreateMutex();
         _impl->mountpoint(mountPoint);
         return true;
     }
@@ -136,7 +142,6 @@ namespace driver
         log_i("SD card mounted at: %s\n", mountPoint);
         sdmmc_card_print_info(stdout, _card);
         
-        _mutex = xSemaphoreCreateMutex();
         _impl->mountpoint(mountPoint);
         return true;
     }
@@ -145,12 +150,11 @@ namespace driver
     {
         if (isMounted()) 
         {
-            xSemaphoreTake(_mutex, portMAX_DELAY);
+            MutexLockGuard lock(_mutex);
             esp_vfs_fat_sdcard_unmount(_impl->mountpoint(), _card);
             if (_spi_slot >= 0) spi_bus_free(spi_host_device_t(_spi_slot));
             _impl->mountpoint(nullptr);
             _card = nullptr;
-            xSemaphoreGive(_mutex);
         }
     }
 
@@ -221,17 +225,15 @@ namespace driver
 
     bool SDCard::writeSectors(uint8_t *src, size_t startSector, size_t sectorCount)
     {
-        xSemaphoreTake(_mutex, portMAX_DELAY);
+        MutexLockGuard lock(_mutex);
         esp_err_t res = sdmmc_write_sectors(_card, src, startSector, sectorCount);
-        xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
 
     bool SDCard::readSectors(uint8_t *dst, size_t startSector, size_t sectorCount)
     {
-        xSemaphoreTake(_mutex, portMAX_DELAY);
+        MutexLockGuard lock(_mutex);
         esp_err_t res = sdmmc_read_sectors(_card, dst, startSector, sectorCount);
-        xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
 

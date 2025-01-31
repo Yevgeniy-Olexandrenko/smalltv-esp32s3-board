@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "blocks/audio/Status.h"
+#include "../Status.h"
 
 namespace audio
 {

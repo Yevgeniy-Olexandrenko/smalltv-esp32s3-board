@@ -1,7 +1,7 @@
 #pragma once
 
-#include "blocks/audio/source/Source.h"
-#include "blocks/audio/output/Output.h"
+#include "../source/Source.h"
+#include "../output/Output.h"
 
 namespace audio
 {

@@ -1,16 +1,23 @@
-#include "Flash.h"
 #include <vfs_api.h>
 #include <esp_vfs_fat.h>
 #include <diskio_wl.h>
+
+#include "Flash.h"
+#include "codebase/tasks/MutexLockGuard.h"
 
 namespace driver
 {
     Flash::Flash()
         : fs::FS(FSImplPtr(new VFSImpl()))
         , _wl_handle(WL_INVALID_HANDLE)
+        , _mutex(xSemaphoreCreateMutex())
     {}
 
-    Flash::~Flash() { end(); }
+    Flash::~Flash() 
+    { 
+        end();
+        vSemaphoreDelete(_mutex);
+    }
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -42,7 +49,6 @@ namespace driver
             return false;
         }
 
-        _mutex = xSemaphoreCreateMutex();
         _impl->mountpoint(mountPoint);
         return true;
     }
@@ -51,11 +57,10 @@ namespace driver
     {
         if (isMounted())
         {
-            xSemaphoreTake(_mutex, portMAX_DELAY);
+            MutexLockGuard lock(_mutex);
             esp_vfs_fat_spiflash_unmount(_impl->mountpoint(), _wl_handle);
             _wl_handle = WL_INVALID_HANDLE;
             _impl->mountpoint(nullptr);
-            xSemaphoreGive(_mutex);
         }
     }
 
@@ -118,20 +123,18 @@ namespace driver
 
     bool Flash::writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
-        xSemaphoreTake(_mutex, portMAX_DELAY);
+        MutexLockGuard lock(_mutex);
         size_t start_addr = (wl_sector_size(_wl_handle) * lba + offset);
         esp_err_t res = wl_erase_range(_wl_handle, start_addr, bufsize);
         if (res == ESP_OK) res = wl_write(_wl_handle, start_addr, buffer, bufsize);
-        xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
 
     bool Flash::readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
-        xSemaphoreTake(_mutex, portMAX_DELAY);
+        MutexLockGuard lock(_mutex);
         size_t start_addr = (wl_sector_size(_wl_handle) * lba + offset);
         esp_err_t res = wl_read(_wl_handle, start_addr, buffer, bufsize);
-        xSemaphoreGive(_mutex);
         return (res == ESP_OK);
     }
 
