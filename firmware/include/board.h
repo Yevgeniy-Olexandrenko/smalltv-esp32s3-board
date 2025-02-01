@@ -27,7 +27,7 @@
 #endif
 
 // Self reset
-#if defined(NO_SELFRES) || ARDUINO_SMALLTV_BOARD_VER == 10
+#if defined(NO_SELFRES) || ARDUINO_SMALLTV_BOARD_REV == 0
     #undef  PIN_ESP_RES
 #else
     #ifndef PIN_ESP_RES
@@ -49,7 +49,7 @@
     #undef PIN_LED_CAT
     #undef PIN_LED_DIN
 #else
-    #if ARDUINO_SMALLTV_BOARD_VER == 10
+    #if ARDUINO_SMALLTV_BOARD_REV == 0
     // simple LED, shares the same 
     // PIN as the built-in button,
     // connected to PIN via cathode
@@ -166,28 +166,28 @@
     #undef  PIN_TOUCH0
 #else
     #ifndef PIN_TOUCH0
-    #define PIN_TOUCH0 GPIO_NUM_4
+    #define PIN_TOUCH0 TOUCH_PAD_NUM4
     #endif
 #endif
 #ifdef NO_TOUCH1
     #undef  PIN_TOUCH1
 #else
     #ifndef PIN_TOUCH1
-    #define PIN_TOUCH1 GPIO_NUM_5
+    #define PIN_TOUCH1 TOUCH_PAD_NUM5
     #endif
 #endif
 #ifdef NO_TOUCH2
     #undef  PIN_TOUCH2
 #else
     #ifndef PIN_TOUCH2
-    #define PIN_TOUCH2 GPIO_NUM_6
+    #define PIN_TOUCH2 TOUCH_PAD_NUM6
     #endif
 #endif
 #ifdef NO_TOUCH3
     #undef  PIN_TOUCH3
 #else
     #ifndef PIN_TOUCH3
-    #define PIN_TOUCH3 GPIO_NUM_7
+    #define PIN_TOUCH3 TOUCH_PAD_NUM7
     #endif
 #endif
 
