@@ -7,10 +7,10 @@
 #include "drivers/storage/Storage.h"
 
 // background services
-#include "services/NetworkConnection.h"
-#include "services/GeoLocation.h"
-#include "services/DateAndTime.h"
-#include "services/Weather.h"
+#include "services/network-connection/NetworkConnection.h"
+#include "services/geo-location/GeoLocation.h"
+#include "services/date-and-time/DateAndTime.h"
+#include "services/weather-forecast/Weather.h"
 
 // webserver app
 #include "webserver/SettingsWebApp.h"
@@ -91,12 +91,12 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
 }
 
 #if 1
-#include "blocks/audio/source/SourceFile.h"
-#include "blocks/audio/source/SourceMemory.h"
-#include "blocks/audio/source/SourceExtractID3.h"
-#include "blocks/audio/decode/DecodeMOD.h"
-#include "blocks/audio/decode/DecodeMP3.h"
-#include "blocks/audio/output/OutputI2S.h"
+#include "shared/audio/source/SourceFile.h"
+#include "shared/audio/source/SourceMemory.h"
+#include "shared/audio/source/SourceExtractID3.h"
+#include "shared/audio/decode/DecodeMOD.h"
+#include "shared/audio/decode/DecodeMP3.h"
+#include "shared/audio/output/OutputI2S.h"
 
 #define PLAY_MP3
 

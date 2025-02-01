@@ -1,9 +1,9 @@
 #include <LittleFS.h>
 #include "SettingsWebApp.h"
-#include "services/NetworkConnection.h"
-#include "services/GeoLocation.h"
-#include "services/DateAndTime.h"
-#include "services/Weather.h"
+#include "services/network-connection/NetworkConnection.h"
+#include "services/geo-location/GeoLocation.h"
+#include "services/date-and-time/DateAndTime.h"
+#include "services/weather-forecast/Weather.h"
 #include "StorageSettings.h"
 #include "HardwareInfo.h"
 #include "defines.h"

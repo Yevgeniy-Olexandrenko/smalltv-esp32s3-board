@@ -6,7 +6,7 @@
 #include <sdmmc_cmd.h>
 
 #include "SDCard.h"
-#include "codebase/tasks/MutexLockGuard.h"
+#include "shared/tasks/MutexLockGuard.h"
 
 namespace driver
 {
