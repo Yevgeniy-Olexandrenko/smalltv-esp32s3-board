@@ -160,10 +160,10 @@ namespace driver
 
     ////////////////////////////////////////////////////////////////////////////
 
-    sdcard_type_t SDCard::getCardType() const
+    SDCard::Type SDCard::getCardType() const
     {
-        if(!_card) return CARD_NONE;
-        return (_card->ocr & SD_OCR_SDHC_CAP ? CARD_SDHC : CARD_SD);
+        if(!_card) return Type::NONE;
+        return (_card->ocr & SD_OCR_SDHC_CAP ? Type::SDHC : Type::SD);
     }
 
     SDCard::Interface SDCard::getCardInterface() const

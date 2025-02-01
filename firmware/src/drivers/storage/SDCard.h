@@ -1,8 +1,6 @@
 #pragma once
 
 #include <FS.h>
-#include <sd_defines.h>
-#include <freertos/FreeRTOS.h>
 #include <driver/sdmmc_types.h>
 
 namespace driver
@@ -12,6 +10,7 @@ namespace driver
     public:
         static constexpr const char* DEFAULT_MOUNT_POINT = "/sdcard";
         enum class Interface { NONE, SPI, SDIO1, SDIO4 };
+        enum class Type { NONE, SD, SDHC };
 
         SDCard();
         ~SDCard();
@@ -22,7 +21,7 @@ namespace driver
         void end();
 
         // sd card properties
-        sdcard_type_t getCardType() const;
+        Type getCardType() const;
         Interface getCardInterface() const;
 
         // partition properties

@@ -2,7 +2,6 @@
 
 #include <FS.h>
 #include <wear_levelling.h>
-#include <freertos/FreeRTOS.h>
 
 namespace driver
 {
