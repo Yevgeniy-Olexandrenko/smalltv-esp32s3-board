@@ -26,8 +26,7 @@ namespace driver
         // file system properties
         bool isMounted() const;
         const char* getMountPoint() const;
-        uint64_t getTotalBytes() const;
-        uint64_t getUsedBytes() const;
+        int getDriveNumber() const;
 
         // direct access for MSC device mode
         bool writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);

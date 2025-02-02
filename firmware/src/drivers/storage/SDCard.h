@@ -33,8 +33,7 @@ namespace driver
         // file system properties
         bool isMounted() const;
         const char* getMountPoint() const;
-        uint64_t getTotalBytes() const;
-        uint64_t getUsedBytes() const;
+        int getDriveNumber() const;
 
         // direct access for MSC device mode
         bool writeSectors(uint8_t *src, size_t startSector, size_t sectorCount);

@@ -1,3 +1,4 @@
+#include <ff.h>
 #include <USB.h>
 #include "Flash.h"
 #include "SDCard.h"
@@ -105,15 +106,39 @@ namespace driver
 
     uint64_t Storage::getFSTotalBytes() const
     {
-        if (isSDCardStorage()) return sdcard.getTotalBytes();
-        else if (isFlashStorage()) return flash.getTotalBytes();
+        int pdrv = -1;
+        if (isSDCardStorage()) pdrv = sdcard.getDriveNumber();
+        else if (isFlashStorage()) pdrv = flash.getDriveNumber();
+        if (pdrv >= 0)
+        {
+            FATFS *fs; uint32_t free_clust;
+            char drv[3] = { char('0' + pdrv), ':', '\0' };
+            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+            {
+                auto total_sect = (fs->n_fatent - 2) * fs->csize;
+                auto sect_size = fs->ssize;
+                return (total_sect * sect_size);
+            }
+        }
         return 0;
     }
 
     uint64_t Storage::getFSUsedBytes() const
     {
-        if (isSDCardStorage()) return sdcard.getUsedBytes();
-        else if (isFlashStorage()) return flash.getUsedBytes();
+        int pdrv = -1;
+        if (isSDCardStorage()) pdrv = sdcard.getDriveNumber();
+        else if (isFlashStorage()) pdrv = flash.getDriveNumber();
+        if (pdrv >= 0)
+        {
+            FATFS *fs; uint32_t free_clust;
+            char drv[3] = { char('0' + pdrv), ':', '\0' };
+            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+            {
+                auto used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
+                auto sect_size = fs->ssize;
+                return (used_sect * sect_size);
+            }
+        }
         return 0;
     }
 

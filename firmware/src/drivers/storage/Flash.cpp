@@ -94,38 +94,9 @@ namespace driver
         return _impl->mountpoint();
     }
 
-    uint64_t Flash::getTotalBytes() const
+    int Flash::getDriveNumber() const
     {
-        if (isMounted())
-        {
-            FATFS *fs; uint32_t free_clust;
-            auto pdrv = ff_diskio_get_pdrv_wl(_wl_handle);
-            char drv[3] = { char('0' + pdrv), ':', '\0' };
-            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
-            {
-                auto total_sect = (fs->n_fatent - 2) * fs->csize;
-                auto sect_size = CONFIG_WL_SECTOR_SIZE; // fs->ssize
-                return (total_sect * sect_size);
-            }
-        }
-        return 0;
-    }
-
-    uint64_t Flash::getUsedBytes() const
-    {
-        if (isMounted())
-        {
-            FATFS *fs; uint32_t free_clust;
-            auto pdrv = ff_diskio_get_pdrv_wl(_wl_handle);
-            char drv[3] = { char('0' + pdrv), ':', '\0' };
-            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
-            {
-                auto used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
-                auto sect_size = CONFIG_WL_SECTOR_SIZE; // fs->ssize
-                return (used_sect * sect_size);
-            }
-        }
-        return 0;
+        return ff_diskio_get_pdrv_wl(_wl_handle);
     }
 
     ////////////////////////////////////////////////////////////////////////////
