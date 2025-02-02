@@ -2,6 +2,7 @@
 
 #include <FS.h>
 #include <wear_levelling.h>
+#include "shared/tasks/Mutex.h"
 
 namespace driver
 {
@@ -25,8 +26,8 @@ namespace driver
         // file system properties
         bool isMounted() const;
         const char* getMountPoint() const;
-        size_t getTotalBytes() const;
-        size_t getUsedBytes() const;
+        uint64_t getTotalBytes() const;
+        uint64_t getUsedBytes() const;
 
         // direct access for MSC device mode
         bool writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
@@ -34,7 +35,7 @@ namespace driver
 
     private:
         wl_handle_t _wl_handle;
-        SemaphoreHandle_t _mutex;
+        task::Mutex _mutex;
     };
 
     extern Flash flash;

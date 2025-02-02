@@ -3,20 +3,18 @@
 #include <diskio_wl.h>
 
 #include "Flash.h"
-#include "shared/tasks/MutexLockGuard.h"
+#include "shared/tasks/LockGuard.h"
 
 namespace driver
 {
     Flash::Flash()
         : fs::FS(FSImplPtr(new VFSImpl()))
         , _wl_handle(WL_INVALID_HANDLE)
-        , _mutex(xSemaphoreCreateMutex())
     {}
 
     Flash::~Flash() 
     { 
         end();
-        vSemaphoreDelete(_mutex);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -24,6 +22,8 @@ namespace driver
     bool Flash::begin(const char* mountPoint, const char* partitionLabel)
     {
         if (isMounted()) return true;
+
+        task::LockGuard lock(_mutex);
         log_i("Initializing flash FAT");
 
         const esp_partition_t* partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, partitionLabel);
@@ -55,13 +55,12 @@ namespace driver
 
     void Flash::end()
     {
-        if (isMounted())
-        {
-            MutexLockGuard lock(_mutex);
-            esp_vfs_fat_spiflash_unmount(_impl->mountpoint(), _wl_handle);
-            _wl_handle = WL_INVALID_HANDLE;
-            _impl->mountpoint(nullptr);
-        }
+        if (!isMounted()) return;
+        
+        task::LockGuard lock(_mutex);
+        esp_vfs_fat_spiflash_unmount(_impl->mountpoint(), _wl_handle);
+        _wl_handle = WL_INVALID_HANDLE;
+        _impl->mountpoint(nullptr);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -95,35 +94,45 @@ namespace driver
         return _impl->mountpoint();
     }
 
-    size_t Flash::getTotalBytes() const
+    uint64_t Flash::getTotalBytes() const
     {
-        FATFS *fs;
-        DWORD free_clust;
-        BYTE  pdrv = ff_diskio_get_pdrv_wl(_wl_handle);
-        char  drv[3] = { char(48 + pdrv), ':', 0 };
-        if (f_getfree(drv, &free_clust, &fs) != FR_OK) return 0;
-        DWORD tot_sect = (fs->n_fatent - 2) * fs->csize;
-        DWORD sect_size = CONFIG_WL_SECTOR_SIZE;
-        return (tot_sect * sect_size);
+        if (isMounted())
+        {
+            FATFS *fs; uint32_t free_clust;
+            auto pdrv = ff_diskio_get_pdrv_wl(_wl_handle);
+            char drv[3] = { char('0' + pdrv), ':', '\0' };
+            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+            {
+                auto total_sect = (fs->n_fatent - 2) * fs->csize;
+                auto sect_size = CONFIG_WL_SECTOR_SIZE; // fs->ssize
+                return (total_sect * sect_size);
+            }
+        }
+        return 0;
     }
 
-    size_t Flash::getUsedBytes() const
+    uint64_t Flash::getUsedBytes() const
     {
-        FATFS *fs;
-        DWORD free_clust;
-        BYTE  pdrv = ff_diskio_get_pdrv_wl(_wl_handle);
-        char  drv[3] = { char(48 + pdrv), ':', 0 };
-        if (f_getfree(drv, &free_clust, &fs) != FR_OK) return 0;
-        DWORD used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
-        DWORD sect_size = CONFIG_WL_SECTOR_SIZE;
-        return (used_sect * sect_size);
+        if (isMounted())
+        {
+            FATFS *fs; uint32_t free_clust;
+            auto pdrv = ff_diskio_get_pdrv_wl(_wl_handle);
+            char drv[3] = { char('0' + pdrv), ':', '\0' };
+            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+            {
+                auto used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
+                auto sect_size = CONFIG_WL_SECTOR_SIZE; // fs->ssize
+                return (used_sect * sect_size);
+            }
+        }
+        return 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     bool Flash::writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
-        MutexLockGuard lock(_mutex);
+        task::LockGuard lock(_mutex);
         size_t start_addr = (wl_sector_size(_wl_handle) * lba + offset);
         esp_err_t res = wl_erase_range(_wl_handle, start_addr, bufsize);
         if (res == ESP_OK) res = wl_write(_wl_handle, start_addr, buffer, bufsize);
@@ -132,7 +141,7 @@ namespace driver
 
     bool Flash::readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
-        MutexLockGuard lock(_mutex);
+        task::LockGuard lock(_mutex);
         size_t start_addr = (wl_sector_size(_wl_handle) * lba + offset);
         esp_err_t res = wl_read(_wl_handle, start_addr, buffer, bufsize);
         return (res == ESP_OK);

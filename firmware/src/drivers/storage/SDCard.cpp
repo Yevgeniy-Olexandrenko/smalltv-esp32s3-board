@@ -4,9 +4,10 @@
 #include <driver/sdmmc_host.h>
 #include <driver/sdspi_host.h>
 #include <sdmmc_cmd.h>
+#include <diskio_sdmmc.h>
 
 #include "SDCard.h"
-#include "shared/tasks/MutexLockGuard.h"
+#include "shared/tasks/LockGuard.h"
 
 namespace driver
 {
@@ -15,13 +16,11 @@ namespace driver
         , _spi_slot(-1)
         , _onebit_mode(false)
         , _card(nullptr)
-        , _mutex(xSemaphoreCreateMutex())
     {}
 
     SDCard::~SDCard() 
     { 
         end();
-        vSemaphoreDelete(_mutex);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -43,9 +42,11 @@ namespace driver
         gpio_num_t d3)
     {
         if (isMounted()) return true;
-        log_i("Initializing SD card");
-        _onebit_mode = (d1 == GPIO_NUM_NC || d2 == GPIO_NUM_NC || d3 == GPIO_NUM_NC);
 
+        log_i("Initializing SD card");
+        task::LockGuard lock(_mutex);
+
+        _onebit_mode = (d1 == GPIO_NUM_NC || d2 == GPIO_NUM_NC || d3 == GPIO_NUM_NC);
         sdmmc_host_t m_host = SDMMC_HOST_DEFAULT();
         m_host.max_freq_khz = SDMMC_FREQ_52M;
         m_host.flags = (_onebit_mode ? SDMMC_HOST_FLAG_1BIT : SDMMC_HOST_FLAG_4BIT);
@@ -96,7 +97,9 @@ namespace driver
         gpio_num_t cs)
     {
         if (isMounted()) return true;
+
         log_i("Initializing SD card");
+        task::LockGuard lock(_mutex);
 
         sdmmc_host_t m_host = SDSPI_HOST_DEFAULT();
         _spi_slot = m_host.slot;
@@ -135,7 +138,9 @@ namespace driver
         if (ret != ESP_OK)
         {
             log_e("Initializing SD card failed: %s\n", esp_err_to_name(ret));
+            spi_bus_free(spi_host_device_t(_spi_slot));
             _card = nullptr;
+            _spi_slot = -1;
             return false;
         }
 
@@ -148,14 +153,14 @@ namespace driver
 
     void SDCard::end()
     {
-        if (isMounted()) 
-        {
-            MutexLockGuard lock(_mutex);
-            esp_vfs_fat_sdcard_unmount(_impl->mountpoint(), _card);
-            if (_spi_slot >= 0) spi_bus_free(spi_host_device_t(_spi_slot));
-            _impl->mountpoint(nullptr);
-            _card = nullptr;
-        }
+        if (!isMounted()) return; 
+        
+        task::LockGuard lock(_mutex);
+        esp_vfs_fat_sdcard_unmount(_impl->mountpoint(), _card);
+        spi_bus_free(spi_host_device_t(_spi_slot));
+        _impl->mountpoint(nullptr);
+        _card = nullptr;
+        _spi_slot = -1; 
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -203,36 +208,50 @@ namespace driver
 
     uint64_t SDCard::getTotalBytes() const
     {
-        FATFS *fs;
-        DWORD free_clust;
-        if (f_getfree("0:", &free_clust, &fs) != FR_OK) return 0;
-        uint64_t tota_sect = (fs->n_fatent - 2) * fs->csize;
-        uint64_t sect_size = fs->ssize;
-        return (tota_sect * sect_size);
+        if (isMounted())
+        {
+            FATFS *fs; uint32_t free_clust;
+            auto pdrv = ff_diskio_get_pdrv_card(_card);
+            char drv[3] = { char('0' + pdrv), ':', '\0' };
+            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+            {
+                auto total_sect = (fs->n_fatent - 2) * fs->csize;
+                auto sect_size = fs->ssize;
+                return (total_sect * sect_size);
+            }
+        }
+        return 0;
     }
 
     uint64_t SDCard::getUsedBytes() const
     {
-        FATFS *fs;
-        DWORD free_clust;
-        if (f_getfree("0:", &free_clust, &fs) != FR_OK) return 0;
-        uint64_t used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
-        uint64_t sect_size = fs->ssize;
-        return (used_sect * sect_size);
+        if (isMounted())
+        {
+            FATFS *fs; uint32_t free_clust;
+            auto pdrv = ff_diskio_get_pdrv_card(_card);
+            char drv[3] = { char('0' + pdrv), ':', '\0' };
+            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+            {
+                auto used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
+                auto sect_size = fs->ssize;
+                return (used_sect * sect_size);
+            }
+        }
+        return 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     bool SDCard::writeSectors(uint8_t *src, size_t startSector, size_t sectorCount)
     {
-        MutexLockGuard lock(_mutex);
+        task::LockGuard lock(_mutex);
         esp_err_t res = sdmmc_write_sectors(_card, src, startSector, sectorCount);
         return (res == ESP_OK);
     }
 
     bool SDCard::readSectors(uint8_t *dst, size_t startSector, size_t sectorCount)
     {
-        MutexLockGuard lock(_mutex);
+        task::LockGuard lock(_mutex);
         esp_err_t res = sdmmc_read_sectors(_card, dst, startSector, sectorCount);
         return (res == ESP_OK);
     }

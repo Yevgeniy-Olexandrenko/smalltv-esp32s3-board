@@ -2,6 +2,7 @@
 
 #include <FS.h>
 #include <driver/sdmmc_types.h>
+#include "shared/tasks/Mutex.h"
 
 namespace driver
 {
@@ -43,7 +44,7 @@ namespace driver
         int _spi_slot;
         bool _onebit_mode;
         sdmmc_card_t* _card;
-        SemaphoreHandle_t _mutex;
+        task::Mutex _mutex;
     };
 
     extern SDCard sdcard;
