@@ -98,7 +98,7 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
 #include "shared/audio/decode/DecodeMP3.h"
 #include "shared/audio/output/OutputI2S.h"
 
-#define PLAY_MP3
+#define PLAY_MOD
 
 audio::Source* source = nullptr;
 audio::Source* filter = nullptr;
