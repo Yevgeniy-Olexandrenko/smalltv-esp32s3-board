@@ -103,6 +103,7 @@ namespace service_audio_player_impl
             auto source = static_cast<audio::SourceMemory*>(_source);
             return source->open(driver::storage.getFS(), resource);
         }
+        return false;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -126,6 +127,7 @@ namespace service_audio_player_impl
             auto source = static_cast<audio::SourceFile*>(_source);
             return source->open(driver::storage.getFS(), resource);
         }
+        return false;
     }
 
     bool MP3FileAudioContext::bind(audio::Output *output)

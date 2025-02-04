@@ -9,10 +9,27 @@
     "core": "esp32",
     "extra_flags": [
       "-DBOARD_HAS_PSRAM",
-      "-DARDUINO_USB_MODE=1",
-      "-DARDUINO_USB_CDC_ON_BOOT=1",
-      "-DARDUINO_SMALLTV_BOARD",
-      "-DARDUINO_SMALLTV_BOARD_REV=1"
+      "-DARDUINO_USB_MODE=0",
+      "-DARDUINO_USB_CDC_ON_BOOT=0",
+      "-DARDUINO_GEEKMAGIC_S3",
+      "-DNO_VINSENSE",
+      "-DNO_SELFRES",
+      "-DNO_BUTTON",
+      "-DNO_LED",
+      "-DNO_SDCARD",
+      "-DPIN_LCD_RES=GPIO_NUM_6",
+      "-DPIN_LCD_CS=GPIO_NUM_NC",
+      "-DPIN_LCD_SCL=GPIO_NUM_12",
+      "-DPIN_LCD_SDA=GPIO_NUM_11",
+      "-DPIN_LCD_DC=GPIO_NUM_7",
+      "-DPIN_LCD_BL=GPIO_NUM_14",
+      "-DNO_SOUND",
+      "-DNO_MICROPHONE",
+      "-DPIN_TOUCH0=TOUCH_PAD_NUM9",
+      "-DNO_TOUCH1",
+      "-DNO_TOUCH2",
+      "-DNO_TOUCH3",
+      "-DNO_EXPANSION"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
@@ -37,7 +54,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "SmallTV ESP32-S3 Board v1.1 (N16R8)",
+  "name": "GeekMagic S3 16MB",
   "upload": {
     "flash_size": "16MB",
     "maximum_ram_size": 327680,
@@ -45,6 +62,6 @@
     "require_upload_port": true,
     "speed": 921600
   },
-  "url": "https://github.com/Yevgeniy-Olexandrenko/smalltv-esp32s3-board",
-  "vendor": "Yevgeniy Olexandrenko"
+  "url": "https://github.com/GeekMagicClock/GeekMagic-S3",
+  "vendor": "GeekMagic"
 }

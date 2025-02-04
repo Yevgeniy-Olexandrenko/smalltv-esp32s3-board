@@ -37,7 +37,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "SmallTV ESP32-S3 Board v1.0 (N16R8)",
+  "name": "SmallTV ESP32-S3 Board v1.0 16MB",
   "upload": {
     "flash_size": "16MB",
     "maximum_ram_size": 327680,

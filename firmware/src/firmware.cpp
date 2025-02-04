@@ -25,46 +25,6 @@ static bool s_buttonState = false;
 #include <sys/stat.h>
 #include <string.h>
 
-void list_dir(const char *path, int level) {
-    DIR *dir = opendir(path);
-    if (dir == NULL) {
-        printf("Could not open dir: %s\n", path);
-        return;
-    }
-
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        // Пропускаем "." и ".."
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
-        }
-
-        // Формируем полный путь к файлу/каталогу
-        char full_path[256];
-        snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
-
-        // Получаем информацию о файле/каталоге
-        struct stat entry_info;
-        if (stat(full_path, &entry_info) == 0) {
-            // Выводим отступы для подкаталогов
-            for (int i = 0; i < level; i++) {
-                printf("  ");
-            }
-
-            if (S_ISDIR(entry_info.st_mode)) {
-                printf("[DIR]  %s\n", entry->d_name);
-                // Рекурсивно обходим подкаталог
-                list_dir(full_path, level + 1);
-            } else {
-                printf("[FILE] %s\n", entry->d_name);
-            }
-        } else {
-            printf("Could not get file info: %s\n", full_path);
-        }
-    }
-    closedir(dir);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
@@ -282,7 +242,7 @@ void setup()
     }
 
     // test sound
-    sound_setup();
+    // sound_setup();
 }
 
 void loop() 
@@ -316,5 +276,5 @@ void loop()
     }
 
     // test sound
-    sound_loop();
+    // sound_loop();
 }
