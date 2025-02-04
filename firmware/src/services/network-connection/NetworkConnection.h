@@ -1,10 +1,10 @@
 #pragma once
 
-#include "webserver/SettingsProvider.h"
+#include "shared/settings/Settings.h"
 
 namespace service
 {
-    class NetworkConnection : public webserver::SettingsProvider
+    class NetworkConnection : public settings::Provider
     {
         enum class State { ConnectRequested, Connecting, Connected, NotConnected, ScanRequested, Scanning };
 
@@ -25,7 +25,7 @@ namespace service
         void buildWiFiConnection(sets::Builder& b);
 
     private:
-        State m_state = State::NotConnected;
+        State  m_state = State::NotConnected;
         String m_ssid;
         String m_pass;
     };

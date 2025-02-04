@@ -1,10 +1,10 @@
 #pragma once
 
-#include "webserver/SettingsProvider.h"
+#include "shared/settings/Settings.h"
 
 namespace service
 {
-    class WeatherClass : public webserver::SettingsProvider
+    class WeatherForecast : public settings::Provider
     {
     public:
         void begin();
@@ -14,5 +14,5 @@ namespace service
         void settingsUpdate(sets::Updater& u) override;
     };
 
-    extern WeatherClass Weather;
+    extern WeatherForecast weatherForecast;
 }

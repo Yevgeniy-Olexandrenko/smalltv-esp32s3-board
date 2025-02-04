@@ -1,21 +1,20 @@
 #pragma once
 
-#include "SettingsProvider.h"
+#include "shared/settings/Settings.h"
 
-namespace webserver
+namespace service_settings_webapp_impl
 {
-    class HardwareInfoClass : public SettingsProvider
+    class Main : public settings::Provider
     {
     public:
         void settingsBuild(sets::Builder& b) override;
         void settingsUpdate(sets::Updater& u) override;
 
     private:
-        void fillESPModuleInfo(String& moduleChip, String& moduleMemory);
-        void fillHeapUsageInfo(String& heapUsage);
+        void fillESPModuleInfo(String& moduleSpecs);
+        void fillRAMUsageInfo(String& ramUsage);
+        void fillPSRAMUsageInfo(String& psramUsage);
         void fillPowerSourceInfo(String& powerSource);
         void fillWiFiSignalInfo(String& wifiSignal);
     };
-
-    extern HardwareInfoClass HardwareInfo;
 }

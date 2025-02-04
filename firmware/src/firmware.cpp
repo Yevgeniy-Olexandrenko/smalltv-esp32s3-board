@@ -10,11 +10,8 @@
 #include "services/network-connection/NetworkConnection.h"
 #include "services/geo-location/GeoLocation.h"
 #include "services/date-and-time/DateAndTime.h"
-#include "services/weather-forecast/Weather.h"
-
-// webserver app
-#include "webserver/SettingsWebApp.h"
-#include "webserver/StorageSettings.h"
+#include "services/weather-forecast/WeatherForecast.h"
+#include "services/settings-webapp/SettingsWebApp.h"
 
 static bool s_buttonState = false;
 
@@ -221,16 +218,14 @@ void setup()
     // start hardware
     driver::powerSource.begin();
     driver::ledAndButton.begin();
-    driver::storage.begin(webserver::StorageSettings.getStorageType());
+    driver::storage.begin(service::settingsWebApp.sets().getStorageType());
 
     // start services
     service::networkConnection.begin();
-    service::GeoLocation.begin();
-    service::DateAndTime.begin();
-    service::Weather.begin();
-
-    // start webserver app
-    webserver::SettingsWebApp.begin();
+    service::geoLocation.begin();
+    service::dateAndTime.begin();
+    service::weatherForecast.begin();
+    service::settingsWebApp.begin();
 
     // test
     // list_dir(driver::storage.getFSMountPoint(), 0);
@@ -252,12 +247,10 @@ void loop()
 
     // update services
     service::networkConnection.update();
-    service::GeoLocation.update();
-    service::DateAndTime.update();
-    service::Weather.update();
-
-    // update webserver app
-    webserver::SettingsWebApp.update();
+    service::geoLocation.update();
+    service::dateAndTime.update();
+    service::weatherForecast.update();
+    service::settingsWebApp.update();
 
     // test
     bool buttonState = driver::ledAndButton.getButtonState();

@@ -1,6 +1,6 @@
 #include <WiFiConnector.h>
 #include "NetworkConnection.h"
-#include "webserver/SettingsWebApp.h"
+#include "shared/settings/Settings.h"
 #include "drivers/LedAndButton.h"
 #include "defines.h"
 
@@ -13,16 +13,16 @@ namespace service
         Serial.println("NetworkConnection: begin");
 
         // set default and get current settings
-        webserver::Settings.data().init(wifi::ssid, "");
-        webserver::Settings.data().init(wifi::pass, "");
-        webserver::Settings.data().init(wifi::tout, 20);
-        m_ssid = webserver::Settings.data()[wifi::ssid];
-        m_pass = webserver::Settings.data()[wifi::pass];
+        settings::data().init(wifi::ssid, "");
+        settings::data().init(wifi::pass, "");
+        settings::data().init(wifi::tout, 20);
+        m_ssid = settings::data()[wifi::ssid];
+        m_pass = settings::data()[wifi::pass];
 
         // configure AP name and connection timeout
         WiFi.setHostname(NETWORK_HOST_NAME);
         WiFiConnector.setName(NETWORK_ACCESS_POINT);
-        WiFiConnector.setTimeout(webserver::Settings.data()[wifi::tout]);
+        WiFiConnector.setTimeout(settings::data()[wifi::tout]);
 
         // try to connect on firmware startup
         WiFiConnector.onConnect([]() 
@@ -125,17 +125,17 @@ namespace service
             if (b.Button("Scan"))
             {
                 m_state = State::ScanRequested;
-                m_ssid = webserver::Settings.data()[wifi::ssid];
-                m_pass = webserver::Settings.data()[wifi::pass];
+                m_ssid = settings::data()[wifi::ssid];
+                m_pass = settings::data()[wifi::pass];
                 b.reload();
             }
             if (b.Button("Connect")) 
             {
                 m_ssid.trim();
                 m_state = State::ConnectRequested;
-                webserver::Settings.data()[wifi::ssid] = m_ssid;
-                webserver::Settings.data()[wifi::pass] = m_pass;
-                webserver::Settings.data().update();
+                settings::data()[wifi::ssid] = m_ssid;
+                settings::data()[wifi::pass] = m_pass;
+                settings::data().update();
                 WiFi.scanDelete();
                 b.reload();
             }
@@ -161,7 +161,7 @@ namespace service
                     m_state = (WiFiConnector.connected() 
                         ? State::Connected 
                         : State::NotConnected);
-                    webserver::Settings.sets().reload();
+                    settings::sets().reload();
                 }
                 break;
 
@@ -175,7 +175,7 @@ namespace service
                 if (WiFi.scanComplete() != WIFI_SCAN_RUNNING)
                 {
                     Serial.println("NetworkConnection: scan finish");
-                    webserver::Settings.sets().reload();
+                    settings::sets().reload();
                     m_state = State::Connecting;
                 }
                 break;

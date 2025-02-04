@@ -1,10 +1,14 @@
 #pragma once
 
-#include <SettingsBase.h>
+#include <GyverDBFile.h>
+#include <SettingsGyver.h>
 
-namespace webserver
+namespace settings
 {
-    class SettingsProvider
+    GyverDBFile& data();
+    SettingsGyver& sets();
+
+    class Provider
     {
     public:
         virtual void settingsBuild(sets::Builder& b) = 0;

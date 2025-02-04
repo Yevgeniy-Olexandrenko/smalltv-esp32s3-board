@@ -1,10 +1,10 @@
 #pragma once
 
-#include "webserver/SettingsProvider.h"
+#include "shared/settings/Settings.h"
 
 namespace service
 {
-    class DateAndTimeClass : public webserver::SettingsProvider
+    class DateAndTime : public settings::Provider
     {
     public:
         void begin();
@@ -14,5 +14,5 @@ namespace service
         void settingsUpdate(sets::Updater& u);
     };
     
-    extern DateAndTimeClass DateAndTime;
+    extern DateAndTime dateAndTime;
 }

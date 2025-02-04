@@ -1,28 +1,27 @@
 #include "GeoLocation.h"
-#include "webserver/SettingsWebApp.h"
 
 namespace service
 {
-    void GeoLocationClass::begin()
+    void GeoLocation::begin()
     {
         // TODO
     }
 
-    void GeoLocationClass::update()
+    void GeoLocation::update()
     {
         // TODO
     }
 
-    void GeoLocationClass::settingsBuild(sets::Builder &b)
+    void GeoLocation::settingsBuild(sets::Builder &b)
     {
         sets::Group g(b, "Geolocation");
         b.Label("TODO");
     }
 
-    void GeoLocationClass::settingsUpdate(sets::Updater &u)
+    void GeoLocation::settingsUpdate(sets::Updater &u)
     {
         // TODO
     }
 
-    GeoLocationClass GeoLocation;
+    GeoLocation geoLocation;
 }

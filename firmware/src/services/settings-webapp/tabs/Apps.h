@@ -2,17 +2,13 @@
 
 #include "shared/settings/Settings.h"
 
-namespace service
+namespace service_settings_webapp_impl
 {
-    class GeoLocation : public settings::Provider
+    class Apps : public settings::Provider
     {
     public:
-        void begin();
-        void update();
-
         void settingsBuild(sets::Builder& b) override;
         void settingsUpdate(sets::Updater& u) override;
-    };
 
-    extern GeoLocation geoLocation;
+    };
 }
