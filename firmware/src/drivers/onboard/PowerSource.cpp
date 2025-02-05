@@ -6,8 +6,8 @@ namespace driver
 {
     void PowerSource::begin()
     {
-        _timestamp = millis();
-        _milliVolts = getInputMilliVoltsRaw();
+        m_timestamp = millis();
+        m_milliVolts = getInputMilliVoltsRaw();
     }
 
     PowerSource::Type PowerSource::getType()
@@ -56,13 +56,13 @@ namespace driver
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsCached()
     {
     #ifndef NO_VINSENSE
-        if (millis() - _timestamp >= UPDATE_PERIOD)
+        if (millis() - m_timestamp >= UPDATE_PERIOD)
         {
-            _timestamp = millis();
-            _milliVolts += getInputMilliVoltsRaw();
-            _milliVolts /= 2;
+            m_timestamp = millis();
+            m_milliVolts += getInputMilliVoltsRaw();
+            m_milliVolts /= 2;
         }
-        return _milliVolts;
+        return m_milliVolts;
     #else
         return 0;
     #endif

@@ -11,8 +11,6 @@ namespace service_settings_webapp_impl
         void settingsBuild(sets::Builder& b) override;
         void settingsUpdate(sets::Updater& u) override;
 
-        driver::Storage::Type getStorageType() const;
-
     private:
         void storageSettingsBuild(sets::Builder &b);
         void storageSettingsUpdate(sets::Updater &u);

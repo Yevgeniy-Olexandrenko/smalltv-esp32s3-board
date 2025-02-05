@@ -10,8 +10,8 @@ namespace driver
     fs::FS _invalidFS(nullptr);
 
     Storage::Storage()
-        : _type(Type::None)
-        , _runMSC(false)
+        : m_type(Type::None)
+        , m_runMSC(false)
     {}
 
     Storage::~Storage()
@@ -151,14 +151,14 @@ namespace driver
 
     bool Storage::startMSC()
     {
-        if (!_runMSC && (isSDCardStorage() || isFlashStorage()))
+        if (!m_runMSC && (isSDCardStorage() || isFlashStorage()))
         {
-            _runMSC = USB.begin();
-            _usbMSC.vendorID(STORAGE_MSC_VENDORID);
-            _usbMSC.productID(STORAGE_MSC_PRODUCTID);
-            _usbMSC.productRevision(STORAGE_MSC_PRODUCTREV);
-            _usbMSC.mediaPresent(true);
-            _usbMSC.onStartStop([](uint8_t power_condition, bool start, bool load_eject) -> bool
+            m_runMSC = USB.begin();
+            m_usbMSC.vendorID(STORAGE_MSC_VENDORID);
+            m_usbMSC.productID(STORAGE_MSC_PRODUCTID);
+            m_usbMSC.productRevision(STORAGE_MSC_PRODUCTREV);
+            m_usbMSC.mediaPresent(true);
+            m_usbMSC.onStartStop([](uint8_t power_condition, bool start, bool load_eject) -> bool
             {
                 if (!start && load_eject) storage.onStopMSC();
                 return true;
@@ -167,49 +167,49 @@ namespace driver
             if (isSDCardStorage())
             {
                 // Mass Storage Class device for SD Card FAT
-                _usbMSC.onRead([](uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) -> int32_t
+                m_usbMSC.onRead([](uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) -> int32_t
                 {
                     sdcard.readSectors((uint8_t *)buffer, lba, bufsize / sdcard.getSectorSize());
                     return bufsize;
                 });
-                _usbMSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) -> int32_t
+                m_usbMSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) -> int32_t
                 {
                     sdcard.writeSectors(buffer, lba, bufsize / sdcard.getSectorSize());
                     return bufsize;
                 });
-                _runMSC &= _usbMSC.begin(sdcard.getSectorCount(), sdcard.getSectorSize());
+                m_runMSC &= m_usbMSC.begin(sdcard.getSectorCount(), sdcard.getSectorSize());
             }
             else
             {
                 // Mass Storage Class device for Flash FAT
-                _usbMSC.onRead([](uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) -> int32_t
+                m_usbMSC.onRead([](uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) -> int32_t
                 {
                     flash.readBuffer(lba, offset, buffer, bufsize);
                     return bufsize;
                 });
-                _usbMSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) -> int32_t
+                m_usbMSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) -> int32_t
                 {
                     flash.writeBuffer(lba, offset, buffer, bufsize);
                     return bufsize;
                 });
-                _runMSC &= _usbMSC.begin(flash.getSectorCount(), flash.getSectorSize());
+                m_runMSC &= m_usbMSC.begin(flash.getSectorCount(), flash.getSectorSize());
             }
         }
-        return _runMSC;
+        return m_runMSC;
     }
 
     void Storage::onStopMSC()
     {
-        if (_runMSC)
+        if (m_runMSC)
         {
-            _runMSC = false;
-            _usbMSC.end();
+            m_runMSC = false;
+            m_usbMSC.end();
         }
     }
 
     bool Storage::isMSCRunning() const
     {
-        return _runMSC;
+        return m_runMSC;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -218,10 +218,10 @@ namespace driver
     {
         if (flash.begin(Flash::DEFAULT_MOUNT_POINT))
         {
-            _type = Type::Flash;
+            m_type = Type::Flash;
             return true;
         }
-        _type = Type::None;
+        m_type = Type::None;
         return false;
     }
 
@@ -239,22 +239,22 @@ namespace driver
             PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0, PIN_SD_D1, PIN_SD_D2, PIN_SD_D3))
     #endif
         {
-            _type = Type::SDCard;
+            m_type = Type::SDCard;
             return true;
         }
     #endif
-        _type = Type::None;
+        m_type = Type::None;
         return false;
     }
 
     bool Storage::isFlashStorage() const
     {
-        return (_type == Type::Flash && flash.isMounted());
+        return (m_type == Type::Flash && flash.isMounted());
     }
 
     bool Storage::isSDCardStorage() const
     {
-        return (_type == Type::SDCard && sdcard.isMounted());
+        return (m_type == Type::SDCard && sdcard.isMounted());
     }
 
     ////////////////////////////////////////////////////////////////////////////

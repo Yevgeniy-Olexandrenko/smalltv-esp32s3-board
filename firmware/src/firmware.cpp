@@ -207,16 +207,11 @@ void setup()
     digitalWrite(PIN_LCD_BL, HIGH);
 
     // start hardware
-    driver::powerSource.begin();
+    drivers::begin();
     driver::ledAndButton.begin();
-    driver::storage.begin(service::settingsWebApp.sets().getStorageType());
 
     // start services
-    service::networkConnection.begin();
-    service::geoLocation.begin();
-    service::dateAndTime.begin();
-    service::weatherForecast.begin();
-    service::settingsWebApp.begin();
+    services::begin();
 
     // test
     // list_dir(driver::storage.getFSMountPoint(), 0);

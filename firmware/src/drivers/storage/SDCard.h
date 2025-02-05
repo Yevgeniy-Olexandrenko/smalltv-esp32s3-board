@@ -40,10 +40,10 @@ namespace driver
         bool readSectors(uint8_t *dst, size_t startSector, size_t sectorCount);
 
     private:
-        int _spi_slot;
-        bool _onebit_mode;
-        sdmmc_card_t* _card;
-        task::Mutex _mutex;
+        int m_spiSlot;
+        bool m_oneBitMode;
+        sdmmc_card_t* m_card;
+        task::Mutex m_mutex;
     };
 
     extern SDCard sdcard;

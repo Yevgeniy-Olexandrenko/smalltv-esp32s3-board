@@ -9,7 +9,7 @@ namespace driver
 {
     Flash::Flash()
         : fs::FS(FSImplPtr(new VFSImpl()))
-        , _wl_handle(WL_INVALID_HANDLE)
+        , m_wlHandle(WL_INVALID_HANDLE)
     {}
 
     Flash::~Flash() 
@@ -23,7 +23,7 @@ namespace driver
     {
         if (isMounted()) return true;
 
-        task::LockGuard lock(_mutex);
+        task::LockGuard lock(m_mutex);
         log_i("Initializing flash FAT");
 
         const esp_partition_t* partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, partitionLabel);
@@ -40,12 +40,12 @@ namespace driver
             .allocation_unit_size = CONFIG_WL_SECTOR_SIZE
         };
 
-        esp_err_t ret = esp_vfs_fat_spiflash_mount(mountPoint, partitionLabel, &conf, &_wl_handle);
+        esp_err_t ret = esp_vfs_fat_spiflash_mount(mountPoint, partitionLabel, &conf, &m_wlHandle);
         if (ret != ESP_OK)
         {
             log_e("Mount FAT partition failed: %s", esp_err_to_name(ret));
-            esp_vfs_fat_spiflash_unmount(mountPoint, _wl_handle);
-            _wl_handle = WL_INVALID_HANDLE;
+            esp_vfs_fat_spiflash_unmount(mountPoint, m_wlHandle);
+            m_wlHandle = WL_INVALID_HANDLE;
             return false;
         }
 
@@ -57,9 +57,9 @@ namespace driver
     {
         if (!isMounted()) return;
         
-        task::LockGuard lock(_mutex);
-        esp_vfs_fat_spiflash_unmount(_impl->mountpoint(), _wl_handle);
-        _wl_handle = WL_INVALID_HANDLE;
+        task::LockGuard lock(m_mutex);
+        esp_vfs_fat_spiflash_unmount(_impl->mountpoint(), m_wlHandle);
+        m_wlHandle = WL_INVALID_HANDLE;
         _impl->mountpoint(nullptr);
     }
 
@@ -67,14 +67,14 @@ namespace driver
 
     size_t Flash::getSectorSize() const
     {
-        if (_wl_handle == WL_INVALID_HANDLE) return 0;
-        return wl_sector_size(_wl_handle);
+        if (m_wlHandle == WL_INVALID_HANDLE) return 0;
+        return wl_sector_size(m_wlHandle);
     }
 
     size_t Flash::getSectorCount() const
     {
-        if (_wl_handle == WL_INVALID_HANDLE) return 0;
-        return (wl_size(_wl_handle) / wl_sector_size(_wl_handle));
+        if (m_wlHandle == WL_INVALID_HANDLE) return 0;
+        return (wl_size(m_wlHandle) / wl_sector_size(m_wlHandle));
     }
 
     size_t Flash::getPartitionSize() const
@@ -86,7 +86,7 @@ namespace driver
 
     bool Flash::isMounted() const
     {
-        return (_wl_handle != WL_INVALID_HANDLE);
+        return (m_wlHandle != WL_INVALID_HANDLE);
     }
 
     const char *Flash::getMountPoint() const
@@ -96,25 +96,25 @@ namespace driver
 
     int Flash::getDriveNumber() const
     {
-        return ff_diskio_get_pdrv_wl(_wl_handle);
+        return ff_diskio_get_pdrv_wl(m_wlHandle);
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     bool Flash::writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
-        task::LockGuard lock(_mutex);
-        size_t start_addr = (wl_sector_size(_wl_handle) * lba + offset);
-        esp_err_t res = wl_erase_range(_wl_handle, start_addr, bufsize);
-        if (res == ESP_OK) res = wl_write(_wl_handle, start_addr, buffer, bufsize);
+        task::LockGuard lock(m_mutex);
+        size_t start_addr = (wl_sector_size(m_wlHandle) * lba + offset);
+        esp_err_t res = wl_erase_range(m_wlHandle, start_addr, bufsize);
+        if (res == ESP_OK) res = wl_write(m_wlHandle, start_addr, buffer, bufsize);
         return (res == ESP_OK);
     }
 
     bool Flash::readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
-        task::LockGuard lock(_mutex);
-        size_t start_addr = (wl_sector_size(_wl_handle) * lba + offset);
-        esp_err_t res = wl_read(_wl_handle, start_addr, buffer, bufsize);
+        task::LockGuard lock(m_mutex);
+        size_t start_addr = (wl_sector_size(m_wlHandle) * lba + offset);
+        esp_err_t res = wl_read(m_wlHandle, start_addr, buffer, bufsize);
         return (res == ESP_OK);
     }
 

@@ -5,7 +5,7 @@ namespace settings
 {
     // only internal storage is supported
     static GyverDBFile m_database(&LittleFS, "/settings.db");
-    static SettingsGyver m_settings(SETTINGS_TITLE, &m_database);
+    static SettingsGyver m_settings(WEBAPP_TITLE, &m_database);
     static bool m_databaseReady = false;
     static bool m_settingsReady = false;
 

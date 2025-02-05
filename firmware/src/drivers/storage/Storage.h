@@ -44,9 +44,9 @@ namespace driver
         bool isSDCardStorage() const;
 
     private:
-        Type _type;
-        bool _runMSC;
-      USBMSC _usbMSC;
+        Type m_type;
+        bool m_runMSC;
+      USBMSC m_usbMSC;
     };
 
     extern Storage storage;

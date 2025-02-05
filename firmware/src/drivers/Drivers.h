@@ -8,3 +8,8 @@
 #include "storage/Flash.h"
 #include "storage/SDCard.h"
 #include "storage/Storage.h"
+
+namespace drivers
+{
+    void begin();
+}

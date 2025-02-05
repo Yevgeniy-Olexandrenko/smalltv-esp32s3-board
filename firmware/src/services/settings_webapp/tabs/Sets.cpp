@@ -31,14 +31,6 @@ namespace service_settings_webapp_impl
 
     DB_KEYS(storage, type);
 
-    driver::Storage::Type Sets::getStorageType() const
-    {
-        settings::data().init(storage::type, int(driver::Storage::Type::Auto));
-        return driver::Storage::Type(int(settings::data()[storage::type]));
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-
     void Sets::storageSettingsBuild(sets::Builder &b)
     {
         if (m_typeRollback < 0)

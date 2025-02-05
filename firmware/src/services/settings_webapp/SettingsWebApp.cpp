@@ -1,6 +1,6 @@
 #include "SettingsWebApp.h"
 #include "drivers/onboard/SelfReboot.h"
-#include "drivers/storage/Storage.h"
+#include "defines.h"
 
 namespace service
 {
@@ -13,6 +13,7 @@ namespace service
 
         settings::sets().config.theme = sets::Colors::Aqua;
         settings::sets().config.updateTout = 1000;
+        settings::sets().setProjectInfo("home page", WEBAPP_PROJECT_HOME);
         settings::sets().setPass("0000");
 
         m_currentTab = 1;
@@ -46,7 +47,7 @@ namespace service
             return;
         }
 
-        if (b.Tabs("SETS;          MAIN          ;APPS", &m_currentTab))
+        if (b.Tabs("SETS;MAIN;APPS", &m_currentTab))
         {
             b.reload();
             return;

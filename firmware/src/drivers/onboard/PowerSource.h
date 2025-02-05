@@ -32,8 +32,8 @@ namespace driver
         MilliVolt getInputMilliVoltsRaw();
 
     private:
-        Timestamp _timestamp;
-        MilliVolt _milliVolts;
+        Timestamp m_timestamp;
+        MilliVolt m_milliVolts;
     };
     
     extern PowerSource powerSource;

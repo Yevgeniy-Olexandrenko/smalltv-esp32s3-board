@@ -33,8 +33,8 @@ namespace driver
         bool readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
 
     private:
-        wl_handle_t _wl_handle;
-        task::Mutex _mutex;
+        wl_handle_t m_wlHandle;
+        task::Mutex m_mutex;
     };
 
     extern Flash flash;
