@@ -11,10 +11,13 @@ namespace service_settings_webapp_impl
         void settingsUpdate(sets::Updater& u) override;
 
     private:
-        void fillESPModuleInfo(String& moduleSpecs);
-        void fillRAMUsageInfo(String& ramUsage);
-        void fillPSRAMUsageInfo(String& psramUsage);
-        void fillPowerSourceInfo(String& powerSource);
-        void fillWiFiSignalInfo(String& wifiSignal);
+        String getHTML() const;
+        bool hasInternetAccess() const;
+        
+        String getESPModuleInfo() const;
+        String getRAMUsageInfo() const;
+        String getPSRAMUsageInfo() const;
+        String getPowerSourceInfo() const;
+        String getWiFiSignalInfo() const;
     };
 }
