@@ -1,4 +1,5 @@
 #include "SettingsWebApp.h"
+#include "drivers/onboard/SelfReboot.h"
 #include "drivers/storage/Storage.h"
 
 namespace service
@@ -22,7 +23,8 @@ namespace service
     void SettingsWebApp::update()
     {
         settings::sets().tick();
-        if (m_requestReboot) ESP.restart();
+        if (m_requestReboot)
+            driver::selfReboot.reboot();
     }
 
     void SettingsWebApp::requestDeviceReboot()
@@ -44,23 +46,17 @@ namespace service
             return;
         }
 
-        if (b.Tabs("SETS;MAIN;APPS", &m_currentTab))
+        if (b.Tabs("SETS;          MAIN          ;APPS", &m_currentTab))
         {
             b.reload();
             return;
         }
 
-        if (m_currentTab == 0)
-            m_tabSets.settingsBuild(b);
-        else if (m_currentTab == 2)
-            m_tabApps.settingsBuild(b);
-        else
+        switch(m_currentTab)
         {
-            m_tabMain.settingsBuild(b);
-            if (b.Button("Reboot"))
-            {
-                requestDeviceReboot();
-            }
+        case 0: m_tabSets.settingsBuild(b); break;
+        case 1: m_tabMain.settingsBuild(b); break;
+        case 2: m_tabApps.settingsBuild(b); break;
         }        
     }
 

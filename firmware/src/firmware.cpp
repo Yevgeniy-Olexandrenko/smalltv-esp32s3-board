@@ -1,17 +1,8 @@
 #include <Arduino.h>
 #include "defines.h"
-
-// hardware drivers
-#include "drivers/LedAndButton.h"
-#include "drivers/onboard/PowerSource.h"
-#include "drivers/storage/Storage.h"
-
-// background services
-#include "services/network-connection/NetworkConnection.h"
-#include "services/geo-location/GeoLocation.h"
-#include "services/date-and-time/DateAndTime.h"
-#include "services/weather-forecast/WeatherForecast.h"
-#include "services/settings-webapp/SettingsWebApp.h"
+#include "drivers/Drivers.h"
+#include "services/Services.h"
+#include "drivers/LedAndButton.h" // temp
 
 static bool s_buttonState = false;
 

@@ -1,30 +1,34 @@
 #include "Main.h"
 #include "drivers/onboard/PowerSource.h"
-#include "services/network-connection/NetworkConnection.h"
+#include "services/network_connection/NetworkConnection.h"
+#include "services/settings_webapp/SettingsWebApp.h"
 
 namespace service_settings_webapp_impl
 {
     void Main::settingsBuild(sets::Builder &b)
     {
-        String moduleSpecs;
+        String espModule;
         String ramUsage;
         String psramUsage;
         String powerSource;
         String wifiSignal;
 
-        fillESPModuleInfo(moduleSpecs);
+        fillESPModuleInfo(espModule);
         fillRAMUsageInfo(ramUsage);
         fillPSRAMUsageInfo(psramUsage);
         fillPowerSourceInfo(powerSource);
         fillWiFiSignalInfo(wifiSignal);
         
         sets::Group g(b, "Hardware");
-        b.Label("ESP32 module", moduleSpecs);
+        b.Label("ESP32 module", espModule);
         b.Label("ram_usage"_h, "RAM usage", ramUsage);
         if (!psramUsage.isEmpty())
             b.Label("psram_usage"_h, "PSRAM usage", psramUsage);
         b.Label("power_source"_h, "Power source", powerSource);
         b.Label("wifi_signal"_h, "WiFi signal", wifiSignal);
+
+        if (b.Button("Reboot"))
+            service::settingsWebApp.requestDeviceReboot();
     }
 
     void Main::settingsUpdate(sets::Updater &u)
@@ -46,13 +50,13 @@ namespace service_settings_webapp_impl
         u.update("wifi_signal"_h, wifiSignal);
     }
 
-    void Main::fillESPModuleInfo(String &moduleSpecs)
+    void Main::fillESPModuleInfo(String &espModule)
     {
-        moduleSpecs = String(ESP.getChipModel()) + " / ";
-        moduleSpecs += "N" + String(ESP.getFlashChipSize() / uint32_t(1024 * 1024));
+        espModule = String(ESP.getChipModel()) + " / ";
+        espModule += "N" + String(ESP.getFlashChipSize() / uint32_t(1024 * 1024));
 
         if (psramFound())
-            moduleSpecs += "R" + String(esp_spiram_get_size() / uint32_t(1024 * 1024));
+            espModule += "R" + String(esp_spiram_get_size() / uint32_t(1024 * 1024));
     }
 
     void Main::fillRAMUsageInfo(String &ramUsage)

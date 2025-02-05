@@ -1,8 +1,9 @@
 #include "Sets.h"
-#include "services/network-connection/NetworkConnection.h"
-#include "services/date-and-time/DateAndTime.h"
-#include "services/weather-forecast/WeatherForecast.h"
-#include "services/settings-webapp/SettingsWebApp.h"
+#include "services/network_connection/NetworkConnection.h"
+#include "services/geo_location/GeoLocation.h"
+#include "services/date_and_time/DateAndTime.h"
+#include "services/weather_forecast/WeatherForecast.h"
+#include "services/settings_webapp/SettingsWebApp.h"
 #include "drivers/storage/SDCard.h"
 #include "drivers/storage/Flash.h"
 
@@ -11,6 +12,7 @@ namespace service_settings_webapp_impl
     void Sets::settingsBuild(sets::Builder &b)
     {
         service::networkConnection.settingsBuild(b);
+        service::geoLocation.settingsBuild(b);
         service::dateAndTime.settingsBuild(b);
         service::weatherForecast.settingsBuild(b);
         storageSettingsBuild(b);
@@ -19,6 +21,7 @@ namespace service_settings_webapp_impl
     void Sets::settingsUpdate(sets::Updater &u)
     {
         service::networkConnection.settingsUpdate(u);
+        service::geoLocation.settingsUpdate(u);
         service::dateAndTime.settingsUpdate(u);
         service::weatherForecast.settingsUpdate(u);
         storageSettingsUpdate(u);
@@ -41,23 +44,25 @@ namespace service_settings_webapp_impl
         if (m_typeRollback < 0)
             m_typeRollback = settings::data()[storage::type];
 
-        sets::Group g(b, "Storage");
-        if (b.Select(storage::type, "Type", "None;Embedded Flash;External SD Card;Auto"))
         {
-            m_typeChanged = (settings::data()[storage::type] != m_typeRollback);
-        }
-
-        if (driver::storage.getType() != driver::Storage::Type::None)
-        {
-            String specs;
-            fillStorageSpecs(specs);
-            b.Label("Specs", specs);
-
-            if (b.Button("Connect to PC"))
+            sets::Group g(b, "Storage");
+            if (b.Select(storage::type, "Type", "None;Embedded Flash;External SD Card;Auto"))
             {
-                driver::storage.startMSC();
-                b.reload();
-                return;
+                m_typeChanged = (settings::data()[storage::type] != m_typeRollback);
+            }
+
+            if (driver::storage.getType() != driver::Storage::Type::None)
+            {
+                String specs;
+                fillStorageSpecs(specs);
+                b.Label("Specs", specs);
+
+                if (b.Button("Connect to PC"))
+                {
+                    driver::storage.startMSC();
+                    b.reload();
+                    return;
+                }
             }
         }
 
