@@ -50,7 +50,7 @@ namespace service_settings_webapp_impl
             b.Label("wifi_signal"_h, "WiFi signal", getWiFiSignalInfo());
 
             if (b.Button("Reboot"))
-                service::settingsWebApp.requestDeviceReboot();
+                service::settingsWebApp.requestReboot(nullptr);
         }
     }
 

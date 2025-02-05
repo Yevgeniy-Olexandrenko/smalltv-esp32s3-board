@@ -8,6 +8,7 @@
 namespace service
 {
     using namespace service_settings_webapp_impl;
+    using RebootCorfirmCB = std::function<void(bool)>;
 
     class SettingsWebApp
     {
@@ -15,7 +16,7 @@ namespace service
         void begin();
         void update();
         
-        void requestDeviceReboot();
+        void requestReboot(RebootCorfirmCB cb);
 
         const Sets& sets() const { return m_tabSets; }
         const Main& main() const { return m_tabMain; }
@@ -29,7 +30,10 @@ namespace service
     private:
         uint8_t m_currentTab;
         bool m_connectedToPC;
-        bool m_requestReboot;
+        
+        bool m_rebootRequest;
+        bool m_rebootPending;
+        RebootCorfirmCB m_rebootConfirmCB;
 
         Sets m_tabSets;
         Main m_tabMain;

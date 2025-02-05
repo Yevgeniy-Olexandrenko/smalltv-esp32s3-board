@@ -53,17 +53,8 @@ namespace service_settings_webapp_impl
                 {
                     driver::storage.startMSC();
                     b.reload();
-                    return;
                 }
             }
-        }
-
-        if (b.Confirm("confirm"_h, "Changing the storage type requires a reboot"))
-        {
-            if (b.build.value.toBool())
-                service::settingsWebApp.requestDeviceReboot();
-            else
-                settings::data()[storage::type] = m_typeRollback;
         }
     }
 
@@ -71,8 +62,12 @@ namespace service_settings_webapp_impl
     {
         if (m_typeChanged)
         {
-            u.update("confirm"_h);
             m_typeChanged = false;
+            service::settingsWebApp.requestReboot([&](bool reboot)
+            {
+                if (!reboot)
+                    settings::data()[storage::type] = m_typeRollback;
+            });
         }
     }
 
