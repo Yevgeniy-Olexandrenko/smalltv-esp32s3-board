@@ -239,20 +239,20 @@ void loop()
     service::settingsWebApp.update();
 
     // test
-    bool buttonState = driver::ledAndButton.getButtonState();
-    if (buttonState != s_buttonState)
-    {
-        s_buttonState = buttonState;
-        if (buttonState)
-        {
-            Serial.println("Button pressed!");
-            s_forceNext = true;
-        }
-        else
-        {
-            Serial.println("Button released!");
-        }
-    }
+    // bool buttonState = driver::ledAndButton.getButtonState();
+    // if (buttonState != s_buttonState)
+    // {
+    //     s_buttonState = buttonState;
+    //     if (buttonState)
+    //     {
+    //         Serial.println("Button pressed!");
+    //         s_forceNext = true;
+    //     }
+    //     else
+    //     {
+    //         Serial.println("Button released!");
+    //     }
+    // }
 
     // test sound
     // sound_loop();

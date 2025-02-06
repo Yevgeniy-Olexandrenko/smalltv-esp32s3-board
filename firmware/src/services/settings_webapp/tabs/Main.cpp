@@ -1,9 +1,9 @@
-#include "ping/ping.h"
 #include <GyverNTP.h>
 #include "Main.h"
 #include "drivers/onboard/PowerSource.h"
 #include "services/network_connection/NetworkConnection.h"
 #include "services/settings_webapp/SettingsWebApp.h"
+#include "settings.h"
 
 const char custom_html[] = 
 R"raw(
@@ -24,22 +24,24 @@ namespace service_settings_webapp_impl
 {
     void Main::settingsBuild(sets::Builder &b)
     {
-        if (NTP.synced())
+        bool hasInternet = service::networkConnection.isInternetAccessible();
+        bool ntpSynced = NTP.synced();
+
+        //if (hasInternet && ntpSynced)
+        {
             b.HTML("html"_h, "", getHTML());
+        }
+
         {
             sets::Row r(b, "", sets::DivType::Block);
-            bool internet = service::networkConnection.isInternetAccessible();
-            b.LED("internet"_h, "Internet", internet);
+            b.LED("internet"_h, "Internet", hasInternet);
             b.Label("uptime"_h, "Uptime", getUptime());
         }
 
         {
-            static float brigthness = 100;
-            static float volume = 100;
-
             sets::Row r(b, "Controls", sets::DivType::Block);
-            b.Slider("Brightness", 0, 200, 1, "", &brigthness);
-            b.Slider("Volume", 0, 200, 1, "", &volume);
+            b.Slider(db::lcd_brightness, "Brightness", 0, 200);
+            b.Slider(db::audio_volume, "Volume", 0, 200);
         }
 
         {
@@ -60,10 +62,14 @@ namespace service_settings_webapp_impl
 
     void Main::settingsUpdate(sets::Updater &u)
     {
-        if (NTP.synced())
+        bool hasInternet = service::networkConnection.isInternetAccessible();
+        bool ntpSynced = NTP.synced();
+
+        //if (hasInternet && ntpSynced)
+        {
             u.update("html"_h, getHTML());
-        bool internet = service::networkConnection.isInternetAccessible();
-        u.update("internet"_h, internet);
+        }
+        u.update("internet"_h, hasInternet);
         u.update("uptime"_h, getUptime());
         u.update("ram_usage"_h, getRAMUsageInfo());
         if (psramFound())

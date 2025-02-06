@@ -1,11 +1,8 @@
 #include "Sets.h"
-#include "services/network_connection/NetworkConnection.h"
-#include "services/geo_location/GeoLocation.h"
-#include "services/date_and_time/DateAndTime.h"
-#include "services/weather_forecast/WeatherForecast.h"
-#include "services/settings_webapp/SettingsWebApp.h"
+#include "services/Services.h"
 #include "drivers/storage/SDCard.h"
 #include "drivers/storage/Flash.h"
+#include "settings.h"
 
 namespace service_settings_webapp_impl
 {
@@ -29,18 +26,16 @@ namespace service_settings_webapp_impl
 
     ////////////////////////////////////////////////////////////////////////////
 
-    DB_KEYS(storage, type);
-
     void Sets::storageSettingsBuild(sets::Builder &b)
     {
         if (m_typeRollback < 0)
-            m_typeRollback = settings::data()[storage::type];
+            m_typeRollback = settings::data()[db::storage_type];
 
         {
             sets::Group g(b, "Storage");
-            if (b.Select(storage::type, "Type", "None;Embedded Flash;External SD Card;Auto"))
+            if (b.Select(db::storage_type, "Type", "None;Embedded Flash;External SD Card;Auto"))
             {
-                m_typeChanged = (settings::data()[storage::type] != m_typeRollback);
+                m_typeChanged = (settings::data()[db::storage_type] != m_typeRollback);
             }
 
             if (driver::storage.getType() != driver::Storage::Type::None)
@@ -66,7 +61,7 @@ namespace service_settings_webapp_impl
             service::settingsWebApp.requestReboot([&](bool reboot)
             {
                 if (!reboot)
-                    settings::data()[storage::type] = m_typeRollback;
+                    settings::data()[db::storage_type] = m_typeRollback;
             });
         }
     }
