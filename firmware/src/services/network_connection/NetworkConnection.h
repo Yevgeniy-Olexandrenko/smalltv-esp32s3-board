@@ -1,9 +1,12 @@
 #pragma once
 
 #include "shared/settings/Settings.h"
+#include "InternetAccess.h"
 
 namespace service
 {
+    using namespace service_network_connection_impl;
+
     class NetworkConnection : public settings::Provider
     {
         enum class State { ConnectRequested, Connecting, Connected, NotConnected, ScanRequested, Scanning };
@@ -19,6 +22,7 @@ namespace service
 
         int getSignalRSSI() const;
         Signal getSignalStrength() const;
+        bool isInternetAccessible() const;
 
     private:
         void buildWiFiScanResult(sets::Builder& b, int max);
@@ -28,6 +32,7 @@ namespace service
         State  m_state = State::NotConnected;
         String m_ssid;
         String m_pass;
+        InternetAccess m_internetAccess;
     };
 
     extern NetworkConnection networkConnection;

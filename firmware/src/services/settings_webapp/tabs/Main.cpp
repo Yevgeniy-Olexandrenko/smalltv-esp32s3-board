@@ -1,3 +1,4 @@
+#include "ping/ping.h"
 #include <GyverNTP.h>
 #include "Main.h"
 #include "drivers/onboard/PowerSource.h"
@@ -23,19 +24,22 @@ namespace service_settings_webapp_impl
 {
     void Main::settingsBuild(sets::Builder &b)
     {
-        {
-            sets::Group g(b, "");
+        if (NTP.synced())
             b.HTML("html"_h, "", getHTML());
-            b.LED("internet"_h, "Internet access", hasInternetAccess());
+        {
+            sets::Row r(b, "", sets::DivType::Block);
+            bool internet = service::networkConnection.isInternetAccessible();
+            b.LED("internet"_h, "Internet", internet);
+            b.Label("uptime"_h, "Uptime", getUptime());
         }
 
         {
-            static float brigthness = 50;
-            static float volume = 50;
+            static float brigthness = 100;
+            static float volume = 100;
 
             sets::Row r(b, "Controls", sets::DivType::Block);
-            b.Slider("Brightness", 0, 100, 1, "", &brigthness);
-            b.Slider("Volume", 0, 100, 1, "", &volume);
+            b.Slider("Brightness", 0, 200, 1, "", &brigthness);
+            b.Slider("Volume", 0, 200, 1, "", &volume);
         }
 
         {
@@ -56,8 +60,11 @@ namespace service_settings_webapp_impl
 
     void Main::settingsUpdate(sets::Updater &u)
     {
-        u.update("html"_h, getHTML());
-        u.update("internet"_h, hasInternetAccess());
+        if (NTP.synced())
+            u.update("html"_h, getHTML());
+        bool internet = service::networkConnection.isInternetAccessible();
+        u.update("internet"_h, internet);
+        u.update("uptime"_h, getUptime());
         u.update("ram_usage"_h, getRAMUsageInfo());
         if (psramFound())
         {
@@ -74,9 +81,12 @@ namespace service_settings_webapp_impl
         return String(buffer);
     }
 
-    bool Main::hasInternetAccess() const
+    String Main::getUptime() const
     {
-        return NTP.online();
+        auto u = millis() / (60 * 1000);
+        auto m = uint8_t(u % 60); u /= 60;
+        auto h = uint8_t(u % 24); u /= 24;
+        return String(u) + "d " + String(h) + "h " + String(m) + "m";
     }
 
     String Main::getESPModuleInfo() const

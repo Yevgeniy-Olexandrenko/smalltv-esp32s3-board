@@ -88,6 +88,11 @@ namespace service
         return Signal::Bad;
     }
 
+    bool NetworkConnection::isInternetAccessible() const
+    {
+        return m_internetAccess.available();
+    }
+
     void NetworkConnection::buildWiFiScanResult(sets::Builder &b, int max)
     {
         const int16_t found = WiFi.scanComplete();
@@ -146,6 +151,8 @@ namespace service
     void NetworkConnection::update()
     {
         WiFiConnector.tick();
+        m_internetAccess.update();
+        
         switch(m_state)
         {
             case State::ConnectRequested:
