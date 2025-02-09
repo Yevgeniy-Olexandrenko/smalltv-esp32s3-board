@@ -46,7 +46,7 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
 #include "shared/audio/decode/DecodeMP3.h"
 #include "shared/audio/output/OutputI2S.h"
 
-#define PLAY_MOD
+#define PLAY_MP3
 
 audio::Source* source = nullptr;
 audio::Source* filter = nullptr;
@@ -191,6 +191,10 @@ void sound_loop()
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <TFT_eSPI.h>
+
+TFT_eSPI tft = TFT_eSPI();
+
 void setup() 
 {
     Serial.begin(115200);
@@ -201,10 +205,6 @@ void setup()
     pinMode(PIN_LED_CAT, OUTPUT);
     digitalWrite(PIN_LED_CAT, LOW);
     #endif
-
-    // turn on the display backlight
-    pinMode(PIN_LCD_BL, OUTPUT);
-    digitalWrite(PIN_LCD_BL, HIGH);
 
     // start hardware
     drivers::begin();
@@ -224,6 +224,16 @@ void setup()
 
     // test sound
     // sound_setup();
+
+    // tft test
+    tft.init();
+    tft.setRotation(0);
+    tft.fillScreen(TFT_GREEN);
+
+    tft.setCursor(10, 10);
+    tft.setTextColor(TFT_WHITE);
+    tft.setTextSize(2);
+    tft.print("Hello World!");
 }
 
 void loop() 

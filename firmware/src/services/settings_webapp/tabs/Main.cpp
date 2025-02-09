@@ -1,6 +1,7 @@
 #include <GyverNTP.h>
 #include "Main.h"
 #include "drivers/onboard/PowerSource.h"
+#include "drivers/video/LCDBacklight.h"
 #include "services/network_connection/NetworkConnection.h"
 #include "services/settings_webapp/SettingsWebApp.h"
 #include "settings.h"
@@ -40,7 +41,11 @@ namespace service_settings_webapp_impl
 
         {
             sets::Row r(b, "Controls", sets::DivType::Block);
-            b.Slider(db::lcd_brightness, "Brightness", 0, 200);
+            if (b.Slider(db::lcd_brightness, "Brightness", 0, 200))
+            {
+                auto brightness = driver::LCDBacklight::Brightness(b.build.value);
+                driver::lcdBacklight.setBrightness(brightness);
+            }
             b.Slider(db::audio_volume, "Volume", 0, 200);
         }
 

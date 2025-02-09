@@ -9,7 +9,7 @@ namespace driver
     class SDCard : public fs::FS
     {
     public:
-        static constexpr const char* DEFAULT_MOUNT_POINT = "/sdcard";
+        constexpr static const char* DEFAULT_MOUNT_POINT = "/sdcard";
         enum class Interface { NONE, SPI, SDIO1, SDIO4 };
         enum class Type { NONE, SD, SDHC };
 

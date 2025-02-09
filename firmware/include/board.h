@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
+#include <hal/gpio_types.h>
 
 // Input voltage sense
 #ifdef NO_VINSENSE

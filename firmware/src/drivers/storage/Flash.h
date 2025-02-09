@@ -9,8 +9,8 @@ namespace driver
     class Flash : public fs::FS
     {
     public:
-        static constexpr const char* DEFAULT_MOUNT_POINT = "/flash";
-        static constexpr const char* DEFAULT_PARTITION_LABEL = "ffat";
+        constexpr static const char* DEFAULT_MOUNT_POINT = "/flash";
+        constexpr static const char* DEFAULT_PARTITION_LABEL = "ffat";
 
         Flash();
         ~Flash();

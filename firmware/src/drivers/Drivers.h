@@ -8,6 +8,7 @@
 #include "storage/Flash.h"
 #include "storage/SDCard.h"
 #include "storage/Storage.h"
+#include "video/LCDBacklight.h"
 
 namespace drivers
 {

@@ -4,8 +4,8 @@ namespace service_network_connection_impl
 {
     class InternetAccess
     {
-        static const int PING_INTERVAL_MS = 20000;
-        static const int PING_TIMEOUT_MS  = 2000;
+        constexpr static int PING_INTERVAL_MS = 20000;
+        constexpr static int PING_TIMEOUT_MS  = 2000;
 
     public:
         InternetAccess();
