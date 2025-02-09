@@ -2,6 +2,8 @@
 #include "shared/audio/output/OutputI2S.h"
 #include "board.h"
 
+#ifndef NO_SOUND
+
 namespace service
 {
     AudioPlayer::AudioPlayer()
@@ -91,3 +93,5 @@ namespace service
         return false;
     }
 }
+
+#endif

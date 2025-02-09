@@ -16,6 +16,8 @@ static bool s_buttonState = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef NO_SOUND
+
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
 {
     (void)cbData;
@@ -188,6 +190,8 @@ void sound_loop()
         }
     }
 }
+#endif
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

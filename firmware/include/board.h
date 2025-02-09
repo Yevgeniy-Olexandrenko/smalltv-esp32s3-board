@@ -130,6 +130,9 @@
 #ifndef PIN_LCD_BL
 #define PIN_LCD_BL  GPIO_NUM_14
 #endif
+#ifdef ARDUINO_SMALLTV_BOARD
+#undef LCD_BL_INV
+#endif
 
 // Sound
 #ifdef NO_SOUND

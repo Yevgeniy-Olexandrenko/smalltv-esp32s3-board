@@ -23,6 +23,7 @@
       "-DPIN_LCD_SDA=GPIO_NUM_11",
       "-DPIN_LCD_DC=GPIO_NUM_7",
       "-DPIN_LCD_BL=GPIO_NUM_14",
+      "-DLCD_BL_INV",
       "-DNO_SOUND",
       "-DNO_MICROPHONE",
       "-DPIN_TOUCH0=TOUCH_PAD_NUM9",
