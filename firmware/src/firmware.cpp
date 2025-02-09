@@ -12,6 +12,7 @@ static bool s_buttonState = false;
 #include <dirent.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <GyverNTP.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -192,8 +193,14 @@ void sound_loop()
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <TFT_eSPI.h>
+#include "shared/image/QRCode.h"
 
 TFT_eSPI tft = TFT_eSPI();
+TFT_eSprite sprite(&tft);
+
+const int ver = 1;
+const int scale = 5;
+image::QRCode qrcode(ver);
 
 void setup() 
 {
@@ -228,11 +235,12 @@ void setup()
     // tft test
     tft.init();
     tft.setRotation(0);
-    tft.fillScreen(TFT_GREEN);
+    tft.fillScreen(TFT_MAROON);
 
-    tft.setCursor(10, 10);
+    // tft test text
+    tft.setCursor(8, 8);
     tft.setTextColor(TFT_WHITE);
-    tft.setTextSize(2);
+    tft.setTextSize(1);
     tft.print("Hello World!");
 }
 
@@ -266,4 +274,22 @@ void loop()
 
     // test sound
     // sound_loop();
+
+    if (NTP.newSecond())
+    {
+        qrcode.create(NTP.timeToString().c_str());
+
+    #if 1
+        qrcode.renderOn(sprite, scale);
+        int offsetX = (tft.width() - sprite.width()) / 2;
+        int offsetY = (tft.height() - sprite.height()) / 2;
+        sprite.pushSprite(offsetX, offsetY);
+        sprite.deleteSprite();
+    #else
+        int gfxSize = qrcode.getGfxSize(scale);
+        int offsetX = (tft.width() - gfxSize) / 2;
+        int offsetY = (tft.height() - gfxSize) / 2;
+        qrcode.renderOn(tft, scale, offsetX, offsetY);
+    #endif
+    }
 }
