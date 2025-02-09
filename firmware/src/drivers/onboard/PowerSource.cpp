@@ -82,7 +82,7 @@ namespace driver
 
         // calculation of voltage based on 
         // a calibrated dependence line
-        auto x = analogReadRaw(PIN_VIN_SEN);
+        auto x = analogRead(PIN_VIN_SEN);
         auto y = MilliVolt(k * x + b);
         log_i("%d - %d", x, y);
         return y;
