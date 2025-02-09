@@ -4,6 +4,7 @@
 #include "SDCard.h"
 #include "Storage.h"
 #include "defines.h"
+#include "board.h"
 
 namespace driver
 {

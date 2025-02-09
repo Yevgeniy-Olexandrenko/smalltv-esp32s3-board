@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "PowerSource.h"
+#include "board.h"
 
 #define UPDATE_PERIOD 5000
 
