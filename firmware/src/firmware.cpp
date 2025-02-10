@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "defines.h"
+#include "board.h"
 #include "drivers/Drivers.h"
 #include "services/Services.h"
 #include "drivers/LedAndButton.h" // temp
@@ -74,7 +75,7 @@ void sound_setup()
     source = new audio::SourceFile();
     filter = new audio::SourceExtractID3(source);
     decode = new audio::DecodeMP3();
-    decode->setCallback(MDCallback, (void*)"ID3TAG");
+    //decode->setCallback(MDCallback, (void*)"ID3TAG");
     dir = driver::storage.getFS().open("/audio/mp3");
 
     #define FILE_EXT ".mp3"
@@ -84,7 +85,7 @@ void sound_setup()
 
     output = new audio::OutputI2S();
     static_cast<audio::OutputI2S*>(output)->SetPinout(PIN_SND_BCLK, PIN_SND_RLCLK, PIN_SND_DIN);
-    output->SetGain(0.5f);
+    output->SetGain(0.25f);
 }
 
 void sound_loop()
@@ -234,7 +235,7 @@ void setup()
     }
 
     // test sound
-    // sound_setup();
+    sound_setup();
 
     // tft test
     tft.init();
@@ -261,25 +262,25 @@ void loop()
     service::settingsWebApp.update();
 
     // test
-    // bool buttonState = driver::ledAndButton.getButtonState();
-    // if (buttonState != s_buttonState)
-    // {
-    //     s_buttonState = buttonState;
-    //     if (buttonState)
-    //     {
-    //         Serial.println("Button pressed!");
-    //         s_forceNext = true;
-    //     }
-    //     else
-    //     {
-    //         Serial.println("Button released!");
-    //     }
-    // }
+    bool buttonState = driver::ledAndButton.getButtonState();
+    if (buttonState != s_buttonState)
+    {
+        s_buttonState = buttonState;
+        if (buttonState)
+        {
+            Serial.println("Button pressed!");
+            s_forceNext = true;
+        }
+        else
+        {
+            Serial.println("Button released!");
+        }
+    }
 
     // test sound
-    // sound_loop();
+    sound_loop();
 
-    if (NTP.newSecond())
+    if (NTP.synced() && NTP.newSecond())
     {
         qrcode.create(NTP.timeToString().c_str());
 
