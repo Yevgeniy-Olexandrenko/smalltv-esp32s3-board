@@ -234,8 +234,10 @@ void setup()
         Serial.printf("Storage used bytes: %f\n", driver::storage.getFSUsedBytes() / (1024.f * 1024.f));
     }
 
+    #ifndef NO_SOUND
     // test sound
     sound_setup();
+    #endif
 
     // tft test
     tft.init();
@@ -261,6 +263,7 @@ void loop()
     service::weatherForecast.update();
     service::settingsWebApp.update();
 
+    #ifndef NO_SOUND
     // test
     bool buttonState = driver::ledAndButton.getButtonState();
     if (buttonState != s_buttonState)
@@ -279,6 +282,7 @@ void loop()
 
     // test sound
     sound_loop();
+    #endif
 
     if (NTP.synced() && NTP.newSecond())
     {

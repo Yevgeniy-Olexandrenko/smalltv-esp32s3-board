@@ -156,7 +156,11 @@ namespace service
     void NetworkConnection::update()
     {
         WiFiConnector.tick();
-        m_internetAccess.update();
+
+        if (WiFiConnector.connected())
+        {
+            m_internetAccess.update();
+        }
         
         switch(m_state)
         {
