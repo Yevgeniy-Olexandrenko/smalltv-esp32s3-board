@@ -22,6 +22,7 @@ namespace service
 
         int getSignalRSSI() const;
         Signal getSignalStrength() const;
+        bool isInAccessPointMode() const;
         bool isInternetAccessible() const;
 
     private:

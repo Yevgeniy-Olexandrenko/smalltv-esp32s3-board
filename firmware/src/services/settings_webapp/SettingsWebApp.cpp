@@ -97,8 +97,8 @@ namespace service
 
         if (m_rebootRequest)
         {
-            u.update("reboot_confirm"_h);
             m_rebootRequest = false;
+            u.update("reboot_confirm"_h);
         }
     }
 

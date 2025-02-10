@@ -1,7 +1,6 @@
 #include "Sets.h"
+#include "drivers/Drivers.h"
 #include "services/Services.h"
-#include "drivers/storage/SDCard.h"
-#include "drivers/storage/Flash.h"
 #include "settings.h"
 
 namespace service_settings_webapp_impl
@@ -32,8 +31,11 @@ namespace service_settings_webapp_impl
             m_typeRollback = settings::data()[db::storage_type];
 
         {
+            String choice = "None;Embedded Flash";
+            if (hardware::hasSDCard()) choice += ";External SD Card;Auto";
+
             sets::Group g(b, "Storage");
-            if (b.Select(db::storage_type, "Type", "None;Embedded Flash;External SD Card;Auto"))
+            if (b.Select(db::storage_type, "Type", choice))
             {
                 m_typeChanged = (settings::data()[db::storage_type] != m_typeRollback);
             }
@@ -44,7 +46,7 @@ namespace service_settings_webapp_impl
                 fillStorageSpecs(specs);
                 b.Label("Specs", specs);
 
-                if (b.Button("Connect to PC"))
+                if (hardware::hasUsbMSC() && b.Button("Connect to PC"))
                 {
                     driver::storage.startMSC();
                     b.reload();

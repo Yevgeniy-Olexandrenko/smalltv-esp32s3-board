@@ -1,7 +1,6 @@
 #include <GyverNTP.h>
 #include "Main.h"
-#include "drivers/onboard/PowerSource.h"
-#include "drivers/video/LCDBacklight.h"
+#include "drivers/Drivers.h"
 #include "services/network_connection/NetworkConnection.h"
 #include "services/settings_webapp/SettingsWebApp.h"
 #include "settings.h"
@@ -46,22 +45,35 @@ namespace service_settings_webapp_impl
                 auto brightness = driver::LCDBacklight::Brightness(b.build.value);
                 driver::lcdBacklight.setBrightness(brightness);
             }
-            b.Slider(db::audio_volume, "Volume", 0, 200);
+            if (hardware::hasAudio())
+            {
+                if (b.Slider(db::audio_volume, "Volume", 0, 200))
+                {
+                    // TODO
+                }
+            }
         }
 
         {
             sets::Group g(b, "Hardware");
             b.Label("ESP32 module", getESPModuleInfo());
             b.Label("ram_usage"_h, "RAM usage", getRAMUsageInfo());
-            if (psramFound())
+            if (hardware::hasPSRAM())
             {
                 b.Label("psram_usage"_h, "PSRAM usage", getPSRAMUsageInfo());
-            }                
-            b.Label("power_source"_h, "Power source", getPowerSourceInfo());
-            b.Label("wifi_signal"_h, "WiFi signal", getWiFiSignalInfo());
-
+            }
+            if (hardware::hasVINSense())
+            {
+                b.Label("power_source"_h, "Power source", getPowerSourceInfo());
+            }
+            if (!service::networkConnection.isInAccessPointMode())
+            {
+                b.Label("wifi_signal"_h, "WiFi signal", getWiFiSignalInfo());
+            }
             if (b.Button("Reboot"))
+            {
                 service::settingsWebApp.requestReboot(nullptr);
+            }
         }
     }
 
@@ -77,12 +89,18 @@ namespace service_settings_webapp_impl
         u.update("internet"_h, hasInternet);
         u.update("uptime"_h, getUptime());
         u.update("ram_usage"_h, getRAMUsageInfo());
-        if (psramFound())
+        if (hardware::hasPSRAM())
         {
             u.update("psram_usage"_h, getPSRAMUsageInfo());
         }
-        u.update("power_source"_h, getPowerSourceInfo());
-        u.update("wifi_signal"_h, getWiFiSignalInfo());
+        if (hardware::hasVINSense())
+        {
+            u.update("power_source"_h, getPowerSourceInfo());
+        }
+        if (!service::networkConnection.isInAccessPointMode())
+        {
+            u.update("wifi_signal"_h, getWiFiSignalInfo());
+        }
     }
 
     String Main::getHTML() const

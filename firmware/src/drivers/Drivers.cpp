@@ -4,12 +4,18 @@
 
 namespace drivers
 {
+    using namespace driver;
+
+    // default storage type
+    const Storage::Type getDefaultStorageType()
+    {
+        return (hardware::hasSDCard() ? Storage::Type::Auto : Storage::Type::Flash);
+    }
+
     void begin()
     {
-        using namespace driver;
-
         // set default settings
-        settings::data().init(db::storage_type, int(Storage::Type::Auto));
+        settings::data().init(db::storage_type, int(getDefaultStorageType()));
         settings::data().init(db::lcd_brightness, LCDBacklight::RANGE / 2);
         settings::data().init(db::audio_volume, 100);
 

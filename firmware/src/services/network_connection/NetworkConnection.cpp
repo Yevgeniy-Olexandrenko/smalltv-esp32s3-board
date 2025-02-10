@@ -88,6 +88,11 @@ namespace service
         return Signal::Bad;
     }
 
+    bool NetworkConnection::isInAccessPointMode() const
+    {
+        return !WiFiConnector.connected();
+    }
+
     bool NetworkConnection::isInternetAccessible() const
     {
         return m_internetAccess.available();
