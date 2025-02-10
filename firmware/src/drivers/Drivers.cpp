@@ -18,6 +18,8 @@ namespace drivers
         settings::data().init(db::storage_type, int(getDefaultStorageType()));
         settings::data().init(db::lcd_brightness, LCDBacklight::RANGE / 2);
         settings::data().init(db::audio_volume, 100);
+        // TODO
+        settings::data().init(db::reboot_to_msc, false);
 
         // get current settings
         auto storageType = Storage::Type(int(settings::data()[db::storage_type]));
@@ -28,5 +30,12 @@ namespace drivers
         powerSource.begin();
         storage.begin(storageType);
         lcdBacklight.begin(lcdBrightness);
+
+        // on reboot
+        if (settings::data()[db::reboot_to_msc])
+        {
+            settings::data()[db::reboot_to_msc] = false;
+            storage.startMSC();
+        }
     }
 }

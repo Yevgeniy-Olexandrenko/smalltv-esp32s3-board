@@ -3,6 +3,7 @@
 #include "Flash.h"
 #include "SDCard.h"
 #include "Storage.h"
+#include "../onboard/SelfReboot.h"
 #include "defines.h"
 #include "board.h"
 
@@ -53,8 +54,11 @@ namespace driver
 
     Storage::Type Storage::getType() const
     {
-        if (isSDCardStorage()) return Type::SDCard;
-        else if (isFlashStorage()) return Type::Flash;
+        if (!isMSCRunning())
+        {
+            if (isSDCardStorage()) return Type::SDCard;
+            else if (isFlashStorage()) return Type::Flash;
+        }
         return Type::None;
     }
 
@@ -70,22 +74,31 @@ namespace driver
 
     uint64_t Storage::getSectorSize() const
     {
-        if (isSDCardStorage()) return sdcard.getSectorSize();
-        else if (isFlashStorage()) return flash.getSectorCount();
+        if (!isMSCRunning())
+        {
+            if (isSDCardStorage()) return sdcard.getSectorSize();
+            else if (isFlashStorage()) return flash.getSectorCount();
+        }
         return 0;
     }
 
     uint64_t Storage::getSectorCount() const
     {
-        if (isSDCardStorage()) return sdcard.getSectorCount();
-        else if (isFlashStorage()) return flash.getSectorCount();
+        if (!isMSCRunning())
+        {
+            if (isSDCardStorage()) return sdcard.getSectorCount();
+            else if (isFlashStorage()) return flash.getSectorCount();
+        }
         return 0;
     }
 
     uint64_t Storage::getPartitionSize() const
     {
-        if (isSDCardStorage()) return sdcard.getPartitionSize();
-        else if (isFlashStorage()) return flash.getPartitionSize();
+        if (!isMSCRunning())
+        {
+            if (isSDCardStorage()) return sdcard.getPartitionSize();
+            else if (isFlashStorage()) return flash.getPartitionSize();
+        }
         return 0;
     }
 
@@ -93,52 +106,64 @@ namespace driver
 
     fs::FS& Storage::getFS() const
     {
-        if (isSDCardStorage()) return sdcard;
-        else if (isFlashStorage()) return flash;
+        if (!isMSCRunning())
+        {
+            if (isSDCardStorage()) return sdcard;
+            else if (isFlashStorage()) return flash;
+        }
         return _invalidFS;
     }
 
     const char* Storage::getFSMountPoint() const
     {
-        if (isSDCardStorage()) return sdcard.getMountPoint();
-        else if (isFlashStorage()) return flash.getMountPoint();
+        if (!isMSCRunning())
+        {
+            if (isSDCardStorage()) return sdcard.getMountPoint();
+            else if (isFlashStorage()) return flash.getMountPoint();
+        }
         return nullptr;
     }
 
     uint64_t Storage::getFSTotalBytes() const
     {
-        int pdrv = -1;
-        if (isSDCardStorage()) pdrv = sdcard.getDriveNumber();
-        else if (isFlashStorage()) pdrv = flash.getDriveNumber();
-        if (pdrv >= 0)
+        if (!isMSCRunning())
         {
-            FATFS *fs; uint32_t free_clust;
-            char drv[3] = { char('0' + pdrv), ':', '\0' };
-            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+            int pdrv = -1;
+            if (isSDCardStorage()) pdrv = sdcard.getDriveNumber();
+            else if (isFlashStorage()) pdrv = flash.getDriveNumber();
+            if (pdrv >= 0)
             {
-                auto total_sect = (fs->n_fatent - 2) * fs->csize;
-                auto sect_size = fs->ssize;
-                return (total_sect * sect_size);
-            }
+                FATFS *fs; uint32_t free_clust;
+                char drv[3] = { char('0' + pdrv), ':', '\0' };
+                if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+                {
+                    auto total_sect = (fs->n_fatent - 2) * fs->csize;
+                    auto sect_size = fs->ssize;
+                    return (total_sect * sect_size);
+                }
+            }   
         }
         return 0;
     }
 
     uint64_t Storage::getFSUsedBytes() const
     {
-        int pdrv = -1;
-        if (isSDCardStorage()) pdrv = sdcard.getDriveNumber();
-        else if (isFlashStorage()) pdrv = flash.getDriveNumber();
-        if (pdrv >= 0)
+        if (!isMSCRunning())
         {
-            FATFS *fs; uint32_t free_clust;
-            char drv[3] = { char('0' + pdrv), ':', '\0' };
-            if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+            int pdrv = -1;
+            if (isSDCardStorage()) pdrv = sdcard.getDriveNumber();
+            else if (isFlashStorage()) pdrv = flash.getDriveNumber();
+            if (pdrv >= 0)
             {
-                auto used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
-                auto sect_size = fs->ssize;
-                return (used_sect * sect_size);
-            }
+                FATFS *fs; uint32_t free_clust;
+                char drv[3] = { char('0' + pdrv), ':', '\0' };
+                if (f_getfree(drv, &free_clust, &fs) == FR_OK)
+                {
+                    auto used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
+                    auto sect_size = fs->ssize;
+                    return (used_sect * sect_size);
+                }
+            }   
         }
         return 0;
     }
@@ -203,8 +228,9 @@ namespace driver
     {
         if (m_runMSC)
         {
-            m_runMSC = false;
             m_usbMSC.end();
+            m_runMSC = false;
+            driver::selfReboot.reboot();
         }
     }
 

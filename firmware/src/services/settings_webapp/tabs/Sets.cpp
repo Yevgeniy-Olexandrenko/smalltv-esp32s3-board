@@ -48,8 +48,11 @@ namespace service_settings_webapp_impl
 
                 if (hardware::hasUsbMSC() && b.Button("Connect to PC"))
                 {
-                    driver::storage.startMSC();
-                    b.reload();
+                    service::settingsWebApp.requestReboot([&](bool reboot)
+                    {
+                        if (reboot)
+                            settings::data()[db::reboot_to_msc] = true;
+                    });
                 }
             }
         }
