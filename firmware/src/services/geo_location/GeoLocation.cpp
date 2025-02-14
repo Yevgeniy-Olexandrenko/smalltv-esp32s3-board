@@ -19,6 +19,8 @@ namespace service
 
     void GeoLocation::update()
     {
+        return;
+
         auto now = millis();
         if (now - m_fetchTS >= UPDATE_PERIOD)
         {

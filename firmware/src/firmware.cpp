@@ -4,6 +4,7 @@
 #include "drivers/Drivers.h"
 #include "services/Services.h"
 #include "drivers/onboard/_LedAndButton.h" // temp
+#include "services/audio_player/AudioPlayList.h" // temp
 
 static bool s_buttonState = false;
 
@@ -50,7 +51,7 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
 #include "shared/audio/decode/DecodeMP3.h"
 #include "shared/audio/output/OutputI2S.h"
 
-#define PLAY_MP3
+#define PLAY_MOD
 
 audio::Source* source = nullptr;
 audio::Source* filter = nullptr;
@@ -58,15 +59,17 @@ audio::Decode* decode = nullptr;
 audio::Output* output = nullptr;
 
 bool s_forceNext = false;
-fs::File dir;
+using namespace service_audio_player_impl;
+AudioPlayList s_playlist;
 
 void sound_setup()
 {
 #ifdef PLAY_MOD
     source = new audio::SourceMemory();
     decode = new audio::DecodeMOD();
-    dir = driver::storage.getFS().open("/audio/mod");
-    #define FILE_EXT ".mod"
+  
+    #define FILEPATH "/audio/mod/pl00"
+    #define FILE_EXT "mod"
     #define SOURCE_P static_cast<audio::SourceMemory*>(source)
     #define FILTER_P static_cast<audio::SourceMemory*>(source)
 #endif
@@ -76,13 +79,17 @@ void sound_setup()
     filter = new audio::SourceExtractID3(source);
     decode = new audio::DecodeMP3();
     //decode->setCallback(MDCallback, (void*)"ID3TAG");
-    dir = driver::storage.getFS().open("/audio/mp3");
 
-    #define FILE_EXT ".mp3"
+    #define FILEPATH "/audio/mp3/pl01"
+    #define FILE_EXT "mp3"
     #define SOURCE_P static_cast<audio::SourceFile*>(source)
     #define FILTER_P static_cast<audio::SourceExtractID3*>(filter)
 #endif
 
+    // prepare playlist
+    s_playlist.open(FILEPATH, FILE_EXT);
+
+    // open output device
     output = new audio::OutputI2S();
     static_cast<audio::OutputI2S*>(output)->SetPinout(PIN_SND_BCLK, PIN_SND_RLCLK, PIN_SND_DIN);
     output->SetGain(0.25f);
@@ -102,25 +109,18 @@ void sound_loop()
     }
     else
     {
-        s_forceNext = false;
-        File file = dir.openNextFile();
-        if (file)
+        String path = s_playlist.getNext();
+        if (!path.isEmpty())
         {
-            String filename(file.name());
-            filename.toLowerCase();
-
-            if (!filename.startsWith(".") && filename.endsWith(FILE_EXT))
+            source->close();
+            if (SOURCE_P->open(driver::storage.getFS(), path.c_str()))
             {
-                source->close();
-                if (SOURCE_P->open(driver::storage.getFS(), file.path()))
-                {
-                    Serial.printf("Playing file: %s\n", file.path());
-                    decode->begin(FILTER_P, output);
-                }
-                else
-                {
-                    Serial.printf("Error opening: %s\n", file.path());
-                }
+                log_i("Playing file: %s", path.c_str());
+                decode->begin(FILTER_P, output);
+            }
+            else
+            {
+                log_i("Error opening: %s", path.c_str());
             }
         }
     }
