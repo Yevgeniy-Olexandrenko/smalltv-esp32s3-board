@@ -88,6 +88,7 @@ void sound_setup()
 
     // prepare playlist
     s_playlist.open(FILEPATH, FILE_EXT);
+    s_playlist.shuffle();
 
     // open output device
     output = new audio::OutputI2S();
@@ -197,11 +198,9 @@ void sound_loop()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <TFT_eSPI.h>
 #include "shared/image/QRCode.h"
 
-TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite sprite(&tft);
+TFT_eSprite sprite(&driver::display);
 
 const int ver = 1;
 const int scale = 5;
@@ -239,16 +238,12 @@ void setup()
     sound_setup();
     #endif
 
-    // tft test
-    tft.init();
-    tft.setRotation(0);
-    tft.fillScreen(TFT_MAROON);
-
     // tft test text
-    tft.setCursor(8, 8);
-    tft.setTextColor(TFT_WHITE);
-    tft.setTextSize(1);
-    tft.print("Hello World!");
+    driver::display.fillScreen(TFT_MAROON);
+    driver::display.setCursor(8, 8);
+    driver::display.setTextColor(TFT_WHITE);
+    driver::display.setTextSize(1);
+    driver::display.print("Hello World!");
 }
 
 void loop() 
@@ -290,15 +285,15 @@ void loop()
 
     #if 1
         qrcode.renderOn(sprite, scale);
-        int offsetX = (tft.width() - sprite.width()) / 2;
-        int offsetY = (tft.height() - sprite.height()) / 2;
+        int offsetX = (driver::display.width() - sprite.width()) / 2;
+        int offsetY = (driver::display.height() - sprite.height()) / 2;
         sprite.pushSprite(offsetX, offsetY);
         sprite.deleteSprite();
     #else
         int gfxSize = qrcode.getGfxSize(scale);
-        int offsetX = (tft.width() - gfxSize) / 2;
-        int offsetY = (tft.height() - gfxSize) / 2;
-        qrcode.renderOn(tft, scale, offsetX, offsetY);
+        int offsetX = (driver::display.width() - gfxSize) / 2;
+        int offsetY = (driver::display.height() - gfxSize) / 2;
+        qrcode.renderOn(driver::display, scale, offsetX, offsetY);
     #endif
     }
 }
