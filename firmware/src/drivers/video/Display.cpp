@@ -15,15 +15,16 @@ namespace driver
             TFT_eSPI::init();
             TFT_eSPI::setRotation(0);
             TFT_eSPI::fillScreen(TFT_BLACK);
-            setBrightness(brightness);
 
+            setBrightness(brightness);
             xTaskCreatePinnedToCore(
                 [](void* data) 
                 {
-                    auto display = static_cast<Display*>(data);
-                    display->brightnessTask();
+                    auto instance = static_cast<Display*>(data);
+                    instance->task();
                 },
-                "brightness_task", 2048, this, 1, nullptr, 1);
+                "brightness_task", 2048, this, 1, nullptr, 0
+            );
         }
     }
 
@@ -55,12 +56,12 @@ namespace driver
         while(needsAdjustment()) taskYIELD();
     }
 
-    void Display::brightnessTask()
+    void Display::task()
     {
         ledcSetup(LCD_BL_PWM_CHANNEL, LCD_BL_PWM_FREQENCY, 10);
         ledcAttachPin(PIN_LCD_BL, LCD_BL_PWM_CHANNEL);
 
-        while(true)
+        for(m_brFade = 0;;)
         {
             if (needsAdjustment())
             {
@@ -77,9 +78,8 @@ namespace driver
                 #endif
 
                 ledcWrite(LCD_BL_PWM_CHANNEL, pwm);
-                vTaskDelay(pdMS_TO_TICKS(1));
-            } else 
-                taskYIELD();
+            }
+            vTaskDelay(pdMS_TO_TICKS(1));
         }
     }
 

@@ -1,5 +1,6 @@
 #include <GyverNTP.h>
 #include "SettingsWebApp.h"
+#include "drivers/video/Display.h"
 #include "drivers/onboard/SelfReboot.h"
 #include "defines.h"
 
@@ -8,6 +9,24 @@ namespace service
     void SettingsWebApp::begin()
     {
         log_i("begin");
+        xTaskCreatePinnedToCore(
+            [](void* data) 
+            {
+                auto instance = static_cast<SettingsWebApp*>(data);
+                instance->task();
+            },
+            "webapp_task", 4096, this, 1, nullptr, 0
+        );
+    }
+
+    void SettingsWebApp::requestReboot(RebootCorfirmCB cb)
+    {
+        m_rebootConfirmCB = cb;
+        m_rebootRequest = true;
+    }
+
+    void SettingsWebApp::task()
+    {
         settings::sets().onBuild([&](sets::Builder& b) { this->settingsBuild(b); });
         settings::sets().onUpdate([&](sets::Updater& u) { this->settingsUpdate(u); });
         settings::sets().onFocusChange([&]() { this->onFocusChange(settings::sets().focused()); });
@@ -22,22 +41,18 @@ namespace service
         m_connectedToPC = false;
         m_rebootRequest = false;
         m_rebootPending = false;
-    }
 
-    void SettingsWebApp::update()
-    {
-        settings::sets().tick();
-        if (m_rebootPending)
+        while(true)
         {
-            m_rebootPending = false;
-            driver::selfReboot.reboot();
+            settings::sets().tick();
+            if (m_rebootPending)
+            {
+                m_rebootPending = false;
+                driver::display.fadeOut();
+                driver::selfReboot.reboot();
+            }
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
-    }
-
-    void SettingsWebApp::requestReboot(RebootCorfirmCB cb)
-    {
-        m_rebootConfirmCB = cb;
-        m_rebootRequest = true;
     }
 
     void SettingsWebApp::settingsBuild(sets::Builder &b)

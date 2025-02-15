@@ -14,8 +14,6 @@ namespace service
     {
     public:
         void begin();
-        void update();
-        
         void requestReboot(RebootCorfirmCB cb);
 
         const Sets& sets() const { return m_tabSets; }
@@ -23,6 +21,7 @@ namespace service
         const Apps& apps() const { return m_tabApps; }
 
     private:
+        void task();
         void settingsBuild(sets::Builder& b);
         void settingsUpdate(sets::Updater& u);
         void onFocusChange(bool f);

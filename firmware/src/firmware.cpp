@@ -80,7 +80,7 @@ void sound_setup()
     decode = new audio::DecodeMP3();
     //decode->setCallback(MDCallback, (void*)"ID3TAG");
 
-    #define FILEPATH "/audio/mp3/pl01"
+    #define FILEPATH "/audio/mp3/pl00"
     #define FILE_EXT "mp3"
     #define SOURCE_P static_cast<audio::SourceFile*>(source)
     #define FILTER_P static_cast<audio::SourceExtractID3*>(filter)
@@ -241,9 +241,9 @@ void setup()
     #endif
 
     // tft test text
-    driver::display.fillScreen(TFT_MAROON);
+    driver::display.fillScreen(TFT_NAVY);
     driver::display.setCursor(8, 8);
-    driver::display.setTextColor(TFT_WHITE);
+    driver::display.setTextColor(TFT_YELLOW);
     driver::display.setTextSize(1);
     driver::display.print("Hello World!");
 }
@@ -258,7 +258,6 @@ void loop()
     service::geoLocation.update();
     service::dateAndTime.update();
     service::weatherForecast.update();
-    service::settingsWebApp.update();
 
     #ifndef NO_SOUND
     // test

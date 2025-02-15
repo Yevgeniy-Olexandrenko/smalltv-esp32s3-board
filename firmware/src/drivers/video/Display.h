@@ -16,12 +16,12 @@ namespace driver
     private:
         bool needsAdjustment() const;
         void setTagretAndWait(int16_t value);
-        void brightnessTask();
+        void task();
 
     private:
-        int16_t m_brGlobal = 0;
-        int16_t m_brTarget = 0;
-        int16_t m_brFade = 0;
+        int16_t m_brGlobal;
+        int16_t m_brTarget;
+        int16_t m_brFade;
     };
 
     extern Display display;
