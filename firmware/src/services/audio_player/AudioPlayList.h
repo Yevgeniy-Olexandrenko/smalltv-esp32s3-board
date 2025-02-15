@@ -13,6 +13,7 @@ namespace service_audio_player_impl
         String getNext();
         void close();
 
+        void shuffle();
         uint8_t getSize() const { return uint8_t(m_list.size()); }
         bool isEmpty() const { return m_list.empty(); }
 

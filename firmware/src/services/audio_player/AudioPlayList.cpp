@@ -1,3 +1,4 @@
+#include <random>
 #include "AudioPlayList.h"
 #include "drivers/storage/Storage.h"
 
@@ -56,6 +57,13 @@ namespace service_audio_player_impl
     {
         m_list.clear();
         m_index = 0;
+    }
+
+    void AudioPlayList::shuffle()
+    {
+        std::random_device randomDevice;
+        std::mt19937 randomGenerator(randomDevice());
+        std::shuffle(m_list.begin(), m_list.end(), randomGenerator);
     }
 
     void AudioPlayList::insertIfValid(const String& path, const String& ext)
