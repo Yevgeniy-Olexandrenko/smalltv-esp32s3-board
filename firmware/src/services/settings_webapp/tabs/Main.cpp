@@ -42,8 +42,8 @@ namespace service_settings_webapp_impl
             sets::Row r(b, "Controls", sets::DivType::Block);
             if (b.Slider(db::lcd_brightness, "Brightness", 0, 200))
             {
-                auto brightness = driver::LCDBacklight::Brightness(b.build.value);
-                driver::lcdBacklight.setBrightness(brightness);
+                auto brightness = float(b.build.value);
+                driver::display.setBrightness(float(brightness) / 200);
             }
             if (hardware::hasAudio())
             {
