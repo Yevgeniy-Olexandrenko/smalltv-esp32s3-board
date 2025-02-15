@@ -51,7 +51,7 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
 #include "shared/audio/decode/DecodeMP3.h"
 #include "shared/audio/output/OutputI2S.h"
 
-#define PLAY_MOD
+#define PLAY_MP3
 
 audio::Source* source = nullptr;
 audio::Source* filter = nullptr;
@@ -88,12 +88,12 @@ void sound_setup()
 
     // prepare playlist
     s_playlist.open(FILEPATH, FILE_EXT);
-    s_playlist.shuffle();
+    //s_playlist.shuffle();
 
     // open output device
     output = new audio::OutputI2S();
     static_cast<audio::OutputI2S*>(output)->SetPinout(PIN_SND_BCLK, PIN_SND_RLCLK, PIN_SND_DIN);
-    output->SetGain(0.25f);
+    output->SetGain(0.1f);
 }
 
 void sound_loop()
@@ -116,8 +116,10 @@ void sound_loop()
             source->close();
             if (SOURCE_P->open(driver::storage.getFS(), path.c_str()))
             {
+                driver::display.fadeOut();
                 log_i("Playing file: %s", path.c_str());
                 decode->begin(FILTER_P, output);
+                driver::display.fadeIn();
             }
             else
             {

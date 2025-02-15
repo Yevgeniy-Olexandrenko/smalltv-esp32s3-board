@@ -8,19 +8,20 @@ namespace driver
     class Display : public TFT_eSPI
     {
     public:
-        Display();
-
         void begin(float brightness);
         void setBrightness(float brightness);
-        float getBrightness() const;
+        void fadeIn();
+        void fadeOut();
 
     private:
-        void brightnessUpdateTask();
+        bool needsAdjustment() const;
+        void setTagretAndWait(int16_t value);
+        void brightnessTask();
 
     private:
-        TaskHandle_t m_handle;
-        int16_t m_pwmCur;
-        int16_t m_pwmTar;
+        int16_t m_brGlobal = 0;
+        int16_t m_brTarget = 0;
+        int16_t m_brFade = 0;
     };
 
     extern Display display;
