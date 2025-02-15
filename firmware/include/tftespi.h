@@ -6,7 +6,6 @@
 #define ST7789_2_DRIVER
 #define LOAD_GLCD
 
-#define TFT_RGB_ORDER   TFT_RGB
 #define TFT_WIDTH       240
 #define TFT_HEIGHT      240
 #define TFT_MOSI        PIN_LCD_SDA
