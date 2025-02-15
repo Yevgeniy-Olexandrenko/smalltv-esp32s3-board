@@ -1,4 +1,4 @@
-#include <freertos/FreeRTOS.h>
+#include <FreeRTOS.h>
 #include "Display.h"
 #include "board.h"
 
@@ -23,7 +23,7 @@ namespace driver
                     auto instance = static_cast<Display*>(data);
                     instance->task();
                 },
-                "brightness_task", 2048, this, 1, nullptr, 0
+                "lcd_brightness_task", 1024, this, 1, nullptr, 0
             );
         }
     }
@@ -31,7 +31,7 @@ namespace driver
     void Display::setBrightness(float brightness)
     {
         brightness = constrain(brightness, 0.f, 1.f);
-        m_brGlobal = uint16_t(brightness * 1023);
+        m_brGlobal = int16_t(brightness * 1023);
         m_brTarget = m_brGlobal;
     }
 
@@ -61,7 +61,7 @@ namespace driver
         ledcSetup(LCD_BL_PWM_CHANNEL, LCD_BL_PWM_FREQENCY, 10);
         ledcAttachPin(PIN_LCD_BL, LCD_BL_PWM_CHANNEL);
 
-        for(m_brFade = 0;;)
+        for (m_brFade = 0;;)
         {
             if (needsAdjustment())
             {
