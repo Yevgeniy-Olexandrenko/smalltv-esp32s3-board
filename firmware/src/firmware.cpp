@@ -80,7 +80,7 @@ void sound_setup()
     decode = new audio::DecodeMP3();
     //decode->setCallback(MDCallback, (void*)"ID3TAG");
 
-    #define FILEPATH "/audio/mp3/pl00"
+    #define FILEPATH "/audio/mp3/pl01"
     #define FILE_EXT "mp3"
     #define SOURCE_P static_cast<audio::SourceFile*>(source)
     #define FILTER_P static_cast<audio::SourceExtractID3*>(filter)

@@ -31,7 +31,7 @@ namespace driver
     void Display::setBrightness(float brightness)
     {
         brightness = constrain(brightness, 0.f, 1.f);
-        m_brGlobal = int16_t(brightness * 1023);
+        m_brGlobal = int16_t(103 + brightness * 920);
         m_brTarget = m_brGlobal;
     }
 
@@ -72,7 +72,6 @@ namespace driver
                 m_brFade = constrain(m_brFade, 0, 1023);
 
                 auto pwm = uint32_t((uint32_t(m_brFade + 1) * (m_brFade + 1) * m_brFade) >> 20);
-                if (!pwm) pwm = 1;
                 #ifdef LCD_BL_INV
                 pwm = (1023 - pwm);
                 #endif
