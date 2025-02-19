@@ -18,14 +18,6 @@ namespace service
 
     private:
         Timestamp m_fetchTS;
-
-        float m_lat;
-        float m_lon;
-        long  m_utcOffset;
-        char  m_region[256];
-        char  m_city[256];
-        char  m_tz[256];
-
         GeoIP m_geoip;
         location_t m_location;
     };
