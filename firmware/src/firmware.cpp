@@ -20,16 +20,17 @@ static bool s_buttonState = false;
 
 #ifndef NO_SOUND
 
+#include "services/audio_player/AudioPlayer.h"
 static bool s_forceNext = false;
 
 void sound_setup()
 {
-    // TODO
+    service::audioPlayer.begin();
 }
 
 void sound_loop()
 {
-    // TODO
+    service::audioPlayer.loop();
 }
 
 #endif
