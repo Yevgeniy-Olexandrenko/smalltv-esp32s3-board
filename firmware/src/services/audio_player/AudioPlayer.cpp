@@ -2,106 +2,137 @@
 #include "drivers/storage/Storage.h"
 #include "board.h"
 
-void callbackInit();
-Stream* callbackNextStream(int offset);
-
-AudioInfo info(44100, 2, 16);
-I2SStream i2s;
-
-//MP3DecoderHelix decoder;
-MP3DecoderHelix mp3;                     // Decoder
-MetaDataFilterDecoder decoder(mp3); // Decoder which removes metadata
-
-AudioSourceCallback source(callbackNextStream, callbackInit);
-AudioPlayer player(source, i2s, decoder);
-
-File audioFile;
-File dir;
-
-void callbackInit() 
-{
-    // make sure that the directory contains only mp3 files
-    dir = driver::storage.getFS().open("/audio/mp3/pl00");
-}
-  
-Stream* callbackNextStream(int offset) 
-{
-    audioFile.close();
-
-    // the next files must be a mp3 file
-    for (int j = 0; j < offset; j++)
-    {
-        audioFile = dir.openNextFile();
-    }
-    return &audioFile;
-}
-
-void callbackPrintMetaData(MetaDataType type, const char* str, int len)
-{
-    Serial.print("==> ");
-    Serial.print(toStr(type));
-    Serial.print(": ");
-    Serial.println(str);
-}
-
-#define USE_THREAD 1
-
 namespace service
 {
+    AudioPlayer::AudioPlayer()
+    {
+    }
+
+    AudioPlayer::~AudioPlayer()
+    {
+    }
+
     void AudioPlayer::begin()
     {
-#if USE_THREAD
+        #if USE_THREAD
         xTaskCreatePinnedToCore(
             [](void* data) 
             {
                 auto instance = static_cast<AudioPlayer*>(data);
                 instance->task();
             },
-            "audio_player_task", 1024 * 10, this, 1, nullptr, 1
+            "audio_player_task", 1024 * 8, this, 1, nullptr, 1
         );
-#else
+        #else
         taskBegin();
-#endif
+        #endif
     }
 
     void AudioPlayer::loop()
     {
-#if !USE_THREAD
+        #if !USE_THREAD
         taskLoop();
-#endif
+        #endif
     }
 
     void AudioPlayer::task()
     {
         taskBegin();
-        while(true)
-        {
-            taskLoop();
-        }
+        for(;;) taskLoop();
     }
 
     void AudioPlayer::taskBegin()
     {
-        //AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Info);
+        // AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Info);
 
-        // setup output
-        auto cfg = i2s.defaultConfig(TX_MODE);
-        cfg.copyFrom(info); 
-        cfg.pin_ws = PIN_SND_RLCLK;
-        cfg.pin_bck = PIN_SND_BCLK;
-        cfg.pin_data = PIN_SND_DIN;
-        i2s.begin(cfg);
+        initSource();
+        initDecode();
+        initOutput();
 
-        // setup player
-        player.setMetadataCallback(callbackPrintMetaData);
-        player.setAudioInfo(info);
-        player.setVolume(0.25f);
-        player.begin();
+        m_player.setAudioSource(*m_source);
+        m_player.setDecoder(*m_decode);
+        m_player.setOutput(m_output);
+
+        m_player.setMetadataCallback(metadataCallback);
+        m_player.begin();
     }
 
     void AudioPlayer::taskLoop()
     {
-        player.copy();
+        m_player.copy();
+    }
+
+    void AudioPlayer::initSource()
+    {
+        m_cbSrc = new audio_tools::AudioSourceCallback();
+        m_cbSrc->setCallbackOnStart(&initStreamCallback);
+        m_cbSrc->setCallbackNextStream(&nextStreamCallback);
+        m_source = m_cbSrc;
+    }
+
+    void AudioPlayer::initDecode()
+    {
+        m_mp3Dec = new audio_tools::MP3DecoderHelix();
+        m_id3Flt = new audio_tools::MetaDataFilterDecoder(*m_mp3Dec);
+        m_decode = m_id3Flt;
+    }
+
+    void AudioPlayer::initOutput()
+    {
+        // configure I2S
+        auto i2sCfg = m_i2sOut.defaultConfig();
+        i2sCfg.pin_ws = PIN_SND_RLCLK;
+        i2sCfg.pin_bck = PIN_SND_BCLK;
+        i2sCfg.pin_data = PIN_SND_DIN;
+        m_i2sOut.begin(i2sCfg);
+
+        // configure FFT
+        auto fftCfg = m_fftOut.defaultConfig();
+        fftCfg.copyFrom(i2sCfg);
+        fftCfg.length = 1024;
+        fftCfg.callback = &fftResultCallback;
+        m_fftOut.begin(fftCfg);
+
+        // configure MultiOutput
+        m_output.add(m_fftOut);
+        m_output.add(m_i2sOut);
+    }
+
+    void AudioPlayer::initStreamCallback()
+    {
+        const char* path = "/audio/mp3/pl01";
+        audioPlayer.m_dir = driver::storage.getFS().open(path);
+    }
+
+    Stream* AudioPlayer::nextStreamCallback(int offset)
+    {
+        audioPlayer.m_file.close();
+        for (int i = 0; i < offset; i++)
+            audioPlayer.m_file = audioPlayer.m_dir.openNextFile();
+        return &audioPlayer.m_file;
+    }
+
+    void AudioPlayer::fftResultCallback(audio_tools::AudioFFTBase &fft)
+    {
+        float diff;
+        auto result = fft.result();
+        if (result.magnitude>100){
+            Serial.print(result.frequency);
+            Serial.print(" ");
+            Serial.print(result.magnitude);  
+            Serial.print(" => ");
+            Serial.print(result.frequencyAsNote(diff));
+            Serial.print( " diff: ");
+            Serial.println(diff);
+        }
+    }
+
+    void AudioPlayer::metadataCallback(audio_tools::MetaDataType type, const char *str, int len)
+    {
+        Serial.print("==> ");
+        Serial.print(toStr(type));
+        Serial.print(": ");
+        Serial.println(str);
     }
 
     AudioPlayer audioPlayer;
