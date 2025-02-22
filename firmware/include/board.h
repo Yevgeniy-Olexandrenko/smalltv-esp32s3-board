@@ -139,6 +139,7 @@
     #undef  PIN_SND_RLCLK
     #undef  PIN_SND_BCLK
     #undef  PIN_SND_DIN
+    #undef  SND_PRE_AMP
 #else
     #ifndef PIN_SND_RLCLK
     #define PIN_SND_RLCLK GPIO_NUM_17
@@ -148,6 +149,9 @@
     #endif
     #ifndef PIN_SND_DIN
     #define PIN_SND_DIN   GPIO_NUM_15
+    #endif
+    #ifndef SND_PRE_AMP
+    #define SND_PRE_AMP   0.75
     #endif
 #endif
 

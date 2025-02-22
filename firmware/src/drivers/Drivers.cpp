@@ -17,14 +17,11 @@ namespace drivers
         // set default settings
         settings::data().init(db::storage_type, int(getDefaultStorageType()));
         settings::data().init(db::lcd_brightness, 100);
-        settings::data().init(db::audio_volume, 100);
-        // TODO
         settings::data().init(db::reboot_to_msc, false);
 
         // get current settings
         auto storageType = Storage::Type(int(settings::data()[db::storage_type]));
         auto lcdBrightness = float(settings::data()[db::lcd_brightness]) / 200;
-        auto audioVolume = int(settings::data()[db::audio_volume]);
 
         // begin drivers with current settings
         powerSource.begin();

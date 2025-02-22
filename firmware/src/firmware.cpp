@@ -4,7 +4,6 @@
 #include "drivers/Drivers.h"
 #include "services/Services.h"
 #include "drivers/onboard/_LedAndButton.h" // temp
-#include "services/audio_player/AudioPlayList.h" // temp
 
 static bool s_buttonState = false;
 
@@ -15,25 +14,6 @@ static bool s_buttonState = false;
 #include <sys/stat.h>
 #include <string.h>
 #include <GyverNTP.h>
-
-////////////////////////////////////////////////////////////////////////////////
-
-#ifndef NO_SOUND
-
-#include "services/audio_player/AudioPlayer.h"
-static bool s_forceNext = false;
-
-void sound_setup()
-{
-    service::audioPlayer.begin();
-}
-
-void sound_loop()
-{
-    service::audioPlayer.loop();
-}
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -72,10 +52,6 @@ void setup()
         Serial.printf("Storage used bytes: %f\n", driver::storage.getFSUsedBytes() / (1024.f * 1024.f));
     }
 
-    #ifndef NO_SOUND
-    sound_setup();
-    #endif
-
     // tft test text
     driver::display.fillScreen(TFT_NAVY);
     driver::display.setCursor(8, 8);
@@ -95,7 +71,6 @@ void loop()
     service::dateAndTime.update();
     service::weatherForecast.update();
 
-    #ifndef NO_SOUND
     // test
     bool buttonState = driver::ledAndButton.getButtonState();
     if (buttonState != s_buttonState)
@@ -104,17 +79,12 @@ void loop()
         if (buttonState)
         {
             Serial.println("Button pressed!");
-            s_forceNext = true;
         }
         else
         {
             Serial.println("Button released!");
         }
     }
-
-    // test sound
-    sound_loop();
-    #endif
 
     if (NTP.synced() && NTP.newSecond())
     {

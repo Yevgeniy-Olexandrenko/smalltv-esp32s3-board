@@ -8,8 +8,6 @@
 #include <AudioTools/AudioLibs/AudioRealFFT.h>
 #include <FS.h>
 
-#define USE_THREAD 1
-
 namespace service
 {
     class AudioPlayer
@@ -18,27 +16,29 @@ namespace service
         AudioPlayer();
         ~AudioPlayer();
 
-        void begin();
-        void loop();
+        void begin(float volume);
+        void setVolume(float volume);
 
     private:
         void task();
-        void taskBegin();
-        void taskLoop();
 
         void initSource();
         void initDecode();
         void initOutput();
 
+        // audio context
         static void initStreamCallback();
         static Stream* nextStreamCallback(int offset);
-        static void fftResultCallback(audio_tools::AudioFFTBase &fft);
+
+        static void fftResultCallback(audio_tools::AudioFFTBase& fft);
         static void metadataCallback(audio_tools::MetaDataType type, const char* str, int len);
 
     private:
         audio_tools::I2SStream m_i2sOut;
         audio_tools::AudioRealFFT m_fftOut;
         audio_tools::MultiOutput m_output;
+
+        audio_tools::LinearVolumeControl m_volume;
         audio_tools::AudioPlayer m_player;
 
         // audio context

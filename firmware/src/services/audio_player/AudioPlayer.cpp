@@ -12,9 +12,9 @@ namespace service
     {
     }
 
-    void AudioPlayer::begin()
+    void AudioPlayer::begin(float volume)
     {
-        #if USE_THREAD
+        setVolume(volume);
         xTaskCreatePinnedToCore(
             [](void* data) 
             {
@@ -23,25 +23,15 @@ namespace service
             },
             "audio_player_task", 1024 * 8, this, 1, nullptr, 1
         );
-        #else
-        taskBegin();
-        #endif
     }
 
-    void AudioPlayer::loop()
+    void AudioPlayer::setVolume(float volume)
     {
-        #if !USE_THREAD
-        taskLoop();
-        #endif
+        volume = 0.2f + 0.8f * constrain(volume, 0.f, 1.f);
+        m_player.setVolume(volume * SND_PRE_AMP);
     }
 
     void AudioPlayer::task()
-    {
-        taskBegin();
-        for(;;) taskLoop();
-    }
-
-    void AudioPlayer::taskBegin()
     {
         // AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Info);
 
@@ -53,13 +43,15 @@ namespace service
         m_player.setDecoder(*m_decode);
         m_player.setOutput(m_output);
 
+        m_player.setVolumeControl(m_volume);
         m_player.setMetadataCallback(metadataCallback);
         m_player.begin();
-    }
 
-    void AudioPlayer::taskLoop()
-    {
-        m_player.copy();
+        for (;;)
+        {
+            // TODO
+            m_player.copy();
+        }
     }
 
     void AudioPlayer::initSource()
@@ -114,17 +106,17 @@ namespace service
 
     void AudioPlayer::fftResultCallback(audio_tools::AudioFFTBase &fft)
     {
-        float diff;
-        auto result = fft.result();
-        if (result.magnitude>100){
-            Serial.print(result.frequency);
-            Serial.print(" ");
-            Serial.print(result.magnitude);  
-            Serial.print(" => ");
-            Serial.print(result.frequencyAsNote(diff));
-            Serial.print( " diff: ");
-            Serial.println(diff);
-        }
+        // float diff;
+        // auto result = fft.result();
+        // if (result.magnitude>100){
+        //     Serial.print(result.frequency);
+        //     Serial.print(" ");
+        //     Serial.print(result.magnitude);  
+        //     Serial.print(" => ");
+        //     Serial.print(result.frequencyAsNote(diff));
+        //     Serial.print( " diff: ");
+        //     Serial.println(diff);
+        // }
     }
 
     void AudioPlayer::metadataCallback(audio_tools::MetaDataType type, const char *str, int len)
