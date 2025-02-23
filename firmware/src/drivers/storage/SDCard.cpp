@@ -5,9 +5,7 @@
 #include <driver/sdspi_host.h>
 #include <sdmmc_cmd.h>
 #include <diskio_sdmmc.h>
-
 #include "SDCard.h"
-#include "shared/tasks/LockGuard.h"
 
 namespace driver
 {

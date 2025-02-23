@@ -51,7 +51,7 @@ namespace service_settings_webapp_impl
                 if (b.Slider(db::audio_volume, "Volume", 0, 200))
                 {
                     auto volume = (float(b.build.value) / 200);
-                    service::audioPlayer.setVolume(volume);
+                    service::audioPlayer.volume(volume);
                 }
             }
         }

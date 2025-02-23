@@ -1,9 +1,7 @@
 #include <vfs_api.h>
 #include <esp_vfs_fat.h>
 #include <diskio_wl.h>
-
 #include "Flash.h"
-#include "shared/tasks/LockGuard.h"
 
 namespace driver
 {

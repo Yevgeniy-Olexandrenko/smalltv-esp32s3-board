@@ -4,54 +4,190 @@
 
 namespace service
 {
-    AudioPlayer::AudioPlayer()
+    void AudioPlayer::begin(float vol)
     {
+        audio_tools::AudioToolsLogger.begin(Serial, audio_tools::AudioToolsLogLevel::Error);
+
+        if (!m_i2sOut && !m_fftOut)
+        {
+            // configure I2S
+            auto i2sCfg = m_i2sOut.defaultConfig();
+            i2sCfg.pin_ws = PIN_SND_RLCLK;
+            i2sCfg.pin_bck = PIN_SND_BCLK;
+            i2sCfg.pin_data = PIN_SND_DIN;
+            m_i2sOut.begin(i2sCfg);
+
+            // configure FFT
+            auto fftCfg = m_fftOut.defaultConfig();
+            fftCfg.copyFrom(i2sCfg);
+            fftCfg.length = 1024;
+            fftCfg.callback = &fftResultCallback;
+            m_fftOut.begin(fftCfg);
+
+            // configure MultiOutput
+            m_output.add(m_fftOut);
+            m_output.add(m_i2sOut);
+        }
+        volume(vol);
     }
 
-    AudioPlayer::~AudioPlayer()
+    bool AudioPlayer::start(AudioContent content, const char* resource)
     {
-    }
-
-    void AudioPlayer::begin(float volume)
-    {
-        setVolume(volume);
-        xTaskCreatePinnedToCore(
-            [](void* data) 
+        if (!isStarted() && resource)
+        {
+            if (content.format == AudioContent::Format::mp3 && 
+                content.location == AudioContent::Location::StorageFile)
             {
-                auto instance = static_cast<AudioPlayer*>(data);
-                instance->task();
-            },
-            "audio_player_task", 1024 * 8, this, 1, nullptr, 1
-        );
+                // prepare source and decoder
+                String path;
+                path += "/audio";
+                path += '/' + content.extOrContentType;
+                path += '/' + resource;
+                m_path = path;
+
+                // launch playback task
+                return xTaskCreatePinnedToCore(
+                    [](void* data) 
+                    {
+                        auto instance = static_cast<AudioPlayer*>(data);
+                        instance->task();
+                    },
+                    "audio_player_task", 8192, this, 1, &m_task.handle, 1
+                ) == pdPASS;
+            }
+        }
+        return false;
     }
 
-    void AudioPlayer::setVolume(float volume)
+    void AudioPlayer::volume(float vol)
     {
-        volume = 0.2f + 0.8f * constrain(volume, 0.f, 1.f);
-        m_player.setVolume(volume * SND_PRE_AMP);
+        task::LockGuard lock(m_mutex);
+
+        m_task.volume =  0.2f;
+        m_task.volume += 0.8f * constrain(vol, 0.f, 1.f);
+        m_task.volume *= SND_PRE_AMP;
+
+        if (isStarted())
+        {
+            auto command { Command::Volume };
+            xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+        }
+    }
+
+    void AudioPlayer::pause(bool yes)
+    {
+        if (isStarted())
+        {
+            if (yes)
+            {
+                auto command { Command::Pause };
+                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+            }
+            else
+            {
+                auto command { Command::Resume };
+                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+            }
+        }
+    }
+
+    void AudioPlayer::next(bool fwd)
+    {
+        if (isStarted())
+        {
+            if (fwd)
+            {
+                auto command { Command::Next };
+                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+            }
+            else
+            {
+                auto command { Command::Prev };
+                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+            }
+        }
+    }
+
+    void AudioPlayer::stop()
+    {
+        if (isStarted())
+        {
+            auto command { Command::Stop };
+            xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+        }
+    }
+
+    bool AudioPlayer::isStarted()
+    {
+        task::LockGuard lock(m_mutex);
+        return (m_task.handle != nullptr);
+    }
+
+    bool AudioPlayer::isPlaying()
+    {
+        bool taskStarted = isStarted();
+        return (taskStarted && m_task.player.isActive());
     }
 
     void AudioPlayer::task()
     {
-        // AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Info);
+        {   task::LockGuard lock(m_mutex);
+            initSource();
+            initDecode();
 
-        initSource();
-        initDecode();
-        initOutput();
+            m_task.player.setAudioSource(*m_source);
+            m_task.player.setDecoder(*m_decode);
+            m_task.player.setOutput(m_output);
 
-        m_player.setAudioSource(*m_source);
-        m_player.setDecoder(*m_decode);
-        m_player.setOutput(m_output);
+            m_task.player.setMetadataCallback(metadataCallback);
+            m_task.player.setVolumeControl(m_volCtr);
+            m_task.player.setVolume(m_task.volume);
 
-        m_player.setVolumeControl(m_volume);
-        m_player.setMetadataCallback(metadataCallback);
-        m_player.begin();
-
-        for (;;)
-        {
-            // TODO
-            m_player.copy();
+            m_task.player.begin();
         }
+
+        while (true)
+        {
+            Command command;
+            if (xQueueReceive(m_cmdQueue, &command, 0) == pdTRUE)
+            {
+                if (command == Command::Stop) break;
+
+                task::LockGuard lock(m_mutex);
+                switch (command)
+                {
+                    case Command::Volume:
+                        m_task.player.setVolume(m_task.volume);
+                        break;
+
+                    case Command::Pause:
+                        m_task.player.setActive(false);
+                        break;
+
+                    case Command::Resume:
+                        m_task.player.setActive(true);
+                        break;
+
+                    case Command::Next:
+                        m_task.player.next();
+                        break;
+
+                    case Command::Prev:
+                        m_task.player.previous();
+                        break;
+                }
+            }
+            m_task.player.copy();
+        }
+
+        {   task::LockGuard lock(m_mutex);
+            m_task.handle = nullptr;
+            m_task.player.end();
+
+            deinitDecode();
+            deinitSource();
+        }
+        vTaskDelete(nullptr);
     }
 
     void AudioPlayer::initSource()
@@ -69,31 +205,25 @@ namespace service
         m_decode = m_id3Flt;
     }
 
-    void AudioPlayer::initOutput()
+    void AudioPlayer::deinitSource()
     {
-        // configure I2S
-        auto i2sCfg = m_i2sOut.defaultConfig();
-        i2sCfg.pin_ws = PIN_SND_RLCLK;
-        i2sCfg.pin_bck = PIN_SND_BCLK;
-        i2sCfg.pin_data = PIN_SND_DIN;
-        m_i2sOut.begin(i2sCfg);
+        delete m_cbSrc;
+        m_cbSrc = nullptr;
+        m_source = nullptr;
+    }
 
-        // configure FFT
-        auto fftCfg = m_fftOut.defaultConfig();
-        fftCfg.copyFrom(i2sCfg);
-        fftCfg.length = 1024;
-        fftCfg.callback = &fftResultCallback;
-        m_fftOut.begin(fftCfg);
-
-        // configure MultiOutput
-        m_output.add(m_fftOut);
-        m_output.add(m_i2sOut);
+    void AudioPlayer::deinitDecode()
+    {
+        delete m_mp3Dec;
+        delete m_id3Flt;
+        m_mp3Dec = nullptr;
+        m_id3Flt = nullptr;
+        m_decode = nullptr;
     }
 
     void AudioPlayer::initStreamCallback()
     {
-        const char* path = "/audio/mp3/pl01";
-        audioPlayer.m_dir = driver::storage.getFS().open(path);
+        audioPlayer.m_dir = driver::storage.getFS().open(audioPlayer.m_path);
     }
 
     Stream* AudioPlayer::nextStreamCallback(int offset)
