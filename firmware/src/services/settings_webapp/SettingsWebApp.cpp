@@ -15,7 +15,7 @@ namespace service
                 auto instance = static_cast<SettingsWebApp*>(data);
                 instance->task();
             },
-            "webapp_task", 4096, this, 1, nullptr, 1
+            "webapp_task", 8192, this, 1, nullptr, 1
         );
     }
 

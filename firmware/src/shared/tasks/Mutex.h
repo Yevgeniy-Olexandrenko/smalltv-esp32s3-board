@@ -9,7 +9,7 @@ namespace task
     {
     public:
         // Create and destroy
-        Mutex() : m_semaphore(xSemaphoreCreateBinary()) { xSemaphoreGive(m_semaphore); }
+        Mutex() : m_semaphore(xSemaphoreCreateMutex()) {}
         ~Mutex() { vSemaphoreDelete(m_semaphore); }
 
         // Get and release lock

@@ -9,24 +9,29 @@
 #include <FS.h>
 
 #include "AudioContent.h"
+#include "shared/settings/Settings.h"
 #include "shared/tasks/Mutex.h"
 
 namespace service
 {
-    class AudioPlayer
+    class AudioPlayer : public settings::Provider
     {
-        enum class Command { Volume, Pause, Resume, Next, Prev, Stop };
+        enum class Command : uint8_t { Volume, Pause, Resume, Next, Prev, Stop };
 
     public:
-        void begin(float vol);
+        void begin(float volume);
         bool start(AudioContent content, const char* resource);
-        void volume(float vol);
+        void setVolume(float volume);
         void pause(bool yes);
         void next(bool fwd);
         void stop();
 
         bool isStarted();
         bool isPlaying();
+
+    public:
+        void settingsBuild(sets::Builder& b) override;
+        void settingsUpdate(sets::Updater& u) override;
 
     private:
         void task();

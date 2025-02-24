@@ -4,7 +4,7 @@
 
 namespace service
 {
-    void AudioPlayer::begin(float vol)
+    void AudioPlayer::begin(float volume)
     {
         audio_tools::AudioToolsLogger.begin(Serial, audio_tools::AudioToolsLogLevel::Error);
 
@@ -28,7 +28,9 @@ namespace service
             m_output.add(m_fftOut);
             m_output.add(m_i2sOut);
         }
-        volume(vol);
+
+        m_cmdQueue = xQueueCreate(8, sizeof(Command));
+        setVolume(volume);
     }
 
     bool AudioPlayer::start(AudioContent content, const char* resource)
@@ -41,9 +43,10 @@ namespace service
                 // prepare source and decoder
                 String path;
                 path += "/audio";
-                path += '/' + content.extOrContentType;
-                path += '/' + resource;
+                path += "/" + String(content.extOrContentType);
+                path += "/" + String(resource);
                 m_path = path;
+                log_i("path: %s", path.c_str());
 
                 // launch playback task
                 return xTaskCreatePinnedToCore(
@@ -59,13 +62,14 @@ namespace service
         return false;
     }
 
-    void AudioPlayer::volume(float vol)
+    void AudioPlayer::setVolume(float volume)
     {
-        task::LockGuard lock(m_mutex);
-
-        m_task.volume =  0.2f;
-        m_task.volume += 0.8f * constrain(vol, 0.f, 1.f);
+        m_mutex.lock();
+        m_task.volume =  0.1f;
+        m_task.volume += 0.9f * constrain(volume, 0.f, 1.f);
         m_task.volume *= SND_PRE_AMP;
+        m_mutex.unlock();
+        log_i("new volume: %f", m_task.volume);
 
         if (isStarted())
         {
@@ -129,6 +133,75 @@ namespace service
         return (taskStarted && m_task.player.isActive());
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+
+    void AudioPlayer::settingsBuild(sets::Builder &b)
+    {
+        sets::Group g(b, "Audio player");
+        if (isStarted())
+        {
+            b.Label("Title", "This is some title");
+            b.Label("Artist", "An artist here");
+
+            {
+                sets::Buttons buttons(b);
+                if (b.Button("Stop"))
+                {
+                    stop();
+                    b.reload();
+                }
+
+                if (b.Button("Prev"))
+                {
+                    next(false);
+                    b.reload();
+                }
+
+                if (b.Button("Next"))
+                {
+                    next(true);
+                    b.reload();
+                }
+
+                if (b.Button(isPlaying() ? "Pause" : "Play"))
+                {
+                    pause(isPlaying());
+                    b.reload();
+                }
+            }
+        }
+        else
+        {
+            String typeChoice = "mp3;acc;mod";
+            String listChoise = "Free;Jazz;Retrowave;Big;Instrumental";
+
+            if (b.Select("Type", typeChoice))
+            {
+                // TODO
+            }
+
+            if (b.Select("Playlist", listChoise))
+            {
+                // TODO
+            }
+
+            if (b.Button("Start"))
+            {
+                // TODO
+                start(service::StorageFileMP3(), "Christmas");
+                b.reload();
+            }
+        }
+
+    }
+
+    void AudioPlayer::settingsUpdate(sets::Updater &u)
+    {
+        //
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
     void AudioPlayer::task()
     {
         {   task::LockGuard lock(m_mutex);
@@ -141,9 +214,10 @@ namespace service
 
             m_task.player.setMetadataCallback(metadataCallback);
             m_task.player.setVolumeControl(m_volCtr);
-            m_task.player.setVolume(m_task.volume);
-
             m_task.player.begin();
+
+            m_task.player.setVolume(m_task.volume);
+            log_i("start with volume: %f", m_task.volume);
         }
 
         while (true)
@@ -157,6 +231,7 @@ namespace service
                 switch (command)
                 {
                     case Command::Volume:
+                        log_i("received volume: %f", m_task.volume);
                         m_task.player.setVolume(m_task.volume);
                         break;
 
@@ -224,6 +299,7 @@ namespace service
     void AudioPlayer::initStreamCallback()
     {
         audioPlayer.m_dir = driver::storage.getFS().open(audioPlayer.m_path);
+        log_i("open dir: %s (%d)", audioPlayer.m_dir.path(), int(audioPlayer.m_dir));
     }
 
     Stream* AudioPlayer::nextStreamCallback(int offset)
@@ -231,6 +307,8 @@ namespace service
         audioPlayer.m_file.close();
         for (int i = 0; i < offset; i++)
             audioPlayer.m_file = audioPlayer.m_dir.openNextFile();
+
+        log_i("open file: %s (%d)", audioPlayer.m_file.path(), int(audioPlayer.m_file));
         return &audioPlayer.m_file;
     }
 
