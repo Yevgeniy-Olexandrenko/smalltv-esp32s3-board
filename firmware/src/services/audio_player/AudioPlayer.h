@@ -68,6 +68,12 @@ namespace service
         // volume constrol component
         audio_tools::LinearVolumeControl m_volCtr;
 
+        // webapp data
+        bool m_isStarted = false;
+        bool m_isPlaying = false;
+        String m_title;
+        String m_artist;
+
         // audio context
         audio_tools::AudioSourceCallback* m_cbSrc = nullptr;
         audio_tools::MP3DecoderHelix* m_mp3Dec = nullptr;
@@ -75,6 +81,7 @@ namespace service
         audio_tools::AudioSource* m_source = nullptr;
         audio_tools::AudioDecoder* m_decode = nullptr;
         String m_path;
+        int m_fileIndex;
         fs::File m_dir;
         fs::File m_file;
     };
