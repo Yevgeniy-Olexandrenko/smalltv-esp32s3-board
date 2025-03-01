@@ -327,6 +327,7 @@ namespace service
 
         if (audioPlayer.m_file)
         {
+            audioPlayer.fetchTitleAndAuthor(audioPlayer.m_file.name());
             log_i("open file: %s (%d)", audioPlayer.m_file.path(), audioPlayer.m_fileIndex);
             return &audioPlayer.m_file;
         }
@@ -365,6 +366,21 @@ namespace service
                 audioPlayer.m_artist = String(str, len);
                 break;
         }
+    }
+
+    void AudioPlayer::fetchTitleAndAuthor(String metadata)
+    {
+        auto i0 = metadata.lastIndexOf('.');
+        if (i0 < 0) i0 = metadata.length();
+
+        auto i1 = metadata.indexOf(" - ");
+        if (i1 > 0)
+        {
+            m_title = metadata.substring(i1 + 3, i0);
+            m_artist = metadata.substring(0, i1);
+        }
+        else
+            m_title = metadata.substring(0, i0);
     }
 
     AudioPlayer audioPlayer;

@@ -50,6 +50,9 @@ namespace service
         static void fftResultCallback(audio_tools::AudioFFTBase& fft);
         static void metadataCallback(audio_tools::MetaDataType type, const char* str, int len);
 
+        //
+        void fetchTitleAndAuthor(String filename);
+
     private:
         // player state in multitasking context
         struct {
