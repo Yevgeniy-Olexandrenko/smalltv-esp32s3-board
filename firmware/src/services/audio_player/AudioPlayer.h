@@ -1,38 +1,92 @@
 #pragma once
 
-#include <FS.h>
+#define USE_AUDIOTOOLS_NS false
+
+#include <AudioTools.h>
+//#include <AudioTools/AudioCodecs/CodecMP3Helix.h>
+//#include <AudioTools/AudioCodecs/CodecAACHelix.h>
+//#include <AudioTools/AudioLibs/AudioRealFFT.h>
+//#include <FS.h>
 #include "AudioContext.h"
-#include "shared/tasks/Thread.h"
+#include "shared/settings/Settings.h"
+#include "shared/tasks/Mutex.h"
 
 namespace service
 {
     using namespace service_audio_player_impl;
 
-    class AudioPlayer
+    class AudioPlayer : public settings::Provider
     {
+        enum class Command : uint8_t { Volume, Pause, Resume, Next, Prev, Stop };
+
     public:
-        AudioPlayer();
-        ~AudioPlayer();
+        void begin(float volume);
+        bool start(AudioContext* context);
+        void setVolume(float volume);
+        void pause(bool yes);
+        void next(bool fwd);
+        void stop();
 
-        bool begin(AudioType type, fs::File& dir);
-        void pause();
-        void play();
-        void end();
+        bool isStarted();
+        bool isPlaying();
 
-        uint8_t getVolume() const;
-        void setVolume(uint8_t volume);
-        bool isPlaying() const;
+    public:
+        void settingsBuild(sets::Builder& b) override;
+        void settingsUpdate(sets::Updater& u) override;
 
     private:
-        AudioType _type;
-        uint8_t _volume;
+        void task();
 
-        fs::File _dir;
+        //void initSource();
+        //void initDecode();
 
-        audio::Output* _output;
-        AudioContext*  _context;
-        task::Thread*  _thread;
+        //void deinitSource();
+        //void deinitDecode();
 
-        
+        // audio context
+        //static void initStreamCallback();
+        //static Stream* nextStreamCallback(int offset);
+
+        // player callbacks
+        static void fftResultCallback(audio_tools::AudioFFTBase& fft);
+        static void metadataCallback(audio_tools::MetaDataType type, const char* str, int len);
+
+    private:
+        // player state in multitasking context
+        struct {
+            float volume = 0;
+            TaskHandle_t handle = nullptr;
+            AudioContext* context = nullptr;
+            audio_tools::AudioPlayer player;
+        } m_task;
+        QueueHandle_t m_cmdQueue;
+        task::Mutex m_mutex;
+
+        // output components
+        audio_tools::I2SStream m_i2sOut;
+        audio_tools::AudioRealFFT m_fftOut;
+        audio_tools::MultiOutput m_output;
+
+        // volume constrol component
+        audio_tools::LinearVolumeControl m_volCtr;
+
+        // webapp data
+        bool m_isStarted = false;
+        bool m_isPlaying = false;
+        String m_title;
+        String m_artist;
+
+        // audio context
+        //audio_tools::AudioSourceCallback* m_cbSrc = nullptr;
+        //audio_tools::MP3DecoderHelix* m_mp3Dec = nullptr;
+        //audio_tools::MetaDataFilterDecoder* m_id3Flt = nullptr;
+        //audio_tools::AudioSource* m_source = nullptr;
+        //audio_tools::AudioDecoder* m_decode = nullptr;
+        //String m_path;
+        //int m_fileIndex;
+        //fs::File m_dir;
+        //fs::File m_file;
     };
+
+    extern AudioPlayer audioPlayer;
 }

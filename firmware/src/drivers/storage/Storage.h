@@ -1,7 +1,7 @@
 #pragma once
 
-#include <FS.h>
 #include <USBMSC.h>
+#include "FatFS.h"
 
 namespace driver
 {
@@ -25,7 +25,7 @@ namespace driver
         uint64_t getPartitionSize() const;
         
         // file system and its properties
-        fs::FS& getFS() const;
+        FatFS& getFS() const;
         const char* getFSMountPoint() const;
         uint64_t getFSTotalBytes() const;
         uint64_t getFSUsedBytes() const;

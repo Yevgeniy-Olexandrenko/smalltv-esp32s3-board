@@ -1,56 +1,69 @@
 #pragma once
 
-#include "AudioType.h"
-#include "shared/audio/source/Source.h"
-#include "shared/audio/decode/Decode.h"
-#include "shared/audio/output/Output.h"
-#include "shared/audio/source/SourceExtractID3.h"
+#define USE_AUDIOTOOLS_NS false
+
+#include <AudioTools.h>
+#include <FS.h>
 
 namespace service_audio_player_impl
 {
     class AudioContext
     {
     public:
-        AudioContext();
-        virtual ~AudioContext();
+        AudioContext() = default;
+        virtual ~AudioContext() = default;
 
-        virtual bool open(const char* resource);
-        virtual bool bind(audio::Output* output);
-        virtual bool free();
+        virtual void begin() = 0;
+        virtual void end() = 0;
 
-        audio::Source* getSource() const { return _source; }
-        audio::Decode* getDecode() const { return _decode; }
+        using MetadataCallback = void (*)(audio_tools::MetaDataType type, const char* str, int len);
+        void setMetadataCallback(MetadataCallback callback) { m_mdcb = callback; };
+
+        virtual audio_tools::AudioSource& getSource() = 0;
+        virtual audio_tools::AudioDecoder& getDecoder() = 0;
 
     protected:
-        bool isFileNameEndsWithExt(const char* filepath, const char* ext) const;
-
-    protected:
-        audio::Source* _source;
-        audio::Decode* _decode;
-    };
-
-    class MODFileAudioContext : public AudioContext
-    {
-    public:
-        MODFileAudioContext();
-        ~MODFileAudioContext() override;
-
-        bool open(const char* resource) override;
-    };
-
-    class MP3FileAudioContext : public AudioContext
-    {
-    public:
-        MP3FileAudioContext();
-        ~MP3FileAudioContext() override;
-
-        bool open(const char* resource) override;
-        bool bind(audio::Output* output) override;
+        void fetchTitleAndAuthor(String metadata);
 
     private:
-        audio::SourceExtractID3* _srcMP3;
+        MetadataCallback m_mdcb = nullptr;
     };
 
-    AudioContext* createAudioContext(AudioType type);
-    void destroyAudioContext(AudioContext* context);
+    class StorageAudioContext : public AudioContext
+    {
+        static StorageAudioContext* s_this;
+        static void s_initStreamCallback();
+        static Stream* s_nextStreamCallback(int offset);
+
+    public:
+        StorageAudioContext(const char* ext, const char* dir);
+
+        void begin() override;
+        void end() override;
+
+        audio_tools::AudioSource& getSource() override { return *m_source; }
+        audio_tools::AudioDecoder& getDecoder() override { return *m_decode; }
+
+    private:
+        void initStreamCallback();
+        Stream* nextStreamCallback(int offset);
+
+    private:
+        audio_tools::AudioSource* m_source;
+        audio_tools::AudioDecoder* m_decode;
+
+        audio_tools::AudioSourceCallback* m_cbSrc;
+        audio_tools::MetaDataFilterDecoder* m_mdFlt;
+        audio_tools::AudioDecoder* m_codec;
+
+        String m_path;
+        int m_fileIndex;
+        fs::File m_dir;
+        fs::File m_file;
+    };
+
+    class RadioAudioContext : public AudioContext
+    {
+        //
+    };
 }

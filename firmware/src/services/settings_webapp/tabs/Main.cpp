@@ -3,6 +3,7 @@
 #include "drivers/Drivers.h"
 #include "services/network_connection/NetworkConnection.h"
 #include "services/settings_webapp/SettingsWebApp.h"
+#include "services/audio_player/AudioPlayer.h"
 #include "settings.h"
 
 const char custom_html[] = 
@@ -33,25 +34,31 @@ namespace service_settings_webapp_impl
         }
 
         {
-            sets::Row r(b, "", sets::DivType::Block);
+            sets::Row r(b, "", sets::DivType::Line);
             b.LED("internet"_h, "Internet", hasInternet);
             b.Label("uptime"_h, "Uptime", getUptime());
         }
 
         {
-            sets::Row r(b, "Controls", sets::DivType::Block);
+            sets::Row r(b, "", sets::DivType::Line);
             if (b.Slider(db::lcd_brightness, "Brightness", 0, 200))
             {
-                auto brightness = float(b.build.value);
-                driver::display.setBrightness(float(brightness) / 200);
+                auto brightness = (float(b.build.value) / 200);
+                driver::display.setBrightness(brightness);
             }
             if (hardware::hasAudio())
             {
                 if (b.Slider(db::audio_volume, "Volume", 0, 200))
                 {
-                    // TODO
+                    auto volume = (float(b.build.value) / 200);
+                    service::audioPlayer.setVolume(volume);
                 }
             }
+        }
+
+        if (hardware::hasAudio())
+        {
+            service::audioPlayer.settingsBuild(b);
         }
 
         {
@@ -86,6 +93,12 @@ namespace service_settings_webapp_impl
         {
             u.update("html"_h, getHTML());
         }
+
+        if (hardware::hasAudio())
+        {
+            service::audioPlayer.settingsUpdate(u);
+        }
+
         u.update("internet"_h, hasInternet);
         u.update("uptime"_h, getUptime());
         u.update("ram_usage"_h, getRAMUsageInfo());

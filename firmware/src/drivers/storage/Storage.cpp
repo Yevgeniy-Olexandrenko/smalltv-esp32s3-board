@@ -1,4 +1,3 @@
-#include <ff.h>
 #include <USB.h>
 #include "Flash.h"
 #include "SDCard.h"
@@ -9,7 +8,13 @@
 
 namespace driver
 {
-    fs::FS _invalidFS(nullptr);
+    class InvalidFS final : public FatFS
+    {
+    public:
+        uint64_t sectorCount() const override { return 0; };
+        uint64_t sectorSize() const override { return 0; };
+        bool isMounted() const override { return false; };
+    } s_invalidFS;
 
     Storage::Storage()
         : m_type(Type::None)
@@ -76,8 +81,8 @@ namespace driver
     {
         if (!isMSCRunning())
         {
-            if (isSDCardStorage()) return sdcard.getSectorSize();
-            else if (isFlashStorage()) return flash.getSectorCount();
+            if (isSDCardStorage()) return sdcard.sectorSize();
+            else if (isFlashStorage()) return flash.sectorCount();
         }
         return 0;
     }
@@ -86,8 +91,8 @@ namespace driver
     {
         if (!isMSCRunning())
         {
-            if (isSDCardStorage()) return sdcard.getSectorCount();
-            else if (isFlashStorage()) return flash.getSectorCount();
+            if (isSDCardStorage()) return sdcard.sectorCount();
+            else if (isFlashStorage()) return flash.sectorCount();
         }
         return 0;
     }
@@ -96,30 +101,30 @@ namespace driver
     {
         if (!isMSCRunning())
         {
-            if (isSDCardStorage()) return sdcard.getPartitionSize();
-            else if (isFlashStorage()) return flash.getPartitionSize();
+            if (isSDCardStorage()) return sdcard.partitionSize();
+            else if (isFlashStorage()) return flash.partitionSize();
         }
         return 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    fs::FS& Storage::getFS() const
+    FatFS& Storage::getFS() const
     {
         if (!isMSCRunning())
         {
             if (isSDCardStorage()) return sdcard;
             else if (isFlashStorage()) return flash;
         }
-        return _invalidFS;
+        return s_invalidFS;
     }
 
     const char* Storage::getFSMountPoint() const
     {
         if (!isMSCRunning())
         {
-            if (isSDCardStorage()) return sdcard.getMountPoint();
-            else if (isFlashStorage()) return flash.getMountPoint();
+            if (isSDCardStorage()) return sdcard.mountPoint();
+            else if (isFlashStorage()) return flash.mountPoint();
         }
         return nullptr;
     }
@@ -128,20 +133,8 @@ namespace driver
     {
         if (!isMSCRunning())
         {
-            int pdrv = -1;
-            if (isSDCardStorage()) pdrv = sdcard.getDriveNumber();
-            else if (isFlashStorage()) pdrv = flash.getDriveNumber();
-            if (pdrv >= 0)
-            {
-                FATFS *fs; uint32_t free_clust;
-                char drv[3] = { char('0' + pdrv), ':', '\0' };
-                if (f_getfree(drv, &free_clust, &fs) == FR_OK)
-                {
-                    auto total_sect = (fs->n_fatent - 2) * fs->csize;
-                    auto sect_size = fs->ssize;
-                    return (total_sect * sect_size);
-                }
-            }   
+            if (isSDCardStorage()) return sdcard.totalBytes();
+            else if (isFlashStorage()) return flash.totalBytes();
         }
         return 0;
     }
@@ -150,20 +143,8 @@ namespace driver
     {
         if (!isMSCRunning())
         {
-            int pdrv = -1;
-            if (isSDCardStorage()) pdrv = sdcard.getDriveNumber();
-            else if (isFlashStorage()) pdrv = flash.getDriveNumber();
-            if (pdrv >= 0)
-            {
-                FATFS *fs; uint32_t free_clust;
-                char drv[3] = { char('0' + pdrv), ':', '\0' };
-                if (f_getfree(drv, &free_clust, &fs) == FR_OK)
-                {
-                    auto used_sect = (fs->n_fatent - 2 - free_clust) * fs->csize;
-                    auto sect_size = fs->ssize;
-                    return (used_sect * sect_size);
-                }
-            }   
+            if (isSDCardStorage()) return sdcard.usedBytes();
+            else if (isFlashStorage()) return flash.usedBytes();
         }
         return 0;
     }
@@ -195,15 +176,15 @@ namespace driver
                 // Mass Storage Class device for SD Card FAT
                 m_usbMSC.onRead([](uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) -> int32_t
                 {
-                    sdcard.readSectors((uint8_t *)buffer, lba, bufsize / sdcard.getSectorSize());
+                    sdcard.readSectors((uint8_t *)buffer, lba, bufsize / sdcard.sectorSize());
                     return bufsize;
                 });
                 m_usbMSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) -> int32_t
                 {
-                    sdcard.writeSectors(buffer, lba, bufsize / sdcard.getSectorSize());
+                    sdcard.writeSectors(buffer, lba, bufsize / sdcard.sectorSize());
                     return bufsize;
                 });
-                m_runMSC &= m_usbMSC.begin(sdcard.getSectorCount(), sdcard.getSectorSize());
+                m_runMSC &= m_usbMSC.begin(sdcard.sectorCount(), sdcard.sectorSize());
             }
             else
             {
@@ -218,7 +199,7 @@ namespace driver
                     flash.writeBuffer(lba, offset, buffer, bufsize);
                     return bufsize;
                 });
-                m_runMSC &= m_usbMSC.begin(flash.getSectorCount(), flash.getSectorSize());
+                m_runMSC &= m_usbMSC.begin(flash.sectorCount(), flash.sectorSize());
             }
         }
         return m_runMSC;

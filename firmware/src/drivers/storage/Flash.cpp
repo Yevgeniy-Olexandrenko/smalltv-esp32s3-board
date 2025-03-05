@@ -1,14 +1,11 @@
-#include <vfs_api.h>
 #include <esp_vfs_fat.h>
 #include <diskio_wl.h>
-
 #include "Flash.h"
-#include "shared/tasks/LockGuard.h"
 
 namespace driver
 {
     Flash::Flash()
-        : fs::FS(FSImplPtr(new VFSImpl()))
+        : FatFS()
         , m_wlHandle(WL_INVALID_HANDLE)
     {}
 
@@ -49,7 +46,7 @@ namespace driver
             return false;
         }
 
-        _impl->mountpoint(mountPoint);
+        setMountPoint(mountPoint);
         return true;
     }
 
@@ -58,45 +55,28 @@ namespace driver
         if (!isMounted()) return;
         
         task::LockGuard lock(m_mutex);
-        esp_vfs_fat_spiflash_unmount(_impl->mountpoint(), m_wlHandle);
+        esp_vfs_fat_spiflash_unmount(mountPoint(), m_wlHandle);
         m_wlHandle = WL_INVALID_HANDLE;
-        _impl->mountpoint(nullptr);
+        resMountPoint();
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    size_t Flash::getSectorSize() const
-    {
-        if (m_wlHandle == WL_INVALID_HANDLE) return 0;
-        return wl_sector_size(m_wlHandle);
-    }
-
-    size_t Flash::getSectorCount() const
+    uint64_t Flash::sectorCount() const
     {
         if (m_wlHandle == WL_INVALID_HANDLE) return 0;
         return (wl_size(m_wlHandle) / wl_sector_size(m_wlHandle));
     }
 
-    size_t Flash::getPartitionSize() const
+    uint64_t Flash::sectorSize() const
     {
-        return (getSectorSize() * getSectorCount());
+        if (m_wlHandle == WL_INVALID_HANDLE) return 0;
+        return wl_sector_size(m_wlHandle);
     }
-
-    ////////////////////////////////////////////////////////////////////////////
 
     bool Flash::isMounted() const
     {
         return (m_wlHandle != WL_INVALID_HANDLE);
-    }
-
-    const char *Flash::getMountPoint() const
-    {
-        return _impl->mountpoint();
-    }
-
-    int Flash::getDriveNumber() const
-    {
-        return ff_diskio_get_pdrv_wl(m_wlHandle);
     }
 
     ////////////////////////////////////////////////////////////////////////////

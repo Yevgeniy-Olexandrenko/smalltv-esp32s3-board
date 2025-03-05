@@ -1,142 +1,130 @@
 #include "AudioContext.h"
-
-#include "shared/audio/source/SourceFile.h"
-#include "shared/audio/source/SourceMemory.h"
-
-#include "shared/audio/decode/DecodeMOD.h"
-#include "shared/audio/decode/DecodeMP3.h"
-
+#include <AudioTools/AudioCodecs/CodecMP3Helix.h>
+#include <AudioTools/AudioCodecs/CodecAACHelix.h>
 #include "drivers/storage/Storage.h"
 
 namespace service_audio_player_impl
 {
+    void AudioContext::fetchTitleAndAuthor(String metadata)
+    {
+        if (m_mdcb)
+        {
+            String title, artist;
+
+            auto i0 = metadata.lastIndexOf('.');
+            if (i0 < 0) i0 = metadata.length();
+
+            auto i1 = metadata.indexOf(" - ");
+            if (i1 > 0)
+            {
+                title = metadata.substring(i1 + 3, i0);
+                artist = metadata.substring(0, i1);
+            }
+            else
+            {
+                title = metadata.substring(0, i0);
+            }
+
+            if (!title.isEmpty())
+                m_mdcb(audio_tools::MetaDataType::Title, title.c_str(), title.length());
+
+            if (!artist.isEmpty())
+                m_mdcb(audio_tools::MetaDataType::Artist, artist.c_str(), artist.length());
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
-    AudioContext* createAudioContext(AudioType type)
+    StorageAudioContext* StorageAudioContext::s_this = nullptr;
+
+    void StorageAudioContext::s_initStreamCallback() 
+    { 
+        if (s_this) 
+            s_this->initStreamCallback(); 
+    }
+    
+    Stream* StorageAudioContext::s_nextStreamCallback(int offset)
     {
-        switch(type)
-        {
-        case AudioType::MODFile: return new MODFileAudioContext();
-        case AudioType::MP3File: return new MP3FileAudioContext();
-        }
+        if (s_this)
+            return s_this->nextStreamCallback(offset);
         return nullptr;
     }
 
-    void destroyAudioContext(AudioContext *context)
+    StorageAudioContext::StorageAudioContext(const char* ext, const char* dir)
+        : m_source(nullptr)
+        , m_decode(nullptr)
     {
-        if (context) delete context;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    AudioContext::AudioContext()
-        : _source(nullptr)
-        , _decode(nullptr)
-    {}
-
-    AudioContext::~AudioContext()
-    {
-        free();
-        if (_decode) delete _decode;
-        if (_source) delete _source;
-    }
-
-    bool AudioContext::open(const char *resource)
-    {
-        return false;
-    }
-
-    bool AudioContext::bind(audio::Output *output)
-    {
-        if (_source && _decode && output && !_decode->isRunning())
+        s_this = this;
+        if (ext && dir)
         {
-            return _decode->begin(_source, output);
+            String path;
+            path += "/audio";
+            path += "/" + String(ext);
+            path += "/" + String(dir);
+            log_i("path: %s", path.c_str());
+            m_path = path;
         }
-        return false;
     }
 
-    bool AudioContext::free()
+    void StorageAudioContext::begin()
     {
-        bool ok = true;
-        if (_decode) ok &= _decode->stop();
-        if (_source) ok &= _source->close();
-        return ok;
-    }
-
-    bool AudioContext::isFileNameEndsWithExt(const char *filepath, const char *ext) const
-    {
-        if (filepath && ext)
+        if (!m_source)
         {
-            // prepare strings for parsing
-            auto strExt = String(ext), strPath = String(filepath);
-            auto strName = strPath.substring(strPath.lastIndexOf('/'));
-
-            // extension and file name must not be empty
-            if (strExt.isEmpty() || strName.isEmpty()) return false;
-
-            // ignore character case
-            strExt.toLowerCase();
-            strName.toLowerCase();
-
-            // hidden files not allowed
-            if (strName.charAt(0) == '.') return false;
-            return strName.endsWith('.' + strExt);
+            m_cbSrc = new audio_tools::AudioSourceCallback();
+            m_cbSrc->setCallbackOnStart(&s_initStreamCallback);
+            m_cbSrc->setCallbackNextStream(&s_nextStreamCallback);
+            m_source = m_cbSrc;
         }
-        return false;
-    }
 
-    ////////////////////////////////////////////////////////////////////////////
-
-    MODFileAudioContext::MODFileAudioContext()
-    {
-        _source = new audio::SourceMemory();
-        _decode = new audio::DecodeMOD();
-    }
-
-    MODFileAudioContext::~MODFileAudioContext()
-    {}
-
-    bool MODFileAudioContext::open(const char *resource)
-    {
-        if (_source && isFileNameEndsWithExt(resource, "mod"))
+        if (!m_decode)
         {
-            auto source = static_cast<audio::SourceMemory*>(_source);
-            return source->open(driver::storage.getFS(), resource);
+            m_codec  = new audio_tools::MP3DecoderHelix();
+            m_mdFlt  = new audio_tools::MetaDataFilterDecoder(*m_codec);
+            m_decode = m_mdFlt;
         }
-        return false;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
-    MP3FileAudioContext::MP3FileAudioContext()
+    void StorageAudioContext::end()
     {
-        _source = new audio::SourceFile();
-        _srcMP3 = new audio::SourceExtractID3(_source);
-        _decode = new audio::DecodeMP3();
-    }
-
-    MP3FileAudioContext::~MP3FileAudioContext()
-    {
-        delete _srcMP3;
-    }
-
-    bool MP3FileAudioContext::open(const char *resource)
-    {
-        if (_source && isFileNameEndsWithExt(resource, "mp3"))
+        if (m_source)
         {
-            auto source = static_cast<audio::SourceFile*>(_source);
-            return source->open(driver::storage.getFS(), resource);
+            delete m_cbSrc;
+            m_source = nullptr;
         }
-        return false;
+
+        if (m_decode)
+        {
+            delete m_codec;
+            delete m_mdFlt;
+            m_decode = nullptr;
+        }
     }
 
-    bool MP3FileAudioContext::bind(audio::Output *output)
+    void StorageAudioContext::initStreamCallback()
     {
-        if (_srcMP3 && _decode && output && !_decode->isRunning())
+        m_fileIndex = 0;
+        m_dir = driver::storage.getFS().open(m_path);
+        log_i("open dir: %s (%d)", m_dir.path(), int(m_dir));
+    }
+
+    Stream* StorageAudioContext::nextStreamCallback(int offset)
+    {
+        //audioPlayer.m_title.clear();
+        //audioPlayer.m_artist.clear();
+
+        m_file.close();
+        m_fileIndex += offset;
+        m_dir.rewindDirectory();
+        for (int i = 0; i <= m_fileIndex; i++)
+            m_file = m_dir.openNextFile();
+
+        if (m_file)
         {
-            return _decode->begin(_srcMP3, output);
+            fetchTitleAndAuthor(m_file.name());
+            log_i("open file: %s (%d)", m_file.path(), m_fileIndex);
+            return &m_file;
         }
-        return false;
+        return nullptr;
     }
 
     ////////////////////////////////////////////////////////////////////////////

@@ -14,7 +14,7 @@ namespace service_audio_player_impl
             {
                 if (file.isDirectory())
                 {
-                    for(; m_list.size() < m_list.capacity();)
+                    for (; m_list.size() < m_list.capacity();)
                     {
                         String path = file.getNextFileName();
                         if (path.isEmpty()) break;
