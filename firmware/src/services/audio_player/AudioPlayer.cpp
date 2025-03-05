@@ -33,31 +33,19 @@ namespace service
         setVolume(volume);
     }
 
-    bool AudioPlayer::start(AudioContent content, const char* resource)
+    bool AudioPlayer::start(AudioContext* context)
     {
-        if (!isStarted() && resource)
+        if (!isStarted() && context && !m_task.context)
         {
-            if (content.format == AudioContent::Format::mp3 && 
-                content.location == AudioContent::Location::StorageFile)
-            {
-                // prepare source and decoder
-                String path;
-                path += "/audio";
-                path += "/" + String(content.extOrContentType);
-                path += "/" + String(resource);
-                m_path = path;
-                log_i("path: %s", path.c_str());
-
-                // launch playback task
-                return xTaskCreatePinnedToCore(
-                    [](void* data) 
-                    {
-                        auto instance = static_cast<AudioPlayer*>(data);
-                        instance->task();
-                    },
-                    "audio_player_task", 8192, this, 1, &m_task.handle, 1
-                ) == pdPASS;
-            }
+            m_task.context = context;
+            return xTaskCreatePinnedToCore(
+                [](void* data) 
+                {
+                    auto instance = static_cast<AudioPlayer*>(data);
+                    instance->task();
+                },
+                "audio_player_task", 8192, this, 1, &m_task.handle, 1
+            ) == pdPASS;
         }
         return false;
     }
@@ -180,7 +168,7 @@ namespace service
             if (b.Button("Start"))
             {
                 // TODO
-                start(service::StorageFileMP3(), "Christmas");
+                // start(service::StorageFileMP3(), "Christmas");
                 b.reload();
             }
         }
@@ -215,15 +203,16 @@ namespace service
 
     void AudioPlayer::task()
     {
-        {   task::LockGuard lock(m_mutex);
-            initSource();
-            initDecode();
-
-            m_task.player.setAudioSource(*m_source);
-            m_task.player.setDecoder(*m_decode);
+        {   
+            task::LockGuard lock(m_mutex);
+            m_task.context->begin();
+            m_task.context->setMetadataCallback(&metadataCallback);
+            
+            m_task.player.setAudioSource(m_task.context->getSource());
+            m_task.player.setDecoder(m_task.context->getDecoder());
             m_task.player.setOutput(m_output);
 
-            m_task.player.setMetadataCallback(metadataCallback);
+            m_task.player.setMetadataCallback(&metadataCallback);
             m_task.player.setVolumeControl(m_volCtr);
             m_task.player.begin();
 
@@ -266,72 +255,15 @@ namespace service
             m_task.player.copy();
         }
 
-        {   task::LockGuard lock(m_mutex);
-            m_task.handle = nullptr;
+        {   
+            task::LockGuard lock(m_mutex);
             m_task.player.end();
-
-            deinitDecode();
-            deinitSource();
+            m_task.context->end();
+            delete m_task.context;
+            m_task.context = nullptr;
+            m_task.handle = nullptr;
         }
         vTaskDelete(nullptr);
-    }
-
-    void AudioPlayer::initSource()
-    {
-        m_cbSrc = new audio_tools::AudioSourceCallback();
-        m_cbSrc->setCallbackOnStart(&initStreamCallback);
-        m_cbSrc->setCallbackNextStream(&nextStreamCallback);
-        m_source = m_cbSrc;
-    }
-
-    void AudioPlayer::initDecode()
-    {
-        m_mp3Dec = new audio_tools::MP3DecoderHelix();
-        m_id3Flt = new audio_tools::MetaDataFilterDecoder(*m_mp3Dec);
-        m_decode = m_id3Flt;
-    }
-
-    void AudioPlayer::deinitSource()
-    {
-        delete m_cbSrc;
-        m_cbSrc = nullptr;
-        m_source = nullptr;
-    }
-
-    void AudioPlayer::deinitDecode()
-    {
-        delete m_mp3Dec;
-        delete m_id3Flt;
-        m_mp3Dec = nullptr;
-        m_id3Flt = nullptr;
-        m_decode = nullptr;
-    }
-
-    void AudioPlayer::initStreamCallback()
-    {
-        audioPlayer.m_fileIndex = 0;
-        audioPlayer.m_dir = driver::storage.getFS().open(audioPlayer.m_path);
-        log_i("open dir: %s (%d)", audioPlayer.m_dir.path(), int(audioPlayer.m_dir));
-    }
-
-    Stream* AudioPlayer::nextStreamCallback(int offset)
-    {
-        audioPlayer.m_title.clear();
-        audioPlayer.m_artist.clear();
-
-        audioPlayer.m_file.close();
-        audioPlayer.m_fileIndex += offset;
-        audioPlayer.m_dir.rewindDirectory();
-        for (int i = 0; i <= audioPlayer.m_fileIndex; i++)
-            audioPlayer.m_file = audioPlayer.m_dir.openNextFile();
-
-        if (audioPlayer.m_file)
-        {
-            audioPlayer.fetchTitleAndAuthor(audioPlayer.m_file.name());
-            log_i("open file: %s (%d)", audioPlayer.m_file.path(), audioPlayer.m_fileIndex);
-            return &audioPlayer.m_file;
-        }
-        return nullptr;
     }
 
     void AudioPlayer::fftResultCallback(audio_tools::AudioFFTBase &fft)
@@ -366,21 +298,6 @@ namespace service
                 audioPlayer.m_artist = String(str, len);
                 break;
         }
-    }
-
-    void AudioPlayer::fetchTitleAndAuthor(String metadata)
-    {
-        auto i0 = metadata.lastIndexOf('.');
-        if (i0 < 0) i0 = metadata.length();
-
-        auto i1 = metadata.indexOf(" - ");
-        if (i1 > 0)
-        {
-            m_title = metadata.substring(i1 + 3, i0);
-            m_artist = metadata.substring(0, i1);
-        }
-        else
-            m_title = metadata.substring(0, i0);
     }
 
     AudioPlayer audioPlayer;

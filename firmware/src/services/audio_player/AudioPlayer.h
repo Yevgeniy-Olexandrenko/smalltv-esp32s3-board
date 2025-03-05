@@ -3,24 +3,25 @@
 #define USE_AUDIOTOOLS_NS false
 
 #include <AudioTools.h>
-#include <AudioTools/AudioCodecs/CodecMP3Helix.h>
-#include <AudioTools/AudioCodecs/CodecAACHelix.h>
-#include <AudioTools/AudioLibs/AudioRealFFT.h>
-#include <FS.h>
-
-#include "AudioContent.h"
+//#include <AudioTools/AudioCodecs/CodecMP3Helix.h>
+//#include <AudioTools/AudioCodecs/CodecAACHelix.h>
+//#include <AudioTools/AudioLibs/AudioRealFFT.h>
+//#include <FS.h>
+#include "AudioContext.h"
 #include "shared/settings/Settings.h"
 #include "shared/tasks/Mutex.h"
 
 namespace service
 {
+    using namespace service_audio_player_impl;
+
     class AudioPlayer : public settings::Provider
     {
         enum class Command : uint8_t { Volume, Pause, Resume, Next, Prev, Stop };
 
     public:
         void begin(float volume);
-        bool start(AudioContent content, const char* resource);
+        bool start(AudioContext* context);
         void setVolume(float volume);
         void pause(bool yes);
         void next(bool fwd);
@@ -36,28 +37,26 @@ namespace service
     private:
         void task();
 
-        void initSource();
-        void initDecode();
+        //void initSource();
+        //void initDecode();
 
-        void deinitSource();
-        void deinitDecode();
+        //void deinitSource();
+        //void deinitDecode();
 
         // audio context
-        static void initStreamCallback();
-        static Stream* nextStreamCallback(int offset);
+        //static void initStreamCallback();
+        //static Stream* nextStreamCallback(int offset);
 
         // player callbacks
         static void fftResultCallback(audio_tools::AudioFFTBase& fft);
         static void metadataCallback(audio_tools::MetaDataType type, const char* str, int len);
-
-        //
-        void fetchTitleAndAuthor(String filename);
 
     private:
         // player state in multitasking context
         struct {
             float volume = 0;
             TaskHandle_t handle = nullptr;
+            AudioContext* context = nullptr;
             audio_tools::AudioPlayer player;
         } m_task;
         QueueHandle_t m_cmdQueue;
@@ -78,15 +77,15 @@ namespace service
         String m_artist;
 
         // audio context
-        audio_tools::AudioSourceCallback* m_cbSrc = nullptr;
-        audio_tools::MP3DecoderHelix* m_mp3Dec = nullptr;
-        audio_tools::MetaDataFilterDecoder* m_id3Flt = nullptr;
-        audio_tools::AudioSource* m_source = nullptr;
-        audio_tools::AudioDecoder* m_decode = nullptr;
-        String m_path;
-        int m_fileIndex;
-        fs::File m_dir;
-        fs::File m_file;
+        //audio_tools::AudioSourceCallback* m_cbSrc = nullptr;
+        //audio_tools::MP3DecoderHelix* m_mp3Dec = nullptr;
+        //audio_tools::MetaDataFilterDecoder* m_id3Flt = nullptr;
+        //audio_tools::AudioSource* m_source = nullptr;
+        //audio_tools::AudioDecoder* m_decode = nullptr;
+        //String m_path;
+        //int m_fileIndex;
+        //fs::File m_dir;
+        //fs::File m_file;
     };
 
     extern AudioPlayer audioPlayer;
