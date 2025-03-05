@@ -75,7 +75,7 @@ namespace service_settings_webapp_impl
     {
         if (driver::storage.getType() == driver::Storage::Type::SDCard)
         {
-            auto size = driver::sdcard.getPartitionSize() / (1000.f * 1000.f);
+            auto size = driver::sdcard.partitionSize() / (1000.f * 1000.f);
             specs = (driver::sdcard.getCardType() == driver::SDCard::Type::SDHC ? "SDHC" : "SDSC");
             specs += " " + (size > 1000 ? String(size / 1000.f, 0) + "GB" : String(size, 0) + "MB");
             switch(driver::sdcard.getCardInterface())
@@ -87,7 +87,7 @@ namespace service_settings_webapp_impl
         }
         else if (driver::storage.getType() == driver::Storage::Type::Flash)
         {
-            auto size = driver::flash.getPartitionSize() / (1024.f * 1024.f);
+            auto size = driver::flash.partitionSize() / (1024.f * 1024.f);
             specs = "FLASH " + String(size, 0) + "MB / SPI";
             
         }

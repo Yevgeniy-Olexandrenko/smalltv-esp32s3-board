@@ -1,4 +1,4 @@
-#include <vfs_api.h>
+//#include <vfs_api.h>
 #include <esp_vfs_fat.h>
 #include <driver/sdmmc_defs.h>
 #include <driver/sdmmc_host.h>
@@ -10,7 +10,7 @@
 namespace driver
 {
     SDCard::SDCard()
-        : FS(FSImplPtr(new VFSImpl()))
+        : FatFS()
         , m_spiSlot(-1)
         , m_oneBitMode(false)
         , m_card(nullptr)
@@ -82,7 +82,7 @@ namespace driver
         log_i("SD card mounted at: %s\n", mountPoint);
         sdmmc_card_print_info(stdout, m_card);
         
-        _impl->mountpoint(mountPoint);
+        setMountPoint(mountPoint);
         return true;
     }
 
@@ -145,7 +145,7 @@ namespace driver
         log_i("SD card mounted at: %s\n", mountPoint);
         sdmmc_card_print_info(stdout, m_card);
         
-        _impl->mountpoint(mountPoint);
+        setMountPoint(mountPoint);
         return true;
     }
 
@@ -154,9 +154,9 @@ namespace driver
         if (!isMounted()) return; 
         
         task::LockGuard lock(m_mutex);
-        esp_vfs_fat_sdcard_unmount(_impl->mountpoint(), m_card);
+        esp_vfs_fat_sdcard_unmount(mountPoint(), m_card);
         spi_bus_free(spi_host_device_t(m_spiSlot));
-        _impl->mountpoint(nullptr);
+        resMountPoint();
         m_card = nullptr;
         m_spiSlot = -1; 
     }
@@ -177,36 +177,19 @@ namespace driver
 
     ////////////////////////////////////////////////////////////////////////////
 
-    uint64_t SDCard::getSectorSize() const
-    {
-        return (m_card ? m_card->csd.sector_size : 0);
-    }
-
-    uint64_t SDCard::getSectorCount() const
+    uint64_t SDCard::sectorCount() const
     {
         return (m_card ? m_card->csd.capacity : 0);
     }
 
-    uint64_t SDCard::getPartitionSize() const
+    uint64_t SDCard::sectorSize() const
     {
-        return (getSectorSize() * getSectorCount());
+        return (m_card ? m_card->csd.sector_size : 0);
     }
-
-    ////////////////////////////////////////////////////////////////////////////
 
     bool SDCard::isMounted() const
     {
         return (m_card != nullptr);
-    }
-
-    const char *SDCard::getMountPoint() const
-    {
-        return _impl->mountpoint();
-    }
-
-    int SDCard::getDriveNumber() const
-    {
-        return ff_diskio_get_pdrv_card(m_card);
     }
 
     ////////////////////////////////////////////////////////////////////////////

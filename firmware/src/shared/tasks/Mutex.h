@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <FreeRTOS.h>
 #include <freertos/semphr.h>
 
 namespace task

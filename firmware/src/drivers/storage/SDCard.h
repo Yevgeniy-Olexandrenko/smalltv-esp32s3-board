@@ -1,12 +1,12 @@
 #pragma once
 
-#include <FS.h>
 #include <driver/sdmmc_types.h>
 #include "shared/tasks/Mutex.h"
+#include "FatFS.h"
 
 namespace driver
 {
-    class SDCard : public fs::FS
+    class SDCard final : public FatFS
     {
     public:
         constexpr static const char* DEFAULT_MOUNT_POINT = "/sdcard";
@@ -14,7 +14,7 @@ namespace driver
         enum class Type { NONE, SD, SDHC };
 
         SDCard();
-        ~SDCard();
+        ~SDCard() override;
 
         bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0);
         bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpio_num_t d2, gpio_num_t d3);
@@ -25,15 +25,10 @@ namespace driver
         Type getCardType() const;
         Interface getCardInterface() const;
 
-        // partition properties
-        uint64_t getSectorSize() const;
-        uint64_t getSectorCount() const;
-        uint64_t getPartitionSize() const;
-
-        // file system properties
-        bool isMounted() const;
-        const char* getMountPoint() const;
-        int getDriveNumber() const;
+        // partition and file system properties
+        uint64_t sectorCount() const override;
+        uint64_t sectorSize() const override;
+        bool isMounted() const override;
 
         // direct access for MSC device mode
         bool writeSectors(uint8_t *src, size_t startSector, size_t sectorCount);
