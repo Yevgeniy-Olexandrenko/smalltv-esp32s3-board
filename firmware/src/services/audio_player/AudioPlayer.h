@@ -3,10 +3,6 @@
 #define USE_AUDIOTOOLS_NS false
 
 #include <AudioTools.h>
-//#include <AudioTools/AudioCodecs/CodecMP3Helix.h>
-//#include <AudioTools/AudioCodecs/CodecAACHelix.h>
-//#include <AudioTools/AudioLibs/AudioRealFFT.h>
-//#include <FS.h>
 #include "AudioContext.h"
 #include "shared/settings/Settings.h"
 #include "shared/tasks/Mutex.h"
@@ -35,19 +31,10 @@ namespace service
         void settingsUpdate(sets::Updater& u) override;
 
     private:
+        void fetchFormats(String& output);
+        void fetchPlaylists(const String& format, String& output);
+
         void task();
-
-        //void initSource();
-        //void initDecode();
-
-        //void deinitSource();
-        //void deinitDecode();
-
-        // audio context
-        //static void initStreamCallback();
-        //static Stream* nextStreamCallback(int offset);
-
-        // player callbacks
         static void fftResultCallback(audio_tools::AudioFFTBase& fft);
         static void metadataCallback(audio_tools::MetaDataType type, const char* str, int len);
 
@@ -70,22 +57,15 @@ namespace service
         // volume constrol component
         audio_tools::LinearVolumeControl m_volCtr;
 
-        // webapp data
-        bool m_isStarted = false;
-        bool m_isPlaying = false;
-        String m_title;
-        String m_artist;
-
-        // audio context
-        //audio_tools::AudioSourceCallback* m_cbSrc = nullptr;
-        //audio_tools::MP3DecoderHelix* m_mp3Dec = nullptr;
-        //audio_tools::MetaDataFilterDecoder* m_id3Flt = nullptr;
-        //audio_tools::AudioSource* m_source = nullptr;
-        //audio_tools::AudioDecoder* m_decode = nullptr;
-        //String m_path;
-        //int m_fileIndex;
-        //fs::File m_dir;
-        //fs::File m_file;
+        // app and webapp data
+        struct {
+            bool started = false;
+            bool playing = false;
+            uint8_t format = 0;
+            uint8_t playlist = 0;
+            String title;
+            String artist;
+        } m_ui;
     };
 
     extern AudioPlayer audioPlayer;

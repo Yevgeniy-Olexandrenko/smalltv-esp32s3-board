@@ -132,17 +132,17 @@ namespace service
     void AudioPlayer::settingsBuild(sets::Builder &b)
     {
         sets::Group g(b, "Audio player");
-        if (m_isStarted)
+        if (m_ui.started)
         {
-            b.Label("title"_h, "Title", m_title);
-            b.Label("artist"_h, "Artist", m_artist);
+            b.Label("title"_h, "Title", m_ui.title);
+            b.Label("artist"_h, "Artist", m_ui.artist);
 
             {
                 sets::Buttons buttons(b);
                 b.Button("stop"_h, "Stop");
                 b.Button("prev"_h, "Prev");
                 b.Button("next"_h, "Next");
-                b.Button("play"_h, m_isPlaying ? "Pause" : "Play");
+                b.Button("play"_h, m_ui.playing ? "Pause" : "Play");
 
                 if (b.build.isAction())
                 {
@@ -151,31 +151,34 @@ namespace service
                         case "stop"_h: stop(); break;
                         case "prev"_h: next(false); break;
                         case "next"_h: next(true); break;
-                        case "play"_h: pause(m_isPlaying); break;
+                        case "play"_h: pause(m_ui.playing); break;
                     }
                 }
             }
         }
         else
         {
-            String typeChoice = "mp3;acc;mod";
-            String listChoise = "Free;Jazz;Retrowave;Big;Instrumental";
-
-            if (b.Select("Type", typeChoice))
+            String formats;
+            fetchFormats(formats);
+            if (b.Select("Type", formats, &m_ui.format))
             {
-                // TODO
-            }
-
-            if (b.Select("Playlist", listChoise))
-            {
-                // TODO
-            }
-
-            if (b.Button("Start"))
-            {
-                // TODO
-                // start(service::StorageFileMP3(), "Christmas");
+                m_ui.playlist = 0;
                 b.reload();
+            }
+
+            String filelists;
+            fetchPlaylists(Text(formats).getSub(m_ui.format, ';'), filelists);
+            if (!filelists.isEmpty())
+            {
+                b.Select("Playlist", filelists, &m_ui.playlist);
+                if (b.Button("Start"))
+                {
+                    String format = Text(formats).getSub(m_ui.format, ';');
+                    String filelist = Text(filelists).getSub(m_ui.playlist, ';');
+
+                    start(new StorageAudioContext(format.c_str(), filelist.c_str()));
+                    b.reload();
+                }
             }
         }
     }
@@ -183,14 +186,14 @@ namespace service
     void AudioPlayer::settingsUpdate(sets::Updater &u)
     {
         bool reload = false;
-        if (m_isStarted != isStarted())
+        if (m_ui.started != isStarted())
         {
-            m_isStarted ^= true;
+            m_ui.started ^= true;
             reload = true;
         }
-        if (m_isPlaying != isPlaying())
+        if (m_ui.playing != isPlaying())
         {
-            m_isPlaying ^= true;
+            m_ui.playing ^= true;
             reload = true;
         }
 
@@ -200,12 +203,39 @@ namespace service
         }
         else
         {
-            u.update("title"_h, m_title);
-            u.update("artist"_h, m_artist);
+            u.update("title"_h, m_ui.title);
+            u.update("artist"_h, m_ui.artist);
         }
     }
 
     ////////////////////////////////////////////////////////////////////////////
+
+    void AudioPlayer::fetchFormats(String &output)
+    {
+        output = "mp3;acc;wav;mod";
+    }
+
+    void AudioPlayer::fetchPlaylists(const String &format, String &output)
+    {
+        output.clear();
+        File dir = driver::storage.getFS().open("/audio/" + format);
+
+        if (dir.isDirectory())
+        {
+            for (int count = 256; count--;)
+            {
+                bool isDir = false;
+                String entry = dir.getNextFileName(&isDir);
+                if (entry.isEmpty()) break;
+
+                if (isDir)
+                {
+                    output += entry.substring(entry.lastIndexOf('/') + 1);
+                    output += ';';
+                }
+            }
+        }
+    }
 
     void AudioPlayer::task()
     {
@@ -297,11 +327,11 @@ namespace service
         switch (type)
         {
             case audio_tools::MetaDataType::Title:
-                audioPlayer.m_title = String(str, len);
+                audioPlayer.m_ui.title = String(str, len);
                 break;
 
             case audio_tools::MetaDataType::Artist:
-                audioPlayer.m_artist = String(str, len);
+                audioPlayer.m_ui.artist = String(str, len);
                 break;
         }
     }
