@@ -6,6 +6,7 @@ namespace service
 {
     void AudioPlayer::begin(float volume)
     {
+        #ifndef NO_SOUND
         audio_tools::AudioToolsLogger.begin(Serial, audio_tools::AudioToolsLogLevel::Error);
 
         if (!m_i2sOut && !m_fftOut)
@@ -31,10 +32,12 @@ namespace service
 
         m_cmdQueue = xQueueCreate(8, sizeof(Command));
         setVolume(volume);
+        #endif
     }
 
     bool AudioPlayer::start(AudioContext* context)
     {
+        #ifndef NO_SOUND
         if (!isStarted() && context && !m_task.context)
         {
             m_task.context = context;
@@ -47,11 +50,13 @@ namespace service
                 "audio_player_task", 8192, this, 1, &m_task.handle, 1
             ) == pdPASS;
         }
+        #endif
         return false;
     }
 
     void AudioPlayer::setVolume(float volume)
     {
+        #ifndef NO_SOUND
         m_mutex.lock();
         m_task.volume =  0.1f;
         m_task.volume += 0.9f * constrain(volume, 0.f, 1.f);
@@ -64,6 +69,7 @@ namespace service
             auto command { Command::Volume };
             xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
         }
+        #endif
     }
 
     void AudioPlayer::pause(bool yes)
