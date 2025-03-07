@@ -7,10 +7,10 @@ namespace services
     void begin()
     {
         // set default settings
-        settings::data().init(db::audio_volume, 100);
+        settings::data().init(db::audio_volume, 50);
 
         // get current settings
-        auto audioVolume = float(settings::data()[db::audio_volume]) / 200;
+        auto audioVolume = float(settings::data()[db::audio_volume]) * 0.01f;
 
         // begin services with current settings
         service::networkConnection.begin();

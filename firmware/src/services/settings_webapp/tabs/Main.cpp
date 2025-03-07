@@ -41,16 +41,16 @@ namespace service_settings_webapp_impl
 
         {
             sets::Row r(b, "", sets::DivType::Line);
-            if (b.Slider(db::lcd_brightness, "Brightness", 0, 200))
+            if (b.Slider(db::lcd_brightness, "Brightness", 0, 100))
             {
-                auto brightness = (float(b.build.value) / 200);
+                auto brightness = (float(b.build.value) * 0.01f);
                 driver::display.setBrightness(brightness);
             }
             if (hardware::hasAudio())
             {
-                if (b.Slider(db::audio_volume, "Volume", 0, 200))
+                if (b.Slider(db::audio_volume, "Volume", 0, 100))
                 {
-                    auto volume = (float(b.build.value) / 200);
+                    auto volume = (float(b.build.value) * 0.01f);
                     service::audioPlayer.setVolume(volume);
                 }
             }
