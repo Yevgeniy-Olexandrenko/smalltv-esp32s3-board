@@ -16,17 +16,14 @@ namespace service_audio_player_impl
         virtual void begin() = 0;
         virtual void end() = 0;
 
-        using MetadataCallback = void (*)(audio_tools::MetaDataType type, const char* str, int len);
-        void setMetadataCallback(MetadataCallback callback) { m_mdcb = callback; };
+        using onPlaylistItemCallback = void (*)(const char* str, int len);
+        void setOnPlaylistItemCallback(onPlaylistItemCallback callback) { m_playlistItemCb = callback; };
 
         virtual audio_tools::AudioSource& getSource() = 0;
         virtual audio_tools::AudioDecoder& getDecoder() = 0;
 
     protected:
-        void fetchTitleAndAuthor(String metadata);
-
-    private:
-        MetadataCallback m_mdcb = nullptr;
+        onPlaylistItemCallback m_playlistItemCb = nullptr;
     };
 
     class StorageAudioContext : public AudioContext
@@ -37,6 +34,7 @@ namespace service_audio_player_impl
 
     public:
         StorageAudioContext(const char* ext, const char* dir);
+        ~StorageAudioContext() override;
 
         void begin() override;
         void end() override;
@@ -57,7 +55,7 @@ namespace service_audio_player_impl
         audio_tools::AudioDecoder* m_codec;
 
         String m_path;
-        int m_fileIndex;
+        int m_idx;
         fs::File m_dir;
         fs::File m_file;
     };

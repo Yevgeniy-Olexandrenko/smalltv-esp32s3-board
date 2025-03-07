@@ -13,6 +13,11 @@ namespace service
 
     class AudioPlayer : public settings::Provider
     {
+        static AudioPlayer* s_this;
+        static void s_fftCallback(audio_tools::AudioFFTBase& fft);
+        static void s_metadataCallback(audio_tools::MetaDataType type, const char* str, int len);
+        static void s_onPlaylistItemCallback(const char* str, int len);
+
         enum class Command : uint8_t { Volume, Pause, Resume, Next, Prev, Stop };
 
     public:
@@ -26,6 +31,12 @@ namespace service
         bool isStarted();
         bool isPlaying();
 
+    private:
+        void task();
+        void fftCallback(audio_tools::AudioFFTBase& fft);
+        void metadataCallback(audio_tools::MetaDataType type, String str);
+        void onPlaylistItemCallback(String str);
+
     public:
         void settingsBuild(sets::Builder& b) override;
         void settingsUpdate(sets::Updater& u) override;
@@ -33,10 +44,6 @@ namespace service
     private:
         void fetchFormats(String& output);
         void fetchPlaylists(const String& format, String& output);
-
-        void task();
-        static void fftResultCallback(audio_tools::AudioFFTBase& fft);
-        static void metadataCallback(audio_tools::MetaDataType type, const char* str, int len);
 
     private:
         // player state in multitasking context

@@ -5,49 +5,16 @@
 
 namespace service_audio_player_impl
 {
-    void AudioContext::fetchTitleAndAuthor(String metadata)
-    {
-        if (m_mdcb)
-        {
-            String title, artist;
-
-            auto i0 = metadata.lastIndexOf('.');
-            if (i0 < 0) i0 = metadata.length();
-
-            auto i1 = metadata.indexOf(" - ");
-            if (i1 > 0)
-            {
-                title = metadata.substring(i1 + 3, i0);
-                artist = metadata.substring(0, i1);
-            }
-            else
-            {
-                title = metadata.substring(0, i0);
-            }
-
-            if (!title.isEmpty())
-                m_mdcb(audio_tools::MetaDataType::Title, title.c_str(), title.length());
-
-            if (!artist.isEmpty())
-                m_mdcb(audio_tools::MetaDataType::Artist, artist.c_str(), artist.length());
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-
     StorageAudioContext* StorageAudioContext::s_this = nullptr;
 
     void StorageAudioContext::s_initStreamCallback() 
     { 
-        if (s_this) 
-            s_this->initStreamCallback(); 
+        if (s_this) s_this->initStreamCallback(); 
     }
     
     Stream* StorageAudioContext::s_nextStreamCallback(int offset)
     {
-        if (s_this)
-            return s_this->nextStreamCallback(offset);
-        return nullptr;
+        return (s_this ? s_this->nextStreamCallback(offset) : nullptr);
     }
 
     StorageAudioContext::StorageAudioContext(const char* ext, const char* dir)
@@ -64,6 +31,13 @@ namespace service_audio_player_impl
             log_i("path: %s", path.c_str());
             m_path = path;
         }
+    }
+
+    StorageAudioContext::~StorageAudioContext()
+    {
+        end();
+        m_file.close();
+        m_dir.close();
     }
 
     void StorageAudioContext::begin()
@@ -102,26 +76,29 @@ namespace service_audio_player_impl
 
     void StorageAudioContext::initStreamCallback()
     {
-        m_fileIndex = 0;
+        m_idx = 0;
         m_dir = driver::storage.getFS().open(m_path);
         log_i("open dir: %s (%d)", m_dir.path(), int(m_dir));
     }
 
     Stream* StorageAudioContext::nextStreamCallback(int offset)
     {
-        //audioPlayer.m_title.clear();
-        //audioPlayer.m_artist.clear();
-
         m_file.close();
-        m_fileIndex += offset;
+        m_idx += offset;
+
+        String path;
         m_dir.rewindDirectory();
-        for (int i = 0; i <= m_fileIndex; i++)
-            m_file = m_dir.openNextFile();
+        for (int i = 0; i <= m_idx; i++) path = m_dir.getNextFileName();
+        m_file = driver::storage.getFS().open(path);
 
         if (m_file)
         {
-            fetchTitleAndAuthor(m_file.name());
-            log_i("open file: %s (%d)", m_file.path(), m_fileIndex);
+            String name = m_file.name();
+            auto len = name.lastIndexOf('.');
+            if (len < 0) len = name.length();
+            m_playlistItemCb(name.c_str(), len);
+
+            log_i("open file: %s (%d)", m_file.path(), m_idx);
             return &m_file;
         }
         return nullptr;

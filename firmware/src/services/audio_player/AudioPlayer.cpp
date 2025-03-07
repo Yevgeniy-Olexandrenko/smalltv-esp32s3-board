@@ -4,9 +4,27 @@
 
 namespace service
 {
+    AudioPlayer* AudioPlayer::s_this = nullptr;
+
+    void AudioPlayer::s_fftCallback(audio_tools::AudioFFTBase &fft)
+    {
+        if (s_this) s_this->fftCallback(fft);
+    }
+
+    void AudioPlayer::s_metadataCallback(audio_tools::MetaDataType type, const char *str, int len)
+    {
+        if (s_this) s_this->metadataCallback(type, String(str, len));
+    }
+
+    void AudioPlayer::s_onPlaylistItemCallback(const char *str, int len)
+    {
+        if (s_this) s_this->onPlaylistItemCallback(String(str, len));
+    }
+
     void AudioPlayer::begin(float volume)
     {
         #ifndef NO_SOUND
+        s_this = this;
         audio_tools::AudioToolsLogger.begin(Serial, audio_tools::AudioToolsLogLevel::Error);
 
         if (!m_i2sOut && !m_fftOut)
@@ -22,7 +40,7 @@ namespace service
             auto fftCfg = m_fftOut.defaultConfig();
             fftCfg.copyFrom(i2sCfg);
             fftCfg.length = 1024;
-            fftCfg.callback = &fftResultCallback;
+            fftCfg.callback = &s_fftCallback;
             m_fftOut.begin(fftCfg);
 
             // configure MultiOutput
@@ -30,7 +48,7 @@ namespace service
             m_output.add(m_i2sOut);
         }
 
-        m_cmdQueue = xQueueCreate(8, sizeof(Command));
+        m_cmdQueue = xQueueCreate(4, sizeof(Command));
         setVolume(volume);
         #endif
     }
@@ -125,6 +143,93 @@ namespace service
     {
         bool taskStarted = isStarted();
         return (taskStarted && m_task.player.isActive());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void AudioPlayer::task()
+    {
+        m_mutex.lock();
+        m_task.context->begin();
+        m_task.context->setOnPlaylistItemCallback(&s_onPlaylistItemCallback);
+
+        m_task.player.setAudioSource(m_task.context->getSource());
+        m_task.player.setDecoder(m_task.context->getDecoder());
+        m_task.player.setOutput(m_output);
+
+        m_task.player.setMetadataCallback(&s_metadataCallback);
+        m_task.player.setVolumeControl(m_volCtr);
+        m_task.player.begin();
+
+        m_task.player.setVolume(m_task.volume);
+        m_mutex.unlock();
+
+        while (true)
+        {
+            Command command;
+            if (xQueueReceive(m_cmdQueue, &command, 0) == pdTRUE)
+            {
+                if (command == Command::Stop) break;
+
+                task::LockGuard lock(m_mutex);
+                switch (command)
+                {
+                    case Command::Volume: m_task.player.setVolume(m_task.volume); break;
+                    case Command::Pause:  m_task.player.stop(); break;
+                    case Command::Resume: m_task.player.play(); break;
+                    case Command::Next:   m_task.player.next(); break;
+                    case Command::Prev:   m_task.player.previous(); break;
+                }
+            }
+            m_task.player.copy();
+        }
+
+        m_mutex.lock();
+        m_task.player.end();
+        m_task.context->end();
+
+        delete m_task.context;
+        m_task.context = nullptr;
+        m_task.handle = nullptr;
+        m_mutex.unlock();
+        
+        vTaskDelete(nullptr);
+    }
+
+    void AudioPlayer::fftCallback(audio_tools::AudioFFTBase &fft)
+    {
+        // float diff;
+        // auto result = fft.result();
+        // if (result.magnitude>100){
+        //     Serial.print(result.frequency);
+        //     Serial.print(" ");
+        //     Serial.print(result.magnitude);  
+        //     Serial.print(" => ");
+        //     Serial.print(result.frequencyAsNote(diff));
+        //     Serial.print( " diff: ");
+        //     Serial.println(diff);
+        // }
+    }
+
+    void AudioPlayer::metadataCallback(audio_tools::MetaDataType type, String str)
+    {
+        Serial.print("==> ");
+        Serial.print(toStr(type));
+        Serial.print(": ");
+        Serial.println(str);
+
+        switch (type)
+        {
+            case audio_tools::MetaDataType::Title: m_ui.title = str; break;
+            case audio_tools::MetaDataType::Artist: m_ui.artist = str; break;
+        }
+    }
+
+    void AudioPlayer::onPlaylistItemCallback(String str)
+    {
+        log_i("playlist item: %s", str.c_str());
+        m_ui.title  = str;
+        m_ui.artist = "Unknown";
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -237,104 +342,7 @@ namespace service
         }
     }
 
-    void AudioPlayer::task()
-    {
-        {   
-            task::LockGuard lock(m_mutex);
-            m_task.context->begin();
-            m_task.context->setMetadataCallback(&metadataCallback);
-            
-            m_task.player.setAudioSource(m_task.context->getSource());
-            m_task.player.setDecoder(m_task.context->getDecoder());
-            m_task.player.setOutput(m_output);
-
-            m_task.player.setMetadataCallback(&metadataCallback);
-            m_task.player.setVolumeControl(m_volCtr);
-            m_task.player.begin();
-
-            m_task.player.setVolume(m_task.volume);
-            log_i("start with volume: %f", m_task.volume);
-        }
-
-        while (true)
-        {
-            Command command;
-            if (xQueueReceive(m_cmdQueue, &command, 0) == pdTRUE)
-            {
-                if (command == Command::Stop) break;
-
-                task::LockGuard lock(m_mutex);
-                switch (command)
-                {
-                    case Command::Volume:
-                        log_i("received volume: %f", m_task.volume);
-                        m_task.player.setVolume(m_task.volume);
-                        break;
-
-                    case Command::Pause:
-                        m_task.player.setActive(false);
-                        break;
-
-                    case Command::Resume:
-                        m_task.player.setActive(true);
-                        break;
-
-                    case Command::Next:
-                        m_task.player.next();
-                        break;
-
-                    case Command::Prev:
-                        m_task.player.previous();
-                        break;
-                }
-            }
-            m_task.player.copy();
-        }
-
-        {   
-            task::LockGuard lock(m_mutex);
-            m_task.player.end();
-            m_task.context->end();
-            delete m_task.context;
-            m_task.context = nullptr;
-            m_task.handle = nullptr;
-        }
-        vTaskDelete(nullptr);
-    }
-
-    void AudioPlayer::fftResultCallback(audio_tools::AudioFFTBase &fft)
-    {
-        // float diff;
-        // auto result = fft.result();
-        // if (result.magnitude>100){
-        //     Serial.print(result.frequency);
-        //     Serial.print(" ");
-        //     Serial.print(result.magnitude);  
-        //     Serial.print(" => ");
-        //     Serial.print(result.frequencyAsNote(diff));
-        //     Serial.print( " diff: ");
-        //     Serial.println(diff);
-        // }
-    }
-
-    void AudioPlayer::metadataCallback(audio_tools::MetaDataType type, const char *str, int len)
-    {
-        Serial.print("==> ");
-        Serial.print(toStr(type));
-        Serial.print(": ");
-        Serial.println(str);
-
-        switch (type)
-        {
-            case audio_tools::MetaDataType::Title:
-                audioPlayer.m_ui.title = String(str, len);
-                break;
-
-            case audio_tools::MetaDataType::Artist:
-                audioPlayer.m_ui.artist = String(str, len);
-                break;
-        }
-    }
+    ////////////////////////////////////////////////////////////////////////////
 
     AudioPlayer audioPlayer;
 }
