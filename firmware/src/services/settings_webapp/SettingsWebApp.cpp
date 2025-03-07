@@ -1,5 +1,6 @@
 #include <GyverNTP.h>
 #include "SettingsWebApp.h"
+#include "shared/tasks/Task.h"
 #include "drivers/video/Display.h"
 #include "drivers/onboard/SelfReboot.h"
 #include "defines.h"
@@ -15,7 +16,8 @@ namespace service
                 auto instance = static_cast<SettingsWebApp*>(data);
                 instance->task();
             },
-            "webapp_task", 8192, this, 1, nullptr, 1
+            "task_settings_webapp", 8192, this, task::priority::Background,
+            nullptr, task::core::Application
         );
     }
 

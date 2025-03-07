@@ -1,4 +1,5 @@
 #include "AudioPlayer.h"
+#include "shared/tasks/Task.h"
 #include "drivers/storage/Storage.h"
 #include "board.h"
 
@@ -65,7 +66,8 @@ namespace service
                     auto instance = static_cast<AudioPlayer*>(data);
                     instance->task();
                 },
-                "audio_player_task", 8192, this, 1, &m_task.handle, 1
+                "task_audio_player", 8192, this, task::priority::Realtime,
+                &m_task.handle, task::core::Application
             ) == pdPASS;
         }
         #endif
@@ -80,7 +82,6 @@ namespace service
         m_task.volume += 0.9f * constrain(volume, 0.f, 1.f);
         m_task.volume *= SND_PRE_AMP;
         m_mutex.unlock();
-        log_i("new volume: %f", m_task.volume);
 
         if (isStarted())
         {
@@ -181,7 +182,9 @@ namespace service
                     case Command::Prev:   m_task.player.previous(); break;
                 }
             }
+
             m_task.player.copy();
+            vTaskDelay(pdMS_TO_TICKS(1));
         }
 
         m_mutex.lock();
@@ -227,7 +230,6 @@ namespace service
 
     void AudioPlayer::onPlaylistItemCallback(String str)
     {
-        log_i("playlist item: %s", str.c_str());
         m_ui.title  = str;
         m_ui.artist = "Unknown";
     }

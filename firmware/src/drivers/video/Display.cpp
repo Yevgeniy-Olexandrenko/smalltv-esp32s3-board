@@ -1,5 +1,6 @@
 #include <FreeRTOS.h>
 #include "Display.h"
+#include "shared/tasks/Task.h"
 #include "board.h"
 
 #define LCD_BL_PWM_CHANNEL   0
@@ -23,7 +24,8 @@ namespace driver
                     auto instance = static_cast<Display*>(data);
                     instance->task();
                 },
-                "lcd_brightness_task", 1024, this, 1, nullptr, 0
+                "task_lcd_brightness", 1024, this, task::priority::Background,
+                nullptr, task::core::System
             );
         }
     }

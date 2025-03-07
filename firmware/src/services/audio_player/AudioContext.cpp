@@ -76,9 +76,9 @@ namespace service_audio_player_impl
 
     void StorageAudioContext::initStreamCallback()
     {
-        m_idx = 0;
+        m_idx = -1;
         m_dir = driver::storage.getFS().open(m_path);
-        log_i("open dir: %s (%d)", m_dir.path(), int(m_dir));
+        log_i("open dir: %s", m_dir.path());
     }
 
     Stream* StorageAudioContext::nextStreamCallback(int offset)
@@ -89,18 +89,23 @@ namespace service_audio_player_impl
         String path;
         m_dir.rewindDirectory();
         for (int i = 0; i <= m_idx; i++) path = m_dir.getNextFileName();
-        m_file = driver::storage.getFS().open(path);
 
-        if (m_file)
+        if (!path.isEmpty())
         {
-            String name = m_file.name();
-            auto len = name.lastIndexOf('.');
-            if (len < 0) len = name.length();
-            m_playlistItemCb(name.c_str(), len);
+            m_file = driver::storage.getFS().open(path);
+            if (m_file)
+            {
+                String name = m_file.name();
+                auto len = name.lastIndexOf('.');
+                if (len < 0) len = name.length();
+                m_plistItemCB(name.c_str(), len);
 
-            log_i("open file: %s (%d)", m_file.path(), m_idx);
-            return &m_file;
+                log_i("open file: %s (%d)", m_file.path(), m_idx);
+                return &m_file;
+            }
         }
+
+        log_i("no files to open");
         return nullptr;
     }
 
