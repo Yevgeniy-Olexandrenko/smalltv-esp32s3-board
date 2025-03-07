@@ -9,6 +9,8 @@ namespace service_audio_player_impl
 {
     class AudioContext
     {
+        using onPlaylistItemCallback = void (*)(const char* str, int len);
+
     public:
         AudioContext() = default;
         virtual ~AudioContext() = default;
@@ -16,14 +18,13 @@ namespace service_audio_player_impl
         virtual void begin() = 0;
         virtual void end() = 0;
 
-        using onPlaylistItemCallback = void (*)(const char* str, int len);
-        void setOnPlaylistItemCallback(onPlaylistItemCallback callback) { m_playlistItemCb = callback; };
+        void setOnPlaylistItemCallback(onPlaylistItemCallback callback) { m_plistItemCB = callback; };
 
         virtual audio_tools::AudioSource& getSource() = 0;
         virtual audio_tools::AudioDecoder& getDecoder() = 0;
 
     protected:
-        onPlaylistItemCallback m_playlistItemCb = nullptr;
+        onPlaylistItemCallback m_plistItemCB = nullptr;
     };
 
     class StorageAudioContext : public AudioContext
@@ -56,8 +57,8 @@ namespace service_audio_player_impl
 
         String m_path;
         int m_idx;
-        fs::File m_dir;
-        fs::File m_file;
+        File m_dir;
+        File m_file;
     };
 
     class RadioAudioContext : public AudioContext

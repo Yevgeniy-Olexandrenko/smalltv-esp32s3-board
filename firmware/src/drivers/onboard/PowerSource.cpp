@@ -85,7 +85,7 @@ namespace driver
         // a calibrated dependence line
         auto x = analogRead(PIN_VIN_SEN);
         auto y = MilliVolt(k * x + b);
-        log_i("%d - %d", x, y);
+        // log_i("%d - %d", x, y);
         return y;
     #else
         return 0;
