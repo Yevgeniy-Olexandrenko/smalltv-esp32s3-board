@@ -278,12 +278,13 @@ namespace service
             if (!filelists.isEmpty())
             {
                 b.Select("Playlist", filelists, &m_ui.playlist);
+                b.Switch("Shuffle", &m_ui.shuffle);
                 if (b.Button("Start"))
                 {
                     String format = Text(formats).getSub(m_ui.format, ';');
                     String filelist = Text(filelists).getSub(m_ui.playlist, ';');
 
-                    start(new StorageAudioContext(format.c_str(), filelist.c_str()));
+                    start(new StorageAudioContext(format, filelist, m_ui.shuffle));
                     b.reload();
                 }
             }
