@@ -1,0 +1,94 @@
+--- Terminal on /dev/cu.usbmodem14201 | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+[549886][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Tonebox - Cyber Realm.mp3 (1 of 111)
+==> Artist: Tonebox
+==> Title: Cyber Realm
+[626785][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[646153][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[663035][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[705133][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[710156][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[747207][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[752208][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[773430][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[778437][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[857517][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/FAVORIT89 – Mars (Synthwave   Retro Electro).mp3 (2 of 111)
+==> Artist: Culprate
+==> Title: Mars
+[875035][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[896117][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[928466][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[933469][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[973720][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[978720][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1019007][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1024011][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1064253][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1069255][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1109404][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1114412][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1176684][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1185907][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1253043][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Juno Dreams - Space Warp.mp3 (3 of 111)
+==> Artist: Juno Dreams
+==> Title: Space Warp
+
+assert failed: block_locate_free heap_tlsf.c:441 (block_size(block) >= size)
+
+
+Backtrace: 0x4037804a:0x3fca8990 0x4037dff9:0x3fca89b0 0x403848fd:0x3fca89d0 0x40383d9a:0x3fca8b00 0x4038443d:0x3fca8b20 0x4038456c:0x3fca8b40 0x403786c7:0x3fca8b60 0x4037878e:0x3fca8b90 0x40378409:0x3fca8be0 0x4003ecad:0x3fca8c00 |<-CORRUPTED
+
+  #0  0x4037804a:0x3fca8990 in panic_abort at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/esp_system/panic.c:408
+  #1  0x4037dff9:0x3fca89b0 in esp_system_abort at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/esp_system/esp_system.c:137
+  #2  0x403848fd:0x3fca89d0 in __assert_func at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/newlib/assert.c:85
+  #3  0x40383d9a:0x3fca8b00 in block_locate_free at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/heap/heap_tlsf.c:441
+      (inlined by) tlsf_malloc at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/heap/heap_tlsf.c:849
+  #4  0x4038443d:0x3fca8b20 in multi_heap_malloc_impl at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/heap/multi_heap.c:187
+  #5  0x4038456c:0x3fca8b40 in multi_heap_malloc at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/heap/multi_heap_poisoning.c:234
+      (inlined by) multi_heap_malloc at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/heap/multi_heap_poisoning.c:223
+  #6  0x403786c7:0x3fca8b60 in heap_caps_malloc_base at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/heap/heap_caps.c:175
+      (inlined by) heap_caps_malloc_base at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/heap/heap_caps.c:120
+  #7  0x4037878e:0x3fca8b90 in heap_caps_malloc_prefer at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/heap/heap_caps.c:290
+  #8  0x40378409:0x3fca8be0 in wifi_malloc at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/esp_wifi/esp32s3/esp_adapter.c:71
+  #9  0x4003ecad:0x3fca8c00 in ?? ??:0
+
+
+
+
+ELF file SHA256: fce0b32fc349d237
+
+E (2958) esp_core_dump_flash: Core dump flash config is corrupted! CRC=0x7bd5c66f instead of 0x0
+Rebooting...
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x28 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40377c58
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce3808,len:0x44c
+load:0x403c9700,len:0xbd8
+load:0x403cc700,len:0x2a80
+entry 0x403c98d0
+E (257) esp_core_dump_flash: No core dump partition found!
+E (257) esp_core_dump_flash: No core dump partition found!
+[   258][I][esp32-hal-psram.c:96] psramInit(): PSRAM enabled
+[  1780][I][Settings.cpp:16] data(): begin database
+[  1797][I][SDCard.cpp:44] begin(): Initializing SD card
+[  1844][I][SDCard.cpp:82] begin(): SD card mounted at: /sdcard
+
+Name: SD16G
+Type: SDHC/SDXC
+Speed: 40 MHz
+Size: 7624MB
+NetworkConnection: begin
+NetworkConnection: connect on boot
+DateAndTimeClass: begin
+[  3137][I][SettingsWebApp.cpp:12] begin(): begin
+[  3137][I][Settings.cpp:28] sets(): begin settings
+Strorage mount point: /sdcard
+Storage total bytes: 7608.121094
+Storage used bytes: 2794.863281
+NetworkConnection: connected: 192.168.0.108
+[ 19146][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES

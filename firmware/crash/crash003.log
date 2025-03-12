@@ -1,0 +1,200 @@
+--- Terminal on /dev/cu.usbmodem14201 | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+[175399][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[185516][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Juno Dreams - Stay.mp3 (0 of 111)
+==> Title: Juno Dreams - Stay
+[200097][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[224256][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[230293][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[303109][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[308122][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[375396][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[380405][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[425080][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[430083][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[443667][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/George Ergemlidze - Strangers.mp3 (1 of 111)
+==> Artist: George Ergemlidze
+==> Title: Strangers
+[653135][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/morch kovalski - DX 7000.mp3 (2 of 111)
+==> Title: morch kovalski - DX 7000
+[842940][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[881385][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[888843][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[893853][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[901743][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[907591][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[908088][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[913089][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[919851][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[924856][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[937776][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[948642][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[964930][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[969930][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[970053][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[975065][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[989607][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Fury Weekend - Lonely Night.mp3 (3 of 111)
+==> Artist: Fury Weekend
+==> Title: Lonely Night
+[1010904][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1015910][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1070707][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1076513][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1121003][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1126909][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1127432][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1132446][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1149239][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1154249][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1184167][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1184180][E][WiFiClient.cpp:429] write(): fail on fd 51, errno: 104, "Connection reset by peer"
+[1189182][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[1317609][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/HEYZ - Odyssey.mp3 (4 of 111)
+==> Artist: Bligg feat. Stress
+==> Title: Odyssey
+[1388351][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[1587060][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/M.A.D.E.S - Return.mp3 (5 of 111)
+==> Title: Return
+==> Artist: M.A.D.E.S
+[1890667][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Juno Dreams - Daydreamer.mp3 (6 of 111)
+==> Artist: Juno Dreams
+==> Title: Daydreamer
+[2139639][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Volt Age - Pleasure Operator (feat. Maram El Dsoki) (Official Video).mp3 (7 of 111)
+==> Artist: Tony & Tyrone
+==> Title: Please Operator
+[2379942][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Meteor - No Return.mp3 (8 of 111)
+==> Artist: No, Really
+==> Title: Return
+[2652380][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/POWERCYAN - Space Rock (PYLOT remix).mp3 (9 of 111)
+==> Title: POWERCYAN - Space Rock (PYLOT remix)
+[2847326][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Scandroid - Rendezvous.mp3 (10 of 111)
+==> Artist: Scandroid
+==> Title: Rendezvous
+[2895357][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[3099992][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/M. Avossa - Miami Days.mp3 (11 of 111)
+==> Title: M. Avossa - Miami Days
+[3242235][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[3247247][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[3267312][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[3278351][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Cassette Tape - Space and Time.mp3 (12 of 111)
+==> Title: Cassette Tape - Space and Time
+[3291573][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[3526842][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Donbor - Grey Sky (Magnatron 2.0).mp3 (13 of 111)
+==> Artist: Donbor
+==> Title: Grey Sky
+[3782176][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/StarSpawn - The Yellow King.mp3 (14 of 111)
+==> Artist: I See Stars
+==> Title: Yellow King
+[4069789][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Juno Dreams - Exhale.mp3 (15 of 111)
+==> Artist: Juno Dreams
+==> Title: Exhale
+[4334842][I][SettingsWebApp.cpp:124] onFocusChange(): focus: YES
+[4339681][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/OGRE - The Bench.mp3 (16 of 111)
+==> Title: The Bench
+==> Artist: OGRE
+[4547809][I][SettingsWebApp.cpp:124] onFocusChange(): focus: NO
+[4556602][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/NINA - Born To Live.mp3 (17 of 111)
+==> Title: Born To Live
+==> Artist: NINA
+[4807965][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Division - Into The Void (Magnatron 2.0).mp3 (18 of 111)
+==> Artist: Division
+==> Title: Into The Void
+[5043187][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/The Arc - Starlight (Original Mix).mp3 (19 of 111)
+==> Artist: The Pinch
+==> Title: Starlight
+[5273387][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Scandroid - The Force Theme (Star Wars Cover).mp3 (20 of 111)
+==> Title: The Force Theme
+==> Album: Monochrome
+==> Artist: Scandroid
+==> Genre: Disco
+[5596882][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Earmake - In Your Dreams.mp3 (21 of 111)
+==> Artist: Pete Moss
+==> Title: In Your Dreams
+[5792408][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Mr. McNoggin - Desire.mp3 (22 of 111)
+==> Title: Mr. McNoggin - Desire
+[6043193][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/[Kung Fury OST] 08. Mitch Murder - Power Move.mp3 (23 of 111)
+==> Artist: Mitch Murder
+==> Title: Power Move
+[6226268][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Adele - Rolling In The Deep ( Fury Weekend Remix).mp3 (24 of 111)
+==> Artist: Adele
+==> Title: Rolling in the Deep (live, 2011-09-22: Royal Albert Hall, London, UK)
+[6479857][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Brandon - California Summer.mp3 (25 of 111)
+==> Artist: Brandon
+==> Title: California Summer
+[6706732][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/BIODRIVE - Sixth Gear.mp3 (26 of 111)
+==> Title: BIODRIVE - Sixth Gear
+[6982964][I][AudioContext.cpp:112] nextStreamCallback(): open file: /audio/mp3/Retrowave/Juno Dreams - Lost Souls.mp3 (27 of 111)
+==> Title: Juno Dreams - Lost Souls
+Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
+
+Core  1 register dump:
+PC      : 0x4037607b  PS      : 0x00050031  A0      : 0x4037972c  A1      : 0x3fc98de0  
+A2      : 0x3d80a390  A3      : 0xffffffff  A4      : 0x00000000  A5      : 0x4037e026  
+A6      : 0x0002ae66  A7      : 0xffffffff  A8      : 0x00000001  A9      : 0x00000000  
+A10     : 0x3d80a390  A11     : 0x00000001  A12     : 0x00000014  A13     : 0x00000004  
+A14     : 0x3fcb9468  A15     : 0x80000001  SAR     : 0x0000000c  EXCCAUSE: 0x0000001c  
+EXCVADDR: 0x00000004  LBEG    : 0x40056fc5  LEND    : 0x40056fe7  LCOUNT  : 0x00000000  
+
+
+Backtrace: 0x40376078:0x3fc98de0 0x40379729:0x3fc98e10 0x42050156:0x3fcb8fe0 0x4204b9b5:0x3fcb9040 0x4204b315:0x3fcb9070 0x42009256:0x3fcb90b0 0x4200a1d9:0x3fcb9100 0x420e998a:0x3fcb9140 0x4200bf19:0x3fcb9160 0x4200d8dd:0x3fcb9180 0x4200dd5c:0x3fcb91d0 0x4201168f:0x3fcb91f0 0x4201f65d:0x3fcb9210 0x4201f8e7:0x3fcb9240 0x4202053e:0x3fcb92a0 0x420201a6:0x3fcb92c0 0x42020485:0x3fcb92f0
+
+  #0  0x40376078:0x3fc98de0 in gdma_default_tx_isr at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/driver/gdma.c:781
+  #1  0x40379729:0x3fc98e10 in _xt_lowint1 at /Users/ficeto/Desktop/ESP32/ESP32S2/esp-idf-public/components/freertos/port/xtensa/xtensa_vectors.S:1114
+  #2  0x42050156:0x3fcb8fe0 in MADD64 at .pio/libdeps/smalltv-esp32s3-rev0-16mb/libhelix/src/libhelix-mp3/assembly.h:452 (discriminator 3)
+      (inlined by) xmp3_PolyphaseStereo at .pio/libdeps/smalltv-esp32s3-rev0-16mb/libhelix/src/libhelix-mp3/polyphase.c:281 (discriminator 3)
+  #3  0x4204b9b5:0x3fcb9040 in xmp3_Subband at .pio/libdeps/smalltv-esp32s3-rev0-16mb/libhelix/src/libhelix-mp3/subband.c:78 (discriminator 3)
+  #4  0x4204b315:0x3fcb9070 in MP3Decode at .pio/libdeps/smalltv-esp32s3-rev0-16mb/libhelix/src/libhelix-mp3/mp3dec.c:473
+  #5  0x42009256:0x3fcb90b0 in libhelix::MP3DecoderHelix::decode() at .pio/libdeps/smalltv-esp32s3-rev0-16mb/libhelix/src/MP3DecoderHelix.h:118
+  #6  0x4200a1d9:0x3fcb9100 in libhelix::CommonHelix::writeChunk(void const*, unsigned int) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/libhelix/src/CommonHelix.h:221
+  #7  0x420e998a:0x3fcb9140 in libhelix::CommonHelix::write(void const*, unsigned int) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/libhelix/src/CommonHelix.h:82
+  #8  0x4200bf19:0x3fcb9160 in audio_tools::MP3DecoderHelix::write(unsigned char const*, unsigned int) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioCodecs/CodecMP3Helix.h:110
+  #9  0x4200d8dd:0x3fcb9180 in audio_tools::MetaDataFilter::write(unsigned char const*, unsigned int) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioMetaData/MetaDataFilter.h:64 (discriminator 1)
+  #10 0x4200dd5c:0x3fcb91d0 in audio_tools::MetaDataFilterDecoder::write(unsigned char const*, unsigned int) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioMetaData/MetaDataFilter.h:207
+  #11 0x4201168f:0x3fcb91f0 in audio_tools::EncodedAudioOutput::write(unsigned char const*, unsigned int) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioCodecs/AudioEncoded.h:199 (discriminator 4)
+  #12 0x4201f65d:0x3fcb9210 in audio_tools::StreamCopyT<unsigned char>::write(unsigned int, unsigned int&) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/StreamCopy.h:399
+  #13 0x4201f8e7:0x3fcb9240 in audio_tools::StreamCopyT<unsigned char>::copyBytes(unsigned int) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/StreamCopy.h:163
+  #14 0x4202053e:0x3fcb92a0 in audio_tools::AudioPlayer::copy(unsigned int) at .pio/libdeps/smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioPlayer.h:373 (discriminator 2)
+  #15 0x420201a6:0x3fcb92c0 in audio_tools::AudioPlayer::copy() at .pio/libdeps/smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioPlayer.h:356
+      (inlined by) service::AudioPlayer::task() at src/services/audio_player/AudioPlayer.cpp:186
+  #16 0x42020485:0x3fcb92f0 in service::AudioPlayer::start(service_audio_player_impl::AudioContext*)::{lambda(void*)#1}::_FUN(void*) at src/services/audio_player/AudioPlayer.cpp:67
+      (inlined by) _FUN at src/services/audio_player/AudioPlayer.cpp:68
+
+
+
+
+ELF file SHA256: fce0b32fc349d237
+
+E (9941) esp_core_dump_flash: Core dump flash config is corrupted! CRC=0x7bd5c66f instead of 0x0
+Rebooting...
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x28 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x420ed1ea
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce3808,len:0x44c
+load:0x403c9700,len:0xbd8
+load:0x403cc700,len:0x2a80
+entry 0x403c98d0
+E (258) esp_core_dump_flash: No core dump partition found!
+E (258) esp_core_dump_flash: No core dump partition found!
+[   260][I][esp32-hal-psram.c:96] psramInit(): PSRAM enabled
+[  1782][I][Settings.cpp:16] data(): begin database
+[  1799][I][SDCard.cpp:44] begin(): Initializing SD card
+[  1846][I][SDCard.cpp:82] begin(): SD card mounted at: /sdcard
+
+Name: SD16G
+Type: SDHC/SDXC
+Speed: 40 MHz
+Size: 7624MB
+NetworkConnection: begin
+NetworkConnection: connect on boot
+DateAndTimeClass: begin
+[  3228][I][SettingsWebApp.cpp:12] begin(): begin
+[  3229][I][Settings.cpp:28] sets(): begin settings
+Strorage mount point: /sdcard
+Storage total bytes: 7608.121094
+Storage used bytes: 2794.863281
+NetworkConnection: connected: 192.168.0.108
