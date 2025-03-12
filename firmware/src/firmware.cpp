@@ -30,21 +30,20 @@ void setup()
     Serial.begin(115200);
     delay(1500);
 
-    // turn on the onboard led
-    #ifdef PIN_LED_CAT
-    pinMode(PIN_LED_CAT, OUTPUT);
-    digitalWrite(PIN_LED_CAT, LOW);
-    #endif
+    // // turn on the onboard led
+    // #ifdef PIN_LED_CAT
+    // pinMode(PIN_LED_CAT, OUTPUT);
+    // digitalWrite(PIN_LED_CAT, LOW);
+    // #endif
 
     // start hardware
     drivers::begin();
-    driver::ledAndButton.begin();
+    // driver::ledAndButton.begin();
 
     // start services
     services::begin();
 
     // test
-    // list_dir(driver::storage.getFSMountPoint(), 0);
     if (driver::storage.getFSMountPoint())
     {
         Serial.printf("Strorage mount point: %s\n", driver::storage.getFSMountPoint());
@@ -63,7 +62,7 @@ void setup()
 void loop() 
 {
     // update hardware
-    driver::ledAndButton.update();
+    // driver::ledAndButton.update();
 
     // update services
     service::networkConnection.update();
@@ -72,19 +71,19 @@ void loop()
     service::weatherForecast.update();
 
     // test
-    bool buttonState = driver::ledAndButton.getButtonState();
-    if (buttonState != s_buttonState)
-    {
-        s_buttonState = buttonState;
-        if (buttonState)
-        {
-            Serial.println("Button pressed!");
-        }
-        else
-        {
-            Serial.println("Button released!");
-        }
-    }
+    // bool buttonState = driver::ledAndButton.getButtonState();
+    // if (buttonState != s_buttonState)
+    // {
+    //     s_buttonState = buttonState;
+    //     if (buttonState)
+    //     {
+    //         Serial.println("Button pressed!");
+    //     }
+    //     else
+    //     {
+    //         Serial.println("Button released!");
+    //     }
+    // }
 
     if (NTP.synced() && NTP.newSecond())
     {
