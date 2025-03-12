@@ -170,17 +170,17 @@ namespace service
             Command command;
             if (xQueueReceive(m_cmdQueue, &command, 0) == pdTRUE)
             {
-                if (command == Command::Stop) break;
-
-                task::LockGuard lock(m_mutex);
+                task::LockGuard lock(m_mutex);   
+                bool keepPlaying = true;
                 switch (command)
                 {
                     case Command::Volume: m_task.player.setVolume(m_task.volume); break;
                     case Command::Pause:  m_task.player.stop(); break;
                     case Command::Resume: m_task.player.play(); break;
-                    case Command::Next:   m_task.player.next(); break;
-                    case Command::Prev:   m_task.player.previous(); break;
+                    case Command::Next:   keepPlaying &= m_task.player.next(); break;
+                    case Command::Prev:   keepPlaying &= m_task.player.previous(); break;
                 }
+                if (command == Command::Stop || !keepPlaying) break;
             }
 
             m_task.player.copy();
@@ -278,13 +278,17 @@ namespace service
             if (!filelists.isEmpty())
             {
                 b.Select("Playlist", filelists, &m_ui.playlist);
-                b.Switch("Shuffle", &m_ui.shuffle);
+                {
+                    sets::Row r(b, "", sets::DivType::Default);
+                    b.Switch("Shuffle", &m_ui.shuffle);
+                    b.Switch("Loop", &m_ui.loop);
+                }
                 if (b.Button("Start"))
                 {
                     String format = Text(formats).getSub(m_ui.format, ';');
                     String filelist = Text(filelists).getSub(m_ui.playlist, ';');
 
-                    start(new StorageAudioContext(format, filelist, m_ui.shuffle));
+                    start(new StorageAudioContext(format, filelist, m_ui.shuffle, m_ui.loop));
                     b.reload();
                 }
             }
@@ -304,7 +308,6 @@ namespace service
             m_ui.playing ^= true;
             reload = true;
         }
-
         if (reload)
         {
             settings::sets().reload();

@@ -13,8 +13,12 @@ namespace service_audio_player_impl
         return (s_this ? s_this->nextStreamCallback(offset) : nullptr);
     }
 
-    StorageAudioContext::StorageAudioContext(const String& ext, const String& dir, bool shuffle)
-        : m_index(-1)
+    StorageAudioContext::StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop)
+        : m_source(nullptr)
+        , m_decode(nullptr)
+        , m_filter(nullptr)
+        , m_index(-1)
+        , m_loop(loop)
     {
         s_this = this;
         if (!ext.isEmpty() && !dir.isEmpty())
@@ -28,7 +32,7 @@ namespace service_audio_player_impl
             if (file && file.isDirectory())
             {
                 m_list.reserve(256);
-                for (; m_list.size() < m_list.capacity();)
+                while (m_list.size() < m_list.capacity())
                 {
                     auto path = file.getNextFileName();
                     if (path.isEmpty()) break;
@@ -42,12 +46,12 @@ namespace service_audio_player_impl
                         m_list.push_back(path.substring(i));
                     }
                 }
-            }
 
-            if (shuffle)
-            {
-                std::mt19937 randomGenerator(millis());
-                std::shuffle(m_list.begin(), m_list.end(), randomGenerator);
+                if (shuffle)
+                {
+                    std::mt19937 rnd(millis());
+                    std::shuffle(m_list.begin(), m_list.end(), rnd);
+                }
             }
         }
     }
@@ -61,45 +65,40 @@ namespace service_audio_player_impl
 
     void StorageAudioContext::begin()
     {
-        if (!m_source)
+        if (!AudioContext::m_source)
         {
-            m_cbSrc = new audio_tools::AudioSourceCallback(&s_nextStreamCallback);
-            m_source = m_cbSrc;
+            m_source = new audio_tools::AudioSourceCallback(&s_nextStreamCallback);
+            AudioContext::m_source = m_source;
         }
 
-        if (!m_decode)
+        if (!AudioContext::m_decode)
         {
-            m_codec  = new audio_tools::MP3DecoderHelix();
-            m_mdFlt  = new audio_tools::MetaDataFilterDecoder(*m_codec);
-            m_decode = m_mdFlt;
+            m_decode = new audio_tools::MP3DecoderHelix();
+            m_filter = new audio_tools::MetaDataFilterDecoder(*m_decode);
+            AudioContext::m_decode = m_filter;
         }
     }
 
     void StorageAudioContext::end()
     {
-        if (m_source)
+        if (AudioContext::m_source)
         {
-            delete m_cbSrc;
-            m_source = nullptr;
+            AudioContext::m_source = nullptr;
+            delete m_source;
         }
 
-        if (m_decode)
+        if (AudioContext::m_decode)
         {
-            delete m_codec;
-            delete m_mdFlt;
-            m_decode = nullptr;
+            AudioContext::m_decode = nullptr;
+            delete m_decode;
+            delete m_filter;
         }
     }
 
     Stream* StorageAudioContext::nextStreamCallback(int offset)
     {
-        if (!m_list.empty())
+        if (!m_list.empty() && updateListIndex(offset))
         {
-            if ((m_index += offset) < 0)
-                m_index += m_list.size();
-            else
-                m_index %= m_list.size();
-
             auto path = m_path + "/" + m_list[m_index];
             m_file = driver::storage.getFS().open(path);
 
@@ -115,8 +114,25 @@ namespace service_audio_player_impl
             }
         }
 
-        log_i("no files to open");
+        log_i("no files to open (%d of %d)", m_index, m_list.size());
         return nullptr;
+    }
+
+    bool StorageAudioContext::updateListIndex(int offset)
+    {
+        const auto size = m_list.size();
+        const auto next = m_index + offset;
+
+        if (m_loop || (next >= 0 && next < size))
+        {
+            m_index += offset;
+            if (m_index < 0) 
+                m_index += size;
+            else 
+                m_index %= size;
+            return true;
+        }
+        return false;
     }
 
     ////////////////////////////////////////////////////////////////////////////

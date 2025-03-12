@@ -29,13 +29,17 @@ namespace service_audio_player_impl
         onPlaylistItemCallback m_plistItemCB = nullptr;
     };
 
+    ////////////////////////////////////////////////////////////////////////////
+
     class StorageAudioContext : public AudioContext
     {
         static StorageAudioContext* s_this;
         static Stream* s_nextStreamCallback(int offset);
 
+        using Filelist = std::vector<String>;
+
     public:
-        StorageAudioContext(const String& ext, const String& dir, bool shuffle);
+        StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop);
         ~StorageAudioContext() override;
 
         void begin() override;
@@ -43,17 +47,21 @@ namespace service_audio_player_impl
 
     private:
         Stream* nextStreamCallback(int offset);
+        bool updateListIndex(int offset);
 
     private:
-        audio_tools::AudioSourceCallback* m_cbSrc;
-        audio_tools::MetaDataFilterDecoder* m_mdFlt;
-        audio_tools::AudioDecoder* m_codec;
+        audio_tools::AudioSource* m_source;
+        audio_tools::AudioDecoder* m_decode;
+        audio_tools::AudioDecoder* m_filter;
 
         String m_path;
-        std::vector<String> m_list;
+        Filelist m_list;
         int16_t m_index;
+        bool m_loop;
         fs::File m_file;
     };
+
+    ////////////////////////////////////////////////////////////////////////////
 
     class RadioAudioContext : public AudioContext
     {

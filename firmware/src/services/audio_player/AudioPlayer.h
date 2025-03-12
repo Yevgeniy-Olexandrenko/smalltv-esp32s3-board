@@ -71,6 +71,7 @@ namespace service
             uint8_t format = 0;
             uint8_t playlist = 0;
             bool shuffle = false;
+            bool loop = false;
             String title;
             String artist;
         } m_ui;
