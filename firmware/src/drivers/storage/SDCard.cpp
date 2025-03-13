@@ -100,7 +100,7 @@ namespace driver
         task::LockGuard lock(m_mutex);
 
         sdmmc_host_t m_host = SDSPI_HOST_DEFAULT();
-        m_spiSlot = m_host.slot;
+        m_spiSlot = m_host.slot = SPI3_HOST;
 
         spi_bus_config_t bus_cfg = 
         {
