@@ -57,6 +57,13 @@ void setup()
     driver::display.setTextColor(TFT_YELLOW);
     driver::display.setTextSize(1);
     driver::display.print("Hello World!");
+
+    // start the audio player
+    bool shuffle = true, loop = false;
+    String format = "mp3", filelist = "Retrowave";
+    service::audioPlayer.start(
+        new service::audio_player::StorageAudioContext(format, filelist, shuffle, loop)
+    );
 }
 
 void loop() 
