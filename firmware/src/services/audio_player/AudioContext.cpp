@@ -4,7 +4,7 @@
 #include <AudioTools/AudioCodecs/CodecAACHelix.h>
 #include "drivers/storage/Storage.h"
 
-namespace service_audio_player_impl
+namespace service::audio_player
 {
     StorageAudioContext* StorageAudioContext::s_this = nullptr;
     

@@ -5,7 +5,7 @@
 #include <AudioTools.h>
 #include <FS.h>
 
-namespace service_audio_player_impl
+namespace service::audio_player
 {
     class AudioContext
     {

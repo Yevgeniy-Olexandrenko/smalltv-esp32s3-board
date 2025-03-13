@@ -9,7 +9,7 @@
 
 namespace service
 {
-    using namespace service_audio_player_impl;
+    using namespace audio_player;
 
     class AudioPlayer : public settings::Provider
     {
