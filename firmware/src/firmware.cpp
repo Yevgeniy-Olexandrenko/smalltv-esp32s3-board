@@ -58,12 +58,14 @@ void setup()
     driver::display.setTextSize(1);
     driver::display.print("Hello World!");
 
+#if 0
     // start the audio player
     bool shuffle = true, loop = false;
     String format = "mp3", filelist = "Retrowave";
     service::audioPlayer.start(
         new service::audio_player::StorageAudioContext(format, filelist, shuffle, loop)
     );
+#endif
 }
 
 void loop() 

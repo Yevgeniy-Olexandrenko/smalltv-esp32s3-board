@@ -58,7 +58,7 @@ namespace service_settings_webapp_impl
 
         if (hardware::hasAudio())
         {
-            service::audioPlayer.settingsBuild(b);
+            service::audioPlayer.getUI().settingsBuild(b);
         }
 
         {
@@ -96,7 +96,7 @@ namespace service_settings_webapp_impl
 
         if (hardware::hasAudio())
         {
-            service::audioPlayer.settingsUpdate(u);
+            service::audioPlayer.getUI().settingsUpdate(u);
         }
 
         u.update("internet"_h, hasInternet);

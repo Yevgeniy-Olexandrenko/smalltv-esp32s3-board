@@ -14,9 +14,7 @@ namespace service::audio_player
     }
 
     StorageAudioContext::StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop)
-        : m_source(nullptr)
-        , m_decode(nullptr)
-        , m_filter(nullptr)
+        : AudioContext()
         , m_index(-1)
         , m_loop(loop)
     {
@@ -27,7 +25,7 @@ namespace service::audio_player
             strExt.toLowerCase();
 
             m_path = "/audio/" + strExt + "/" + dir;
-            fs::File file = driver::storage.getFS().open(m_path);
+            File file = driver::storage.getFS().open(m_path);
 
             if (file && file.isDirectory())
             {
@@ -59,46 +57,37 @@ namespace service::audio_player
     StorageAudioContext::~StorageAudioContext()
     {
         end();
-        m_file.close();
-        m_list.clear();
     }
 
     void StorageAudioContext::begin()
     {
-        if (!AudioContext::m_source)
+        if (!AudioContext::m_source && !AudioContext::m_decode)
         {
-            m_source = new audio_tools::AudioSourceCallback(&s_nextStreamCallback);
-            AudioContext::m_source = m_source;
-        }
+            // audio source
+            m_source = std::make_unique<AudioSourceCallback>(&s_nextStreamCallback);
+            AudioContext::m_source = m_source.get();
 
-        if (!AudioContext::m_decode)
-        {
-            m_decode = new audio_tools::MP3DecoderHelix();
-            m_filter = new audio_tools::MetaDataFilterDecoder(*m_decode);
-            AudioContext::m_decode = m_filter;
+            // decode chain
+            m_decode = std::make_unique<MP3DecoderHelix>();
+            m_filter = std::make_unique<MetaDataFilterDecoder>(*m_decode);
+            AudioContext::m_decode = m_filter.get();
         }
     }
 
     void StorageAudioContext::end()
     {
-        if (AudioContext::m_source)
-        {
-            AudioContext::m_source = nullptr;
-            delete m_source;
-        }
-
-        if (AudioContext::m_decode)
-        {
-            AudioContext::m_decode = nullptr;
-            delete m_decode;
-            delete m_filter;
-        }
+        AudioContext::m_source = nullptr;
+        AudioContext::m_decode = nullptr;
+        m_source.reset();
+        m_decode.reset();
+        m_filter.reset();
     }
 
     Stream* StorageAudioContext::nextStreamCallback(int offset)
     {
         if (!m_list.empty() && updateListIndex(offset))
         {
+            log_i("[%d / %d] try to open", m_index, m_list.size());
             auto path = m_path + "/" + m_list[m_index];
             m_file = driver::storage.getFS().open(path);
 
@@ -107,14 +96,14 @@ namespace service::audio_player
                 String name { m_file.name() };
                 auto len = name.lastIndexOf('.');
                 if (len < 0) len = name.length();
-                m_plistItemCB(name.c_str(), len);
+                m_newStreamCb(name.c_str(), len);
 
-                log_i("open file: %s (%d of %d)", m_file.path(), m_index, m_list.size());
+                log_i("[%d / %d] open success: %s", m_index, m_list.size(), m_file.path());
                 return &m_file;
             }
         }
 
-        log_i("no files to open (%d of %d)", m_index, m_list.size());
+        log_i("[%d of %d] open fail", m_index, m_list.size());
         return nullptr;
     }
 

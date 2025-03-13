@@ -1,7 +1,6 @@
 #pragma once
 
-#define USE_AUDIOTOOLS_NS false
-
+#include <functional>
 #include <AudioTools.h>
 #include <FS.h>
 
@@ -9,24 +8,24 @@ namespace service::audio_player
 {
     class AudioContext
     {
-        using onPlaylistItemCallback = void (*)(const char* str, int len);
+        using onNewStreamCb = std::function<void(const char* str, int len)>;
 
     public:
-        AudioContext() = default;
-        virtual ~AudioContext() = default;
+        AudioContext() : m_source(nullptr), m_decode(nullptr), m_newStreamCb(nullptr) {}
+        virtual ~AudioContext() {}
 
         virtual void begin() = 0;
         virtual void end() = 0;
 
-        void setOnPlaylistItemCallback(onPlaylistItemCallback callback) { m_plistItemCB = callback; };
+        void setOnNewStreamCb(onNewStreamCb callback) { m_newStreamCb = callback; };
 
         audio_tools::AudioSource& getSource() { return *m_source; }
         audio_tools::AudioDecoder& getDecoder() { return *m_decode; }
 
     protected:
-        audio_tools::AudioSource* m_source = nullptr;
-        audio_tools::AudioDecoder* m_decode = nullptr;
-        onPlaylistItemCallback m_plistItemCB = nullptr;
+        audio_tools::AudioSource* m_source;
+        audio_tools::AudioDecoder* m_decode;
+        onNewStreamCb m_newStreamCb;
     };
 
     ////////////////////////////////////////////////////////////////////////////
@@ -35,8 +34,6 @@ namespace service::audio_player
     {
         static StorageAudioContext* s_this;
         static Stream* s_nextStreamCallback(int offset);
-
-        using Filelist = std::vector<String>;
 
     public:
         StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop);
@@ -50,15 +47,15 @@ namespace service::audio_player
         bool updateListIndex(int offset);
 
     private:
-        audio_tools::AudioSource* m_source;
-        audio_tools::AudioDecoder* m_decode;
-        audio_tools::AudioDecoder* m_filter;
+        std::unique_ptr<audio_tools::AudioSource > m_source;
+        std::unique_ptr<audio_tools::AudioDecoder> m_decode;
+        std::unique_ptr<audio_tools::AudioDecoder> m_filter;
 
         String m_path;
-        Filelist m_list;
+        std::vector<String> m_list;
         int16_t m_index;
         bool m_loop;
-        fs::File m_file;
+        File m_file;
     };
 
     ////////////////////////////////////////////////////////////////////////////
