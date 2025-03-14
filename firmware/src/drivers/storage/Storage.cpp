@@ -3,8 +3,6 @@
 #include "SDCard.h"
 #include "Storage.h"
 #include "../onboard/SelfReboot.h"
-#include "defines.h"
-#include "board.h"
 
 namespace driver
 {

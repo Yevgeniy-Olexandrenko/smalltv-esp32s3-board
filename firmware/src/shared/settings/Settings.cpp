@@ -1,5 +1,4 @@
 #include "Settings.h"
-#include "defines.h"
 
 namespace settings
 {

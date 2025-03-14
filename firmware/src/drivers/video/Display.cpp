@@ -1,7 +1,6 @@
 #include <FreeRTOS.h>
 #include "Display.h"
 #include "shared/tasks/Task.h"
-#include "board.h"
 
 #define LCD_BL_PWM_CHANNEL   0
 #define LCD_BL_PWM_FREQENCY  5000

@@ -3,7 +3,6 @@
 #include "shared/tasks/Task.h"
 #include "drivers/video/Display.h"
 #include "drivers/onboard/SelfReboot.h"
-#include "defines.h"
 
 namespace service
 {

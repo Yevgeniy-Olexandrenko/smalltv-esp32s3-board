@@ -1,5 +1,8 @@
 #pragma once
 
+#include "board.h"
+#include "tftespi.h"
+
 #define PROJECT_NAME            "SmallTV"
 #define PROJECT_VERSION         "1.0.0"
 #define PROJECT_ICON            "📺"

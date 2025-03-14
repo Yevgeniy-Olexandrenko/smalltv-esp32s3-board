@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include "defines.h"
-#include "board.h"
 #include "drivers/Drivers.h"
 #include "services/Services.h"
 #include "drivers/onboard/_LedAndButton.h" // temp

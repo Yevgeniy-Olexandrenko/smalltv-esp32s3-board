@@ -2,7 +2,6 @@
 #include "NetworkConnection.h"
 #include "shared/settings/Settings.h"
 #include "drivers/onboard/_LedAndButton.h"
-#include "defines.h"
 
 namespace service
 {

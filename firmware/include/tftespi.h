@@ -1,7 +1,5 @@
 #pragma once
 
-#include "board.h"
-
 #define USER_SETUP_LOADED
 #define ST7789_2_DRIVER
 #define LOAD_GLCD
