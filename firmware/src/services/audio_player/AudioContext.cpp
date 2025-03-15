@@ -66,12 +66,12 @@ namespace service::audio_player
         if (!AudioContext::m_source && !AudioContext::m_decode)
         {
             // audio source
-            m_source = std::make_unique<AudioSourceCallback>(&s_nextStreamCallback);
+            m_source.reset(new AudioSourceCallback(&s_nextStreamCallback));
             AudioContext::m_source = m_source.get();
 
             // decode chain
-            m_decode = std::make_unique<MP3DecoderHelix>();
-            m_filter = std::make_unique<MetaDataFilterDecoder>(*m_decode);
+            m_decode.reset(new MP3DecoderHelix());
+            m_filter.reset(new MetaDataFilterDecoder(*m_decode));
             AudioContext::m_decode = m_filter.get();
         }
         #endif
