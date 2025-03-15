@@ -28,10 +28,10 @@ namespace service
 
     void SettingsWebApp::task()
     {
-        settings::sets().onBuild([&](sets::Builder& b) { this->settingsBuild(b); });
-        settings::sets().onUpdate([&](sets::Updater& u) { this->settingsUpdate(u); });
-        settings::sets().onFocusChange([&]() { this->onFocusChange(settings::sets().focused()); });
-        settings::sets().rtc.onSync([&](uint32_t unix) { NTP.sync(unix); });
+        settings::sets().onBuild([this](sets::Builder& b) { this->settingsBuild(b); });
+        settings::sets().onUpdate([this](sets::Updater& u) { this->settingsUpdate(u); });
+        settings::sets().onFocusChange([this]() { this->onFocusChange(settings::sets().focused()); });
+        settings::sets().rtc.onSync([](uint32_t unix) { NTP.sync(unix); });
 
         settings::sets().config.theme = sets::Colors::Aqua;
         settings::sets().config.updateTout = 1000;
