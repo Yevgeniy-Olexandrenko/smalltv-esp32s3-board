@@ -32,35 +32,30 @@ namespace service_settings_webapp_impl
         {
             b.HTML("html"_h, "", getHTML());
         }
-
         {
             sets::Row r(b, "", sets::DivType::Line);
             b.LED("internet"_h, "Internet", hasInternet);
             b.Label("uptime"_h, "Uptime", getUptime());
         }
-
         {
             sets::Row r(b, "", sets::DivType::Line);
-
+            #ifndef NO_VIDEO
             if (b.Slider(db::lcd_brightness, "Brightness", 0, 100))
             {
                 auto brightness = (float(b.build.value) * 0.01f);
                 driver::display.setBrightness(brightness);
             }
-
-            #ifndef NO_SOUND
+            #endif
+            #ifndef NO_AUDIO
             if (b.Slider(db::audio_volume, "Volume", 0, 100))
             {
-                auto volume = (float(b.build.value) * 0.01f);
-                service::audioPlayer.setVolume(volume);
+                service::audioPlayer.getUI().onVolumeSettingsChanged();
             }
             #endif
         }
-
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         service::audioPlayer.getUI().settingsBuild(b);
         #endif
-
         {
             sets::Group g(b, "Hardware");
             b.Label("ESP32 module", getESPModuleInfo());
@@ -92,7 +87,7 @@ namespace service_settings_webapp_impl
             u.update("html"_h, getHTML());
         }
 
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         service::audioPlayer.getUI().settingsUpdate(u);
         #endif
 

@@ -9,10 +9,16 @@ namespace service::audio_player
     public:
         AudioPlayerUI();
 
-        void  setTitle(const String& title) { m_title = title; }
+        void begin();
+        void onVolumeSettingsChanged();
+
+        void playStorage(const String& format, const String& filelist);
+        void playRadio(const String& stations);
+
+        void setTitle(const String& title) { m_title = title; }
         const String& getTitle() const { return m_title; }
 
-        void  setArtist(const String& artist) { m_artist = artist; }
+        void setArtist(const String& artist) { m_artist = artist; }
         const String& getArtist() const { return m_artist; }
 
         void settingsBuild(sets::Builder& b) override;
@@ -27,8 +33,6 @@ namespace service::audio_player
         bool m_playing;
         uint8_t m_format;
         uint8_t m_playlist;
-        bool m_shuffle;
-        bool m_loop;
         String m_title;
         String m_artist;
     };

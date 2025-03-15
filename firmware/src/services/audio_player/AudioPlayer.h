@@ -18,7 +18,7 @@ namespace service
     public:
         AudioPlayer();
 
-        void begin(float volume);
+        void begin();
         bool start(audio_player::AudioContext* context);
         void setVolume(float volume);
         void pause(bool yes);

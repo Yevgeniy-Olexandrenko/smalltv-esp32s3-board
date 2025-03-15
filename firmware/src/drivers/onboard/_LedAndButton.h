@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
 #define ONBOARD_LED_PIN    GPIO_NUM_0
 #define ONBOARD_BUTTON_PIN GPIO_NUM_0
 

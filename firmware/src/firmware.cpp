@@ -58,11 +58,8 @@ void setup()
 
 #if 1
     // start the audio player
-    bool shuffle = true, loop = false;
-    String format = "mp3", filelist = "Juno Dreams";
-    service::audioPlayer.start(
-        new service::audio_player::StorageAudioContext(format, filelist, shuffle, loop)
-    );
+    String format = "mp3", filelist = "Juno Dreams/good";
+    service::audioPlayer.getUI().playStorage(format, filelist);
 #endif
 }
 

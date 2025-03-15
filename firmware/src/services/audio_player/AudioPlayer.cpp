@@ -22,16 +22,15 @@ namespace service
     {
     }
 
-    void AudioPlayer::begin(float volume)
+    void AudioPlayer::begin()
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         if (!m_i2sOut && !m_fftOut)
         {
+            m_ui.begin();
             s_this = this;
-            audio_tools::AudioToolsLogger.begin(
-                Serial, audio_tools::AudioToolsLogLevel::Error);
             m_cmdQueue = xQueueCreate(4, sizeof(Command));
-            setVolume(volume);
+            audio_tools::AudioToolsLogger.begin(Serial, audio_tools::AudioToolsLogLevel::Warning);
 
             // configure I2S
             auto i2sCfg = m_i2sOut.defaultConfig();
@@ -56,7 +55,7 @@ namespace service
 
     bool AudioPlayer::start(audio_player::AudioContext* context)
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         if (!isStarted() && context && !m_context)
         {
             m_context.reset(context);
@@ -76,7 +75,7 @@ namespace service
 
     void AudioPlayer::setVolume(float volume)
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         m_mutex.lock();
         m_volume =  0.1f;
         m_volume += 0.9f * constrain(volume, 0.f, 1.f);
@@ -93,7 +92,7 @@ namespace service
 
     void AudioPlayer::pause(bool yes)
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         if (isStarted())
         {
             if (yes)
@@ -112,7 +111,7 @@ namespace service
 
     void AudioPlayer::next(bool fwd)
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         if (isStarted())
         {
             if (fwd)
@@ -131,7 +130,7 @@ namespace service
 
     void AudioPlayer::stop()
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         if (isStarted())
         {
             auto command { Command::Stop };
@@ -142,7 +141,7 @@ namespace service
 
     bool AudioPlayer::isStarted()
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         task::LockGuard lock(m_mutex);
         return (m_handle != nullptr);
         #else
@@ -152,7 +151,7 @@ namespace service
 
     bool AudioPlayer::isPlaying()
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         task::LockGuard lock(m_mutex);
         return (m_handle != nullptr && m_player.isActive());
         #else

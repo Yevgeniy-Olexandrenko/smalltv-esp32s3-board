@@ -2,6 +2,7 @@
 #include "AudioContext.h"
 #include "AudioPlayerUI.h"
 #include "drivers/storage/Storage.h"
+#include "settings.h"
 
 namespace service::audio_player
 {
@@ -10,9 +11,33 @@ namespace service::audio_player
         , m_playing(false)
         , m_format(0)
         , m_playlist(0)
-        , m_shuffle(false)
-        , m_loop(false)
     {
+    }
+
+    void AudioPlayerUI::begin()
+    {
+        settings::data().init(db::audio_volume, 50);
+        settings::data().init(db::audio_player_shuffle, false);
+        settings::data().init(db::audio_player_loop, false);
+        onVolumeSettingsChanged();
+    }
+
+    void AudioPlayerUI::onVolumeSettingsChanged()
+    {
+        auto volume = (float(settings::data()[db::audio_volume]) * 0.01f);
+        service::audioPlayer.setVolume(volume);
+    }
+
+    void AudioPlayerUI::playStorage(const String &format, const String &filelist)
+    {
+        bool shuffle = settings::data()[db::audio_player_shuffle];
+        bool loop = settings::data()[db::audio_player_loop];
+        audioPlayer.start(new StorageAudioContext(format, filelist, shuffle, loop));
+    }
+
+    void AudioPlayerUI::playRadio(const String &stations)
+    {
+        // TODO
     }
 
     void AudioPlayerUI::settingsBuild(sets::Builder &b)
@@ -59,15 +84,14 @@ namespace service::audio_player
                 b.Select("Playlist", filelists, &m_playlist);
                 {
                     sets::Row r(b, "", sets::DivType::Default);
-                    b.Switch("Shuffle", &m_shuffle);
-                    b.Switch("Loop", &m_loop);
+                    b.Switch(db::audio_player_shuffle, "Shuffle");
+                    b.Switch(db::audio_player_loop, "Loop");
                 }
                 if (b.Button("Start"))
                 {
                     String format = Text(formats).getSub(m_format, ';');
                     String filelist = Text(filelists).getSub(m_playlist, ';');
-
-                    audioPlayer.start(new StorageAudioContext(format, filelist, m_shuffle, m_loop));
+                    playStorage(format, filelist);
                     b.reload();
                 }
             }

@@ -2,6 +2,7 @@
 
 #include "board.h"
 #include "tftespi.h"
+#include <stdint.h>
 
 #define PROJECT_NAME            "SmallTV"
 #define PROJECT_VERSION         "1.0.0"

@@ -62,7 +62,7 @@ namespace service::audio_player
 
     void StorageAudioContext::begin()
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         if (!AudioContext::m_source && !AudioContext::m_decode)
         {
             // audio source
@@ -79,7 +79,7 @@ namespace service::audio_player
 
     void StorageAudioContext::end()
     {
-        #ifndef NO_SOUND
+        #ifndef NO_AUDIO
         AudioContext::m_source = nullptr;
         AudioContext::m_decode = nullptr;
         m_source.reset();

@@ -3,14 +3,12 @@
 #include <GyverDB.h>
 
 DB_KEYS(db,
-
-    // drivers
-    storage_type,           //
-    lcd_brightness,         //
-    audio_volume,           //
-    n_lcd_brightness,       //
-    n_audio_volume,         //
-
-    // others
-    reboot_to_msc           //
+    storage_type,
+    lcd_brightness,
+    audio_volume,
+    audio_player_shuffle,
+    audio_player_loop,
+    n_lcd_brightness,
+    n_audio_volume,
+    reboot_to_msc
 );
