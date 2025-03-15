@@ -1,6 +1,8 @@
 #pragma once
 
 #define DISABLE_ALL_LIBRARY_WARNINGS
+#ifndef NO_VIDEO
+
 #define USER_SETUP_LOADED
 #define ST7789_2_DRIVER
 #define USE_FSPI_PORT
@@ -22,4 +24,6 @@
 
 #if PIN_LCD_CS != GPIO_NUM_NC
 #define TFT_CS    PIN_LCD_CS
+#endif
+
 #endif

@@ -47,10 +47,7 @@ namespace service_settings_webapp_impl
             }
             #endif
             #ifndef NO_AUDIO
-            if (b.Slider(db::audio_volume, "Volume", 0, 100))
-            {
-                service::audioPlayer.getUI().onVolumeSettingsChanged();
-            }
+            service::audioPlayer.getUI().settingsBuildVolume(b);
             #endif
         }
         #ifndef NO_AUDIO
@@ -86,11 +83,9 @@ namespace service_settings_webapp_impl
         {
             u.update("html"_h, getHTML());
         }
-
         #ifndef NO_AUDIO
         service::audioPlayer.getUI().settingsUpdate(u);
         #endif
-
         u.update("internet"_h, hasInternet);
         u.update("uptime"_h, getUptime());
         u.update("ram_usage"_h, getRAMUsageInfo());

@@ -1,4 +1,5 @@
 #pragma once
+#ifndef NO_VINSENSE
 
 namespace driver
 {
@@ -36,3 +37,4 @@ namespace driver
     
     extern PowerSource powerSource;
 }
+#endif

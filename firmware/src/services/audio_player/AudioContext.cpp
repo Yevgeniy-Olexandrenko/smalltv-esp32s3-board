@@ -1,3 +1,5 @@
+#ifndef NO_AUDIO
+
 #include <random>
 #include <AudioTools.h>
 #include <AudioTools/AudioCodecs/CodecMP3Helix.h>
@@ -62,7 +64,6 @@ namespace service::audio_player
 
     void StorageAudioContext::begin()
     {
-        #ifndef NO_AUDIO
         if (!AudioContext::m_source && !AudioContext::m_decode)
         {
             // audio source
@@ -74,18 +75,15 @@ namespace service::audio_player
             m_filter.reset(new MetaDataFilterDecoder(*m_decode));
             AudioContext::m_decode = m_filter.get();
         }
-        #endif
     }
 
     void StorageAudioContext::end()
     {
-        #ifndef NO_AUDIO
         AudioContext::m_source = nullptr;
         AudioContext::m_decode = nullptr;
         m_source.reset();
         m_decode.reset();
         m_filter.reset();
-        #endif
     }
 
     Stream* StorageAudioContext::nextStreamCallback(int offset)
@@ -131,3 +129,4 @@ namespace service::audio_player
 
     ////////////////////////////////////////////////////////////////////////////
 }
+#endif

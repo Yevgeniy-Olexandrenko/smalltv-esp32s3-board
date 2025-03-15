@@ -1,4 +1,5 @@
 #pragma once
+#ifndef NO_AUDIO
 
 #include <AudioTools.h>
 #include "AudioContext.h"
@@ -54,3 +55,4 @@ namespace service
 
     extern AudioPlayer audioPlayer;
 }
+#endif

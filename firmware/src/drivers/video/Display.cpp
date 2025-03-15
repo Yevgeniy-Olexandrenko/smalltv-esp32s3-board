@@ -1,3 +1,5 @@
+#ifndef NO_VIDEO
+
 #include <FreeRTOS.h>
 #include "Display.h"
 #include "shared/tasks/Task.h"
@@ -23,7 +25,7 @@ namespace driver
                     auto instance = static_cast<Display*>(data);
                     instance->task();
                 },
-                "task_lcd_brightness", 1024, this, task::priority::Background,
+                "lcd_brightness", 1024, this, task::priority::Background,
                 nullptr, task::core::System
             );
         }
@@ -85,3 +87,4 @@ namespace driver
 
     Display display;
 }
+#endif

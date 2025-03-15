@@ -1,3 +1,5 @@
+#ifndef NO_AUDIO
+
 #include "AudioPlayer.h"
 #include "AudioContext.h"
 #include "AudioPlayerUI.h"
@@ -22,17 +24,17 @@ namespace service::audio_player
         onVolumeSettingsChanged();
     }
 
-    void AudioPlayerUI::onVolumeSettingsChanged()
-    {
-        auto volume = (float(settings::data()[db::audio_volume]) * 0.01f);
-        service::audioPlayer.setVolume(volume);
-    }
-
     void AudioPlayerUI::playStorage(const String &format, const String &filelist)
     {
+        log_i("play_storage: %s/%s", format.c_str(), filelist.c_str());
         bool shuffle = settings::data()[db::audio_player_shuffle];
+        log_i("play_storage: got shuffle");
         bool loop = settings::data()[db::audio_player_loop];
-        audioPlayer.start(new StorageAudioContext(format, filelist, shuffle, loop));
+        log_i("play_storage: got loop");
+        auto context = new StorageAudioContext(format, filelist, shuffle, loop);
+        log_i("play_storage: got context");
+        audioPlayer.start(context);
+        log_i("play_storage: started");
     }
 
     void AudioPlayerUI::playRadio(const String &stations)
@@ -92,6 +94,9 @@ namespace service::audio_player
                     String format = Text(formats).getSub(m_format, ';');
                     String filelist = Text(filelists).getSub(m_playlist, ';');
                     playStorage(format, filelist);
+                    //bool shuffle = settings::data()[db::audio_player_shuffle];
+                    //bool loop = settings::data()[db::audio_player_loop];
+                    //audioPlayer.start(new StorageAudioContext(format, filelist, shuffle, loop));
                     b.reload();
                 }
             }
@@ -122,6 +127,20 @@ namespace service::audio_player
         }
     }
 
+    void AudioPlayerUI::settingsBuildVolume(sets::Builder &b)
+    {
+        if (b.Slider(db::audio_volume, "Volume", 0, 100))
+        {
+            onVolumeSettingsChanged();
+        }
+    }
+
+    void AudioPlayerUI::onVolumeSettingsChanged()
+    {
+        auto volume = (float(settings::data()[db::audio_volume]) * 0.01f);
+        service::audioPlayer.setVolume(volume);
+    }
+
     void AudioPlayerUI::fetchFormats(String &output)
     {
         output = "mp3;acc;wav;mod";
@@ -149,3 +168,4 @@ namespace service::audio_player
         }
     }
 }
+#endif

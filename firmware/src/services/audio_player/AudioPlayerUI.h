@@ -1,4 +1,5 @@
 #pragma once
+#ifndef NO_AUDIO
 
 #include "shared/settings/Settings.h"
 
@@ -10,8 +11,6 @@ namespace service::audio_player
         AudioPlayerUI();
 
         void begin();
-        void onVolumeSettingsChanged();
-
         void playStorage(const String& format, const String& filelist);
         void playRadio(const String& stations);
 
@@ -23,8 +22,10 @@ namespace service::audio_player
 
         void settingsBuild(sets::Builder& b) override;
         void settingsUpdate(sets::Updater& u) override;
+        void settingsBuildVolume(sets::Builder& b);
 
     private:
+        void onVolumeSettingsChanged();
         void fetchFormats(String& output);
         void fetchPlaylists(const String& format, String& output);
 
@@ -37,3 +38,4 @@ namespace service::audio_player
         String m_artist;
     };
 }
+#endif

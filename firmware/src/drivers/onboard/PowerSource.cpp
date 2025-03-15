@@ -1,3 +1,5 @@
+#ifndef NO_VINSENSE
+
 #include <Arduino.h>
 #include "PowerSource.h"
 
@@ -71,7 +73,6 @@ namespace driver
 
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsRaw()
     {
-    #ifndef NO_VINSENSE
         pinMode(PIN_VIN_SEN, INPUT);
         analogSetPinAttenuation(PIN_VIN_SEN, ADC_11db);
 
@@ -86,10 +87,8 @@ namespace driver
         auto y = MilliVolt(k * x + b);
         // log_i("%d - %d", x, y);
         return y;
-    #else
-        return 0;
-    #endif
     }
 
     PowerSource powerSource;
 }
+#endif

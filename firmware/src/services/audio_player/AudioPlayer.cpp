@@ -1,3 +1,5 @@
+#ifndef NO_AUDIO
+
 #include "AudioPlayer.h"
 #include "shared/tasks/Task.h"
 
@@ -24,7 +26,6 @@ namespace service
 
     void AudioPlayer::begin()
     {
-        #ifndef NO_AUDIO
         if (!m_i2sOut && !m_fftOut)
         {
             m_ui.begin();
@@ -50,12 +51,10 @@ namespace service
             m_output.add(m_fftOut);
             m_output.add(m_i2sOut);
         }
-        #endif
     }
 
     bool AudioPlayer::start(audio_player::AudioContext* context)
     {
-        #ifndef NO_AUDIO
         if (!isStarted() && context && !m_context)
         {
             m_context.reset(context);
@@ -65,17 +64,15 @@ namespace service
                     auto instance = static_cast<AudioPlayer*>(data);
                     instance->task();
                 },
-                "task_audio_player", 8192, this, task::priority::Realtime,
+                "audio_player", 8192 * 2, this, task::priority::Realtime,
                 &m_handle, task::core::Application
             ) == pdPASS;
         }
-        #endif
         return false;
     }
 
     void AudioPlayer::setVolume(float volume)
     {
-        #ifndef NO_AUDIO
         m_mutex.lock();
         m_volume =  0.1f;
         m_volume += 0.9f * constrain(volume, 0.f, 1.f);
@@ -87,12 +84,10 @@ namespace service
             auto command { Command::Volume };
             xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
         }
-        #endif
     }
 
     void AudioPlayer::pause(bool yes)
     {
-        #ifndef NO_AUDIO
         if (isStarted())
         {
             if (yes)
@@ -106,12 +101,10 @@ namespace service
                 xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
             }
         }
-        #endif
     }
 
     void AudioPlayer::next(bool fwd)
     {
-        #ifndef NO_AUDIO
         if (isStarted())
         {
             if (fwd)
@@ -125,38 +118,27 @@ namespace service
                 xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
             }
         }
-        #endif
     }
 
     void AudioPlayer::stop()
     {
-        #ifndef NO_AUDIO
         if (isStarted())
         {
             auto command { Command::Stop };
             xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
         }
-        #endif
     }
 
     bool AudioPlayer::isStarted()
     {
-        #ifndef NO_AUDIO
         task::LockGuard lock(m_mutex);
         return (m_handle != nullptr);
-        #else
-        return false;
-        #endif
     }
 
     bool AudioPlayer::isPlaying()
     {
-        #ifndef NO_AUDIO
         task::LockGuard lock(m_mutex);
         return (m_handle != nullptr && m_player.isActive());
-        #else
-        return false;
-        #endif
     }
 
     void AudioPlayer::task()
@@ -223,3 +205,4 @@ namespace service
 
     AudioPlayer audioPlayer;
 }
+#endif

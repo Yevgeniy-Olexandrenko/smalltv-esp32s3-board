@@ -15,7 +15,7 @@ namespace service
                 auto instance = static_cast<SettingsWebApp*>(data);
                 instance->task();
             },
-            "task_settings_webapp", 8192, this, task::priority::Background,
+            "settings_webapp", 8192 * 2, this, task::priority::Background,
             nullptr, task::core::Application
         );
     }
@@ -49,7 +49,9 @@ namespace service
             if (m_rebootPending)
             {
                 m_rebootPending = false;
+                #ifndef NO_VIDEO
                 driver::display.fadeOut();
+                #endif
                 driver::selfReboot.reboot();
             }
             vTaskDelay(pdMS_TO_TICKS(10));

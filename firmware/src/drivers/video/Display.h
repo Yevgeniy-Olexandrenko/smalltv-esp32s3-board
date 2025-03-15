@@ -1,4 +1,5 @@
 #pragma once
+#ifndef NO_VIDEO
 
 #include <TFT_eSPI.h>
 
@@ -25,3 +26,4 @@ namespace driver
 
     extern Display display;
 }
+#endif

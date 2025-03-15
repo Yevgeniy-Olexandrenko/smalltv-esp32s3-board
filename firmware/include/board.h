@@ -122,30 +122,40 @@
 #endif
 
 // Display
-#ifndef PIN_LCD_RES
-#define PIN_LCD_RES GPIO_NUM_9
-#endif
-#ifndef PIN_LCD_CS
-#define PIN_LCD_CS  GPIO_NUM_10
-#endif
-#ifndef PIN_LCD_SCL
-#define PIN_LCD_SCL GPIO_NUM_12
-#endif
-#ifndef PIN_LCD_SDA
-#define PIN_LCD_SDA GPIO_NUM_11
-#endif
-#ifndef PIN_LCD_DC
-#define PIN_LCD_DC  GPIO_NUM_13
-#endif
-#ifndef PIN_LCD_BL
-#define PIN_LCD_BL  GPIO_NUM_14
-#endif
-#ifdef ARDUINO_SMALLTV_BOARD
-#undef LCD_BL_INV
+#ifdef NO_VIDEO
+    #undef  PIN_LCD_BL
+    #undef  PIN_LCD_CS
+    #undef  PIN_LCD_DC
+    #undef  PIN_LCD_RES
+    #undef  PIN_LCD_SDA
+    #undef  PIN_LCD_SCL
+    #undef  LCD_BL_INV
+#else
+    #ifndef PIN_LCD_BL
+    #define PIN_LCD_BL  GPIO_NUM_14
+    #endif
+    #ifndef PIN_LCD_CS
+    #define PIN_LCD_CS  GPIO_NUM_10
+    #endif
+    #ifndef PIN_LCD_DC
+    #define PIN_LCD_DC  GPIO_NUM_13
+    #endif
+    #ifndef PIN_LCD_RES
+    #define PIN_LCD_RES GPIO_NUM_9
+    #endif
+    #ifndef PIN_LCD_SDA
+    #define PIN_LCD_SDA GPIO_NUM_11
+    #endif
+    #ifndef PIN_LCD_SCL
+    #define PIN_LCD_SCL GPIO_NUM_12
+    #endif
+    #ifdef  ARDUINO_SMALLTV_BOARD
+    #undef  LCD_BL_INV
+    #endif
 #endif
 
 // Sound
-#ifdef NO_SOUND
+#ifdef NO_AUDIO
     #undef  PIN_SND_RLCLK
     #undef  PIN_SND_BCLK
     #undef  PIN_SND_DIN

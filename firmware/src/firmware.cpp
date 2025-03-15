@@ -15,30 +15,26 @@ static bool s_buttonState = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef NO_VIDEO
 #include "shared/image/QRCode.h"
-
 TFT_eSprite sprite(&driver::display);
-
 const int ver = 1;
 const int scale = 5;
 image::QRCode qrcode(ver);
+#endif
 
 void setup() 
 {
     Serial.begin(115200);
     delay(1500);
 
-    // // turn on the onboard led
+    // turn on the onboard led
     // #ifdef PIN_LED_CAT
     // pinMode(PIN_LED_CAT, OUTPUT);
     // digitalWrite(PIN_LED_CAT, LOW);
     // #endif
 
-    // start hardware
     drivers::begin();
-    // driver::ledAndButton.begin();
-
-    // start services
     services::begin();
 
     // test
@@ -49,17 +45,21 @@ void setup()
         Serial.printf("Storage used bytes: %f\n", driver::storage.getFSUsedBytes() / (1024.f * 1024.f));
     }
 
+#ifndef NO_VIDEO
     // tft test text
     driver::display.fillScreen(TFT_NAVY);
     driver::display.setCursor(8, 8);
     driver::display.setTextColor(TFT_YELLOW);
     driver::display.setTextSize(1);
     driver::display.print("Hello World!");
+#endif    
 
-#if 1
+#ifndef NO_AUDIO
+#if 0
     // start the audio player
     String format = "mp3", filelist = "Juno Dreams/good";
     service::audioPlayer.getUI().playStorage(format, filelist);
+#endif
 #endif
 }
 
@@ -86,6 +86,7 @@ void loop()
     //     }
     // }
 
+#ifndef NO_VIDEO
     if (NTP.synced() && NTP.newSecond())
     {
         qrcode.create(NTP.timeToString().c_str());
@@ -103,4 +104,5 @@ void loop()
         qrcode.renderOn(driver::display, scale, offsetX, offsetY);
     #endif
     }
+#endif
 }

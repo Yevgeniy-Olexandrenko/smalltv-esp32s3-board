@@ -1,4 +1,5 @@
 #pragma once
+#ifndef NO_AUDIO
 
 #include <vector>
 #include <functional>
@@ -71,3 +72,4 @@ namespace service::audio_player
         //
     };
 }
+#endif

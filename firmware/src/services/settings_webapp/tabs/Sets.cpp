@@ -8,19 +8,19 @@ namespace service_settings_webapp_impl
     void Sets::settingsBuild(sets::Builder &b)
     {
         service::networkConnection.settingsBuild(b);
+        storageSettingsBuild(b);
         service::geoLocation.settingsBuild(b);
         service::dateAndTime.settingsBuild(b);
         service::weatherForecast.settingsBuild(b);
-        storageSettingsBuild(b);
     }
 
     void Sets::settingsUpdate(sets::Updater &u)
     {
         service::networkConnection.settingsUpdate(u);
+        storageSettingsUpdate(u);
         service::geoLocation.settingsUpdate(u);
         service::dateAndTime.settingsUpdate(u);
         service::weatherForecast.settingsUpdate(u);
-        storageSettingsUpdate(u);
     }
 
     ////////////////////////////////////////////////////////////////////////////
