@@ -1,8 +1,13 @@
 #pragma once
 
 #include <functional>
-#include <AudioTools.h>
 #include <FS.h>
+
+namespace audio_tools
+{
+    class AudioSource;
+    class AudioDecoder;
+}
 
 namespace service::audio_player
 {

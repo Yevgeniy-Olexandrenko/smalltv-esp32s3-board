@@ -1,5 +1,6 @@
 #pragma once
 
+#include <AudioTools.h>
 #include "AudioContext.h"
 #include "AudioPlayerUI.h"
 #include "shared/tasks/Mutex.h"

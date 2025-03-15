@@ -1,5 +1,4 @@
 #include "AudioPlayer.h"
-#include "drivers/Drivers.h"
 #include "shared/tasks/Task.h"
 
 namespace service
@@ -25,7 +24,8 @@ namespace service
 
     void AudioPlayer::begin(float volume)
     {
-        if (hardware::hasAudio() && !m_i2sOut && !m_fftOut)
+        #ifndef NO_SOUND
+        if (!m_i2sOut && !m_fftOut)
         {
             s_this = this;
             audio_tools::AudioToolsLogger.begin(
@@ -51,50 +51,50 @@ namespace service
             m_output.add(m_fftOut);
             m_output.add(m_i2sOut);
         }
+        #endif
     }
 
     bool AudioPlayer::start(audio_player::AudioContext* context)
     {
-        if (hardware::hasAudio())
+        #ifndef NO_SOUND
+        if (!isStarted() && context && !m_context)
         {
-            if (!isStarted() && context && !m_context)
-            {
-                m_context.reset(context);
-                return xTaskCreatePinnedToCore(
-                    [](void* data) 
-                    {
-                        auto instance = static_cast<AudioPlayer*>(data);
-                        instance->task();
-                    },
-                    "task_audio_player", 8192, this, task::priority::Realtime,
-                    &m_handle, task::core::Application
-                ) == pdPASS;
-            }
+            m_context.reset(context);
+            return xTaskCreatePinnedToCore(
+                [](void* data) 
+                {
+                    auto instance = static_cast<AudioPlayer*>(data);
+                    instance->task();
+                },
+                "task_audio_player", 8192, this, task::priority::Realtime,
+                &m_handle, task::core::Application
+            ) == pdPASS;
         }
+        #endif
         return false;
     }
 
     void AudioPlayer::setVolume(float volume)
     {
-        if (hardware::hasAudio())
-        {
-            m_mutex.lock();
-            m_volume =  0.1f;
-            m_volume += 0.9f * constrain(volume, 0.f, 1.f);
-            m_volume *= SND_PRE_AMP;
-            m_mutex.unlock();
+        #ifndef NO_SOUND
+        m_mutex.lock();
+        m_volume =  0.1f;
+        m_volume += 0.9f * constrain(volume, 0.f, 1.f);
+        m_volume *= SND_PRE_AMP;
+        m_mutex.unlock();
 
-            if (isStarted())
-            {
-                auto command { Command::Volume };
-                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
-            }
+        if (isStarted())
+        {
+            auto command { Command::Volume };
+            xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
         }
+        #endif
     }
 
     void AudioPlayer::pause(bool yes)
     {
-        if (hardware::hasAudio() && isStarted())
+        #ifndef NO_SOUND
+        if (isStarted())
         {
             if (yes)
             {
@@ -107,11 +107,13 @@ namespace service
                 xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
             }
         }
+        #endif
     }
 
     void AudioPlayer::next(bool fwd)
     {
-        if (hardware::hasAudio() && isStarted())
+        #ifndef NO_SOUND
+        if (isStarted())
         {
             if (fwd)
             {
@@ -124,35 +126,38 @@ namespace service
                 xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
             }
         }
+        #endif
     }
 
     void AudioPlayer::stop()
     {
-        if (hardware::hasAudio() && isStarted())
+        #ifndef NO_SOUND
+        if (isStarted())
         {
             auto command { Command::Stop };
             xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
         }
+        #endif
     }
 
     bool AudioPlayer::isStarted()
     {
-        if (hardware::hasAudio())
-        {
-            task::LockGuard lock(m_mutex);
-            return (m_handle != nullptr);
-        }
+        #ifndef NO_SOUND
+        task::LockGuard lock(m_mutex);
+        return (m_handle != nullptr);
+        #else
         return false;
+        #endif
     }
 
     bool AudioPlayer::isPlaying()
     {
-        if (hardware::hasAudio())
-        {
-            task::LockGuard lock(m_mutex);
-            return (m_handle != nullptr && m_player.isActive());
-        }
+        #ifndef NO_SOUND
+        task::LockGuard lock(m_mutex);
+        return (m_handle != nullptr && m_player.isActive());
+        #else
         return false;
+        #endif
     }
 
     void AudioPlayer::task()

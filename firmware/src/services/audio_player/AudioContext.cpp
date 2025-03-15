@@ -1,7 +1,8 @@
 #include <random>
-#include "AudioContext.h"
+#include <AudioTools.h>
 #include <AudioTools/AudioCodecs/CodecMP3Helix.h>
 #include <AudioTools/AudioCodecs/CodecAACHelix.h>
+#include "AudioContext.h"
 #include "drivers/storage/Storage.h"
 
 namespace service::audio_player
@@ -61,6 +62,7 @@ namespace service::audio_player
 
     void StorageAudioContext::begin()
     {
+        #ifndef NO_SOUND
         if (!AudioContext::m_source && !AudioContext::m_decode)
         {
             // audio source
@@ -72,15 +74,18 @@ namespace service::audio_player
             m_filter = std::make_unique<MetaDataFilterDecoder>(*m_decode);
             AudioContext::m_decode = m_filter.get();
         }
+        #endif
     }
 
     void StorageAudioContext::end()
     {
+        #ifndef NO_SOUND
         AudioContext::m_source = nullptr;
         AudioContext::m_decode = nullptr;
         m_source.reset();
         m_decode.reset();
         m_filter.reset();
+        #endif
     }
 
     Stream* StorageAudioContext::nextStreamCallback(int offset)
