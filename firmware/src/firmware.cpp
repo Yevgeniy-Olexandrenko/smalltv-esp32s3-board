@@ -56,10 +56,10 @@ void setup()
     driver::display.setTextSize(1);
     driver::display.print("Hello World!");
 
-#if 0
+#if 1
     // start the audio player
     bool shuffle = true, loop = false;
-    String format = "mp3", filelist = "Retrowave";
+    String format = "mp3", filelist = "Juno Dreams";
     service::audioPlayer.start(
         new service::audio_player::StorageAudioContext(format, filelist, shuffle, loop)
     );
@@ -72,10 +72,7 @@ void loop()
     // driver::ledAndButton.update();
 
     // update services
-    service::networkConnection.update();
-    service::geoLocation.update();
-    service::dateAndTime.update();
-    service::weatherForecast.update();
+    services::update();
 
     // test
     // bool buttonState = driver::ledAndButton.getButtonState();

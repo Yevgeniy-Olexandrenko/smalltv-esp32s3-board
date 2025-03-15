@@ -10,4 +10,5 @@
 namespace services
 {
     void begin();
+    void update();
 }

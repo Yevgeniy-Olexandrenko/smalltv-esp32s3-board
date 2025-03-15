@@ -32,7 +32,9 @@ namespace service_settings_webapp_impl
 
         {
             String choice = "None;Embedded Flash";
-            if (hardware::hasSDCard()) choice += ";External SD Card;Auto";
+            #ifndef NO_SDCARD
+            choice += ";External SD Card;Auto";
+            #endif
 
             sets::Group g(b, "Storage");
             if (b.Select(db::storage_type, "Type", choice))
@@ -46,7 +48,8 @@ namespace service_settings_webapp_impl
                 fillStorageSpecs(specs);
                 b.Label("Specs", specs);
 
-                if (hardware::hasUsbMSC() && b.Button("Connect to PC"))
+                #ifndef NO_USBMSC
+                if (b.Button("Connect to PC"))
                 {
                     service::settingsWebApp.requestReboot([&](bool reboot)
                     {
@@ -54,6 +57,7 @@ namespace service_settings_webapp_impl
                             settings::data()[db::reboot_to_msc] = true;
                     });
                 }
+                #endif
             }
         }
     }

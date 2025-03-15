@@ -41,38 +41,36 @@ namespace service_settings_webapp_impl
 
         {
             sets::Row r(b, "", sets::DivType::Line);
+
             if (b.Slider(db::lcd_brightness, "Brightness", 0, 100))
             {
                 auto brightness = (float(b.build.value) * 0.01f);
                 driver::display.setBrightness(brightness);
             }
-            if (hardware::hasAudio())
+
+            #ifndef NO_SOUND
+            if (b.Slider(db::audio_volume, "Volume", 0, 100))
             {
-                if (b.Slider(db::audio_volume, "Volume", 0, 100))
-                {
-                    auto volume = (float(b.build.value) * 0.01f);
-                    service::audioPlayer.setVolume(volume);
-                }
+                auto volume = (float(b.build.value) * 0.01f);
+                service::audioPlayer.setVolume(volume);
             }
+            #endif
         }
 
-        if (hardware::hasAudio())
-        {
-            service::audioPlayer.getUI().settingsBuild(b);
-        }
+        #ifndef NO_SOUND
+        service::audioPlayer.getUI().settingsBuild(b);
+        #endif
 
         {
             sets::Group g(b, "Hardware");
             b.Label("ESP32 module", getESPModuleInfo());
             b.Label("ram_usage"_h, "RAM usage", getRAMUsageInfo());
-            if (hardware::hasPSRAM())
-            {
-                b.Label("psram_usage"_h, "PSRAM usage", getPSRAMUsageInfo());
-            }
-            if (hardware::hasVINSense())
-            {
-                b.Label("power_source"_h, "Power source", getPowerSourceInfo());
-            }
+            #ifndef NO_PSRAM
+            b.Label("psram_usage"_h, "PSRAM usage", getPSRAMUsageInfo());
+            #endif
+            #ifndef NO_VINSENSE
+            b.Label("power_source"_h, "Power source", getPowerSourceInfo());
+            #endif
             if (!service::networkConnection.isInAccessPointMode())
             {
                 b.Label("wifi_signal"_h, "WiFi signal", getWiFiSignalInfo());
@@ -94,22 +92,19 @@ namespace service_settings_webapp_impl
             u.update("html"_h, getHTML());
         }
 
-        if (hardware::hasAudio())
-        {
-            service::audioPlayer.getUI().settingsUpdate(u);
-        }
+        #ifndef NO_SOUND
+        service::audioPlayer.getUI().settingsUpdate(u);
+        #endif
 
         u.update("internet"_h, hasInternet);
         u.update("uptime"_h, getUptime());
         u.update("ram_usage"_h, getRAMUsageInfo());
-        if (hardware::hasPSRAM())
-        {
-            u.update("psram_usage"_h, getPSRAMUsageInfo());
-        }
-        if (hardware::hasVINSense())
-        {
-            u.update("power_source"_h, getPowerSourceInfo());
-        }
+        #ifndef NO_PSRAM
+        u.update("psram_usage"_h, getPSRAMUsageInfo());
+        #endif
+        #ifndef NO_VINSENSE
+        u.update("power_source"_h, getPowerSourceInfo());
+        #endif
         if (!service::networkConnection.isInAccessPointMode())
         {
             u.update("wifi_signal"_h, getWiFiSignalInfo());

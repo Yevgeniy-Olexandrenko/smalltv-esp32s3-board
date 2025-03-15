@@ -9,7 +9,11 @@ namespace drivers
     // default storage type
     const Storage::Type getDefaultStorageType()
     {
-        return (hardware::hasSDCard() ? Storage::Type::Auto : Storage::Type::Flash);
+        #ifndef NO_SDCARD
+        return Storage::Type::Auto;
+        #else
+        return Storage::Type::Flash;
+        #endif
     }
 
     void begin()

@@ -2,6 +2,16 @@
 
 #include <hal/gpio_types.h>
 
+// PSRAM availability
+#if !defined(BOARD_HAS_PSRAM) || BOARD_HAS_PSRAM == 0
+#define NO_PSRAM
+#endif
+
+// USB MSC availability
+#if !defined(ARDUINO_USB_MODE) || ARDUINO_USB_MODE == 0
+#define NO_USBMSC
+#endif
+
 // Input voltage sense
 #ifdef NO_VINSENSE
     #undef  PIN_VIN_SEN
