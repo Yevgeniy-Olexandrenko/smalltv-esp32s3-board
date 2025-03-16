@@ -66,6 +66,49 @@ namespace service::audio_player
         return (s_this ? s_this->indexStreamCallback(index) : nullptr);
     }
 
+    void StorageAudioContext::fetchExtPlaylists(const String& ext, std::vector<String>& playlists)
+    {
+        std::function<void(const String&, const size_t&, std::vector<String>&)> fetchPlaylists;
+        fetchPlaylists = [&](const String& path, const size_t& prefixSize, std::vector<String>& playlists) 
+        {
+            File file = driver::storage.getFS().open(path);
+            if (!file.isDirectory()) return;
+
+            std::vector<String> waitCheck;
+            while (playlists.size() < playlists.capacity())
+            {
+                auto isDir = false;
+                auto filePath = file.getNextFileName(&isDir);
+                if (filePath.isEmpty()) break;
+
+                if (isDir)
+                {
+                    playlists.push_back(filePath.substring(prefixSize));
+                    waitCheck.push_back(filePath);
+                }
+            }
+
+            file.close();
+            for (const auto& pathToCheck : waitCheck)
+                fetchPlaylists(pathToCheck, prefixSize, playlists);
+        };
+
+        if (!ext.isEmpty())
+        {
+            auto strExt = ext;
+            strExt.toLowerCase();
+
+            const auto path = "/audio/" + ext;
+            const auto prefixSize = path.length() + 1;
+
+            playlists.clear();
+            playlists.reserve(256);
+
+            fetchPlaylists(path, prefixSize, playlists);
+            playlists.shrink_to_fit();
+        }
+    }
+
     StorageAudioContext::StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop)
     {
         // TODO: check s_this instance!
@@ -96,6 +139,7 @@ namespace service::audio_player
                         m_playlist.push_back(path.substring(i));
                     }
                 }
+                m_playlist.shrink_to_fit();
 
                 if (shuffle)
                 {

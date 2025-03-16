@@ -27,7 +27,7 @@ namespace service::audio_player
     private:
         void onVolumeSettingsChanged();
         void fetchFormats(String& output);
-        void fetchPlaylists(const String& format, String& output);
+        void fetchFormatPlaylists(const String& format, String& options, std::vector<String>& playlists);
         void fetchPlaylist(String& output);
 
     private:

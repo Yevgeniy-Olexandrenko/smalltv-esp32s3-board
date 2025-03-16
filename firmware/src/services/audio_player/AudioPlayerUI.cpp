@@ -78,17 +78,21 @@ namespace service::audio_player
         {
             String formats;
             fetchFormats(formats);
+
             if (b.Select("Type", formats, &m_format))
             {
                 m_playlist = 0;
                 b.reload();
+                return;
             }
 
-            String filelists;
-            fetchPlaylists(Text(formats).getSub(m_format, ';'), filelists);
-            if (!filelists.isEmpty())
+            String playlistsOpts;
+            std::vector<String> playlists;
+            fetchFormatPlaylists(Text(formats).getSub(m_format, ';'), playlistsOpts, playlists);
+
+            if (!playlists.empty())
             {
-                b.Select("Playlist", filelists, &m_playlist);
+                b.Select("Playlist", playlistsOpts, &m_playlist);
                 {
                     sets::Row r(b, "", sets::DivType::Default);
                     b.Switch(db::audio_player_shuffle, "Shuffle");
@@ -97,7 +101,7 @@ namespace service::audio_player
                 if (b.Button("Start"))
                 {
                     String format = Text(formats).getSub(m_format, ';');
-                    String filelist = Text(filelists).getSub(m_playlist, ';');
+                    String filelist = playlists[m_playlist];
                     playStorage(format, filelist);
                 }
             }
@@ -123,7 +127,8 @@ namespace service::audio_player
         }
         else if (m_started)
         {
-            u.update("file"_h, audioPlayer.getContext()->getIndex());
+            auto index = audioPlayer.getContext()->getIndex();
+            u.update("file"_h, index);
             u.update("title"_h, m_title);
             u.update("artist"_h, m_artist);
         }
@@ -148,25 +153,25 @@ namespace service::audio_player
         output = "mp3;acc;wav;mod";
     }
 
-    void AudioPlayerUI::fetchPlaylists(const String &format, String &output)
+    void AudioPlayerUI::fetchFormatPlaylists(const String &format, String &options, std::vector<String> &playlists)
     {
-        output.clear();
-        File dir = driver::storage.getFS().open("/audio/" + format);
+        audio_player::StorageAudioContext::fetchExtPlaylists(format, playlists);
+        std::sort(playlists.begin(), playlists.end());
 
-        if (dir.isDirectory())
+        char letter = 0;
+        for (auto item : playlists)
         {
-            for (int count = 256; count--;)
+            item.replace('[', '(');
+            item.replace(']', ')');
+            if (item[0] != letter)
             {
-                bool isDir = false;
-                String entry = dir.getNextFileName(&isDir);
-                if (entry.isEmpty()) break;
-
-                if (isDir)
-                {
-                    output += entry.substring(entry.lastIndexOf('/') + 1);
-                    output += ';';
-                }
+                letter = item[0];
+                options += '[';
+                options += letter;
+                options += ']';
             }
+            options += item;
+            options += ';';
         }
     }
 
