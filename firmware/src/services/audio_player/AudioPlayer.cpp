@@ -172,23 +172,23 @@ namespace service
             m_player.begin();
             m_player.setVolume(m_volume);
         }
-        while (true)
+        while (m_player.getStream() != nullptr)
         {
             Command command;
             if (xQueueReceive(m_cmdQueue, &command, 0) == pdTRUE)
             {
+                if (command == Command::Stop) break;
+
                 task::LockGuard lock(m_mutex);   
-                bool keepPlaying = true;
                 switch (command)
                 {
                     case Command::Volume: m_player.setVolume(m_volume); break;
                     case Command::Pause:  m_player.stop(); break;
                     case Command::Resume: m_player.play(); break;
-                    case Command::Next:   keepPlaying &= m_player.next(); break;
-                    case Command::Prev:   keepPlaying &= m_player.previous(); break;
-                    case Command::Index:  keepPlaying &= m_player.setIndex(m_index); break;
+                    case Command::Next:   m_player.next(); break;
+                    case Command::Prev:   m_player.previous(); break;
+                    case Command::Index:  m_player.setIndex(m_index); break;
                 }
-                if (command == Command::Stop || !keepPlaying) break;
             }
 
             m_player.copy();

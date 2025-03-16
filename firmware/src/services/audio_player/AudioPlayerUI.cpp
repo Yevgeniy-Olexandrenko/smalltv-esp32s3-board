@@ -26,15 +26,10 @@ namespace service::audio_player
 
     void AudioPlayerUI::playStorage(const String &format, const String &filelist)
     {
-        log_i("play_storage: %s/%s", format.c_str(), filelist.c_str());
         bool shuffle = settings::data()[db::audio_player_shuffle];
-        log_i("play_storage: got shuffle");
         bool loop = settings::data()[db::audio_player_loop];
-        log_i("play_storage: got loop");
         auto context = new StorageAudioContext(format, filelist, shuffle, loop);
-        log_i("play_storage: got context");
         audioPlayer.start(context);
-        log_i("play_storage: started");
     }
 
     void AudioPlayerUI::playRadio(const String &stations)
