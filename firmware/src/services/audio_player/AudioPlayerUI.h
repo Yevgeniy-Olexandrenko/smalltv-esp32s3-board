@@ -37,17 +37,15 @@ namespace service::audio_player
 
     private:
         void onVolumeSettingsChanged();
-        void fetchFormats(String& output);
-        void fetchSourcePlaylists(const UIList& uilist, String& output);
-        void fetchPlaylist(String& output);
+        void fillSourcesOptions(String& output);
+        void fillFilelistsOptions(String& output);
+        void fillPlaylistOptions(String& output);
 
     private:
         bool m_started;
         bool m_playing;
-
-        uint8_t m_format;
+        UIList m_sources;
         UIList m_filelists;
-
         String m_title;
         String m_artist;
     };

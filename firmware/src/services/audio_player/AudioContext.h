@@ -56,7 +56,8 @@ namespace service::audio_player
         static Stream* s_indexStreamCallback(int index);
 
     public:
-        static void fetchExtPlaylists(const String& ext, std::vector<String>& playlists);
+        static void fetchExts(std::vector<String>& exts);
+        static void fetchFilelistsForExt(const String& ext, std::vector<String>& filelists);
 
         StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop);
         ~StorageAudioContext() override;

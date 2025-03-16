@@ -11,7 +11,6 @@ namespace service::audio_player
     AudioPlayerUI::AudioPlayerUI()
         : m_started(false)
         , m_playing(false)
-        , m_format(0)
     {
     }
 
@@ -40,9 +39,12 @@ namespace service::audio_player
     {
         sets::Group g(b, "Audio player");
         if (m_started)
-        {    
+        {
+            m_sources.clear();
+            m_filelists.clear();
+
             String playlist;
-            fetchPlaylist(playlist);
+            fillPlaylistOptions(playlist);
             int index = audioPlayer.getContext()->getIndex();
 
             b.beginRow();
@@ -75,28 +77,31 @@ namespace service::audio_player
         }
         else
         {
-            String formats;
-            fetchFormats(formats);
-
-            if (m_filelists.empty())
+            if (m_sources.empty())
             {
-                auto format = Text(formats).getSub(m_format, ';');
-                audio_player::StorageAudioContext::fetchExtPlaylists(format, m_filelists.items);
+                audio_player::StorageAudioContext::fetchExts(m_sources.items);
+                m_sources.sort();
+            }
+            if (m_filelists.empty() && !m_sources.empty())
+            {
+                const auto& source = m_sources.item();
+                audio_player::StorageAudioContext::fetchFilelistsForExt(source, m_filelists.items);
                 m_filelists.sort();
             }
 
-            if (b.Select("Type", formats, &m_format))
+            String sources;
+            fillSourcesOptions(sources);
+            if (b.Select("Source", sources, &m_sources.index))
             {
-                auto format = Text(formats).getSub(m_format, ';');
-                audio_player::StorageAudioContext::fetchExtPlaylists(format, m_filelists.items);
+                const auto& source = m_sources.item();
+                audio_player::StorageAudioContext::fetchFilelistsForExt(source, m_filelists.items);
                 m_filelists.sort();
                 b.reload();
             }
-
             if (!m_filelists.empty())
             {
                 String filelists;
-                fetchSourcePlaylists(m_filelists, filelists);
+                fillFilelistsOptions(filelists);
                 b.Select("Playlist", filelists, &m_filelists.index);
             }
             {
@@ -104,12 +109,9 @@ namespace service::audio_player
                 b.Switch(db::audio_player_shuffle, "Shuffle");
                 b.Switch(db::audio_player_loop, "Loop");
             }
-            if (!m_filelists.empty() && b.Button("Start"))
+            if (!m_filelists.empty() && b.Button("Play"))
             {
-                String format = Text(formats).getSub(m_format, ';');
-                String filelist = m_filelists.item();
-                m_filelists.clear();
-                playStorage(format, filelist);
+                playStorage(m_sources.item(), m_filelists.item());
             }
         }
     }
@@ -130,8 +132,10 @@ namespace service::audio_player
         if (reload)
         {
             settings::sets().reload();
+            return;
         }
-        else if (m_started)
+
+        if (m_started)
         {
             auto index = audioPlayer.getContext()->getIndex();
             u.update("file"_h, index);
@@ -154,15 +158,21 @@ namespace service::audio_player
         audioPlayer.setVolume(volume);
     }
 
-    void AudioPlayerUI::fetchFormats(String &output)
+    void AudioPlayerUI::fillSourcesOptions(String &output)
     {
-        output = "mp3;acc;wav;mod";
+        for (auto item : m_sources.items)
+        {
+            item.toLowerCase();
+            output += "Storage: ";
+            output += item;
+            output += ';';
+        }
     }
 
-    void AudioPlayerUI::fetchSourcePlaylists(const UIList &uilist, String &output)
+    void AudioPlayerUI::fillFilelistsOptions(String &output)
     {
         char letter = 0;
-        for (auto item : uilist.items)
+        for (auto item : m_filelists.items)
         {
             item.replace('[', '(');
             item.replace(']', ')');
@@ -178,7 +188,7 @@ namespace service::audio_player
         }
     }
 
-    void AudioPlayerUI::fetchPlaylist(String &output)
+    void AudioPlayerUI::fillPlaylistOptions(String &output)
     {
         const auto& playlist = audioPlayer.getContext()->getPlaylist();
         const auto  size = playlist.size(); 

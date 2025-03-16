@@ -66,16 +66,37 @@ namespace service::audio_player
         return (s_this ? s_this->indexStreamCallback(index) : nullptr);
     }
 
-    void StorageAudioContext::fetchExtPlaylists(const String& ext, std::vector<String>& playlists)
+    void StorageAudioContext::fetchExts(std::vector<String>& exts)
     {
-        std::function<void(const String&, const size_t&, std::vector<String>&)> fetchPlaylists;
-        fetchPlaylists = [&](const String& path, const size_t& prefixSize, std::vector<String>& playlists) 
+        exts.clear();
+
+        const auto basePath = String("/audio");
+        const auto prefixSize = basePath.length() + 1;
+
+        File file = driver::storage.getFS().open(basePath);
+        if (!file.isDirectory()) return;
+
+        while (true)
+        {
+            auto isDir = false;
+            auto filePath = file.getNextFileName(&isDir);
+            if (filePath.isEmpty()) break;
+
+            if (isDir)
+                exts.push_back(filePath.substring(prefixSize));
+        }
+    }
+
+    void StorageAudioContext::fetchFilelistsForExt(const String &ext, std::vector<String> &filelists)
+    {
+        std::function<void(const String&, const size_t&, std::vector<String>&)> fetchFilelists;
+        fetchFilelists = [&](const String& path, const size_t& prefixSize, std::vector<String>& filelists) 
         {
             File file = driver::storage.getFS().open(path);
             if (!file.isDirectory()) return;
 
             std::vector<String> waitCheck;
-            while (playlists.size() < playlists.capacity())
+            while (filelists.size() < filelists.capacity())
             {
                 auto isDir = false;
                 auto filePath = file.getNextFileName(&isDir);
@@ -83,14 +104,14 @@ namespace service::audio_player
 
                 if (isDir)
                 {
-                    playlists.push_back(filePath.substring(prefixSize));
+                    filelists.push_back(filePath.substring(prefixSize));
                     waitCheck.push_back(filePath);
                 }
             }
 
             file.close();
             for (const auto& pathToCheck : waitCheck)
-                fetchPlaylists(pathToCheck, prefixSize, playlists);
+                fetchFilelists(pathToCheck, prefixSize, filelists);
         };
 
         if (!ext.isEmpty())
@@ -98,14 +119,14 @@ namespace service::audio_player
             auto strExt = ext;
             strExt.toLowerCase();
 
-            const auto path = "/audio/" + ext;
-            const auto prefixSize = path.length() + 1;
+            const auto basePath = "/audio/" + ext;
+            const auto prefixSize = basePath.length() + 1;
 
-            playlists.clear();
-            playlists.reserve(256);
+            filelists.clear();
+            filelists.reserve(256);
 
-            fetchPlaylists(path, prefixSize, playlists);
-            playlists.shrink_to_fit();
+            fetchFilelists(basePath, prefixSize, filelists);
+            filelists.shrink_to_fit();
         }
     }
 

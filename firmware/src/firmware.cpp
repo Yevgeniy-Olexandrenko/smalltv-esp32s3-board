@@ -55,7 +55,7 @@ void setup()
 #endif    
 
 #ifndef NO_AUDIO
-#if 1
+#if 0
     // start the audio player
     String format = "mp3", filelist = "Juno Dreams/bad";
     service::audioPlayer.getUI().playStorage(format, filelist);
