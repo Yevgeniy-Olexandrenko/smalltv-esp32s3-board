@@ -7,6 +7,17 @@ namespace service::audio_player
 {
     class AudioPlayerUI : public settings::Provider
     {
+        struct UIList
+        {
+            std::vector<String> items;
+            uint8_t index = 0;
+
+            bool empty() const { return items.empty(); }
+            void clear() { items.clear(); index = 0; }
+            void sort() { std::sort(items.begin(), items.end()); index = 0; }
+            const String& item() const { return items[index]; }
+        };
+
     public:
         AudioPlayerUI();
 
@@ -27,14 +38,16 @@ namespace service::audio_player
     private:
         void onVolumeSettingsChanged();
         void fetchFormats(String& output);
-        void fetchFormatPlaylists(const String& format, String& options, std::vector<String>& playlists);
+        void fetchSourcePlaylists(const UIList& uilist, String& output);
         void fetchPlaylist(String& output);
 
     private:
         bool m_started;
         bool m_playing;
+
         uint8_t m_format;
-        uint8_t m_playlist;
+        UIList m_filelists;
+
         String m_title;
         String m_artist;
     };

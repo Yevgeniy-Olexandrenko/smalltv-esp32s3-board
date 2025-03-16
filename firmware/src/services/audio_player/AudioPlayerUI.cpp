@@ -12,7 +12,6 @@ namespace service::audio_player
         : m_started(false)
         , m_playing(false)
         , m_format(0)
-        , m_playlist(0)
     {
     }
 
@@ -79,31 +78,38 @@ namespace service::audio_player
             String formats;
             fetchFormats(formats);
 
-            if (b.Select("Type", formats, &m_format))
+            if (m_filelists.empty())
             {
-                m_playlist = 0;
-                b.reload();
-                return;
+                auto format = Text(formats).getSub(m_format, ';');
+                audio_player::StorageAudioContext::fetchExtPlaylists(format, m_filelists.items);
+                m_filelists.sort();
             }
 
-            String playlistsOpts;
-            std::vector<String> playlists;
-            fetchFormatPlaylists(Text(formats).getSub(m_format, ';'), playlistsOpts, playlists);
-
-            if (!playlists.empty())
+            if (b.Select("Type", formats, &m_format))
             {
-                b.Select("Playlist", playlistsOpts, &m_playlist);
-                {
-                    sets::Row r(b, "", sets::DivType::Default);
-                    b.Switch(db::audio_player_shuffle, "Shuffle");
-                    b.Switch(db::audio_player_loop, "Loop");
-                }
-                if (b.Button("Start"))
-                {
-                    String format = Text(formats).getSub(m_format, ';');
-                    String filelist = playlists[m_playlist];
-                    playStorage(format, filelist);
-                }
+                auto format = Text(formats).getSub(m_format, ';');
+                audio_player::StorageAudioContext::fetchExtPlaylists(format, m_filelists.items);
+                m_filelists.sort();
+                b.reload();
+            }
+
+            if (!m_filelists.empty())
+            {
+                String filelists;
+                fetchSourcePlaylists(m_filelists, filelists);
+                b.Select("Playlist", filelists, &m_filelists.index);
+            }
+            {
+                sets::Row r(b, "", sets::DivType::Default);
+                b.Switch(db::audio_player_shuffle, "Shuffle");
+                b.Switch(db::audio_player_loop, "Loop");
+            }
+            if (!m_filelists.empty() && b.Button("Start"))
+            {
+                String format = Text(formats).getSub(m_format, ';');
+                String filelist = m_filelists.item();
+                m_filelists.clear();
+                playStorage(format, filelist);
             }
         }
     }
@@ -153,25 +159,22 @@ namespace service::audio_player
         output = "mp3;acc;wav;mod";
     }
 
-    void AudioPlayerUI::fetchFormatPlaylists(const String &format, String &options, std::vector<String> &playlists)
+    void AudioPlayerUI::fetchSourcePlaylists(const UIList &uilist, String &output)
     {
-        audio_player::StorageAudioContext::fetchExtPlaylists(format, playlists);
-        std::sort(playlists.begin(), playlists.end());
-
         char letter = 0;
-        for (auto item : playlists)
+        for (auto item : uilist.items)
         {
             item.replace('[', '(');
             item.replace(']', ')');
             if (item[0] != letter)
             {
                 letter = item[0];
-                options += '[';
-                options += letter;
-                options += ']';
+                output += '[';
+                output += letter;
+                output += ']';
             }
-            options += item;
-            options += ';';
+            output += item;
+            output += ';';
         }
     }
 
