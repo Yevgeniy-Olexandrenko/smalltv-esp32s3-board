@@ -167,7 +167,7 @@ namespace service
             m_player.setAudioSource(m_context->getSource());
             m_player.setDecoder(m_context->getDecoder());
             m_player.setOutput(m_output);
-            m_player.setMetadataCallback(&s_metadataCallback);
+            // m_player.setMetadataCallback(&s_metadataCallback);
             m_player.setVolumeControl(m_volCtr);
             m_player.begin();
             m_player.setVolume(m_volume);

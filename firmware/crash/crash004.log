@@ -1,0 +1,103 @@
+--- Terminal on /dev/cu.usbmodem14201 | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+[ 66010][I][SettingsWebApp.cpp:125] onFocusChange(): focus: YES
+[ 91045][I][AudioContext.cpp:233] openPlaylistItemStream(): [0 / 4] open file: /audio/mp3/Juno Dreams/bad/Juno Dreams - Descent.mp3
+Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
+
+Core  1 register dump:
+PC      : 0x40376097  PS      : 0x00050031  A0      : 0x40379738  A1      : 0x3fc98010  
+A2      : 0x3d80af98  A3      : 0x3d80c7a0  A4      : 0x00000080  A5      : 0x4037d46e  
+A6      : 0x3d80d0ac  A7      : 0x3d80c09c  A8      : 0x00000001  A9      : 0x00000000  
+A10     : 0x3d80af98  A11     : 0x3d80c69c  A12     : 0xfffffc00  A13     : 0x00000400  
+A14     : 0x4200f00c  A15     : 0x3d81b35c  SAR     : 0x00000018  EXCCAUSE: 0x0000001c  
+EXCVADDR: 0x00000004  LBEG    : 0x400570e8  LEND    : 0x400570f3  LCOUNT  : 0x00000000  
+
+
+Backtrace: 0x40376094:0x3fc98010 0x40379735:0x3fc98040 0x4201b906:0x3fcbaa40 0x4201bc1b:0x3fcbaa80 0x4201bc8f:0x3fcbaaa0 0x4201218a:0x3fcbaac0 0x420f009e:0x3fcbab10 0x4200f046:0x3fcbab30 0x42017a95:0x3fcbab50 0x42018d5d:0x3fcbab70 0x42008dfe:0x3fcbab90 0x42009bf9:0x3fcbabe0 0x420efe06:0x3fcbac20 0x4200b7e9:0x3fcbac40 0x4200d2b9:0x3fcbac60 0x4200d608:0x3fcbacb0 0x420114b7:0x3fcbacd0 0x4201dc95:0x3fcbacf0 0x4201df1f:0x3fcbad20 0x4201e47a:0x3fcbad80 0x4201ed0b:0x3fcbada0 0x4201ee1d:0x3fcbadf0
+  #0  0x40376094 in gdma_default_tx_isr at /home/runner/work/esp32-arduino-lib-builder/esp32-arduino-lib-builder/esp-idf/components/driver/gdma.c:781
+  #1  0x3fc98010 in port_IntStack at ??:?
+  #2  0x40379735 in _xt_lowint1 at /home/runner/work/esp32-arduino-lib-builder/esp32-arduino-lib-builder/esp-idf/components/freertos/port/xtensa/xtensa_vectors.S:1118
+  #3  0x3fc98040 in port_IntStackTop at ??:?
+  #4  0x4201b906 in ffft::FFTReal<float>::compute_direct_pass_n_lut(float*, float const*, int) const at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioLibs/FFT/FFTReal.h:1275
+      (inlined by) ffft::FFTReal<float>::compute_direct_pass_n(float*, float const*, int) const at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioLibs/FFT/FFTReal.h:1228
+      (inlined by) ffft::FFTReal<float>::compute_fft_general(float*, float const*) const at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioLibs/FFT/FFTReal.h:1141
+  #5  0x4201bc1b in ffft::FFTReal<float>::do_fft(float*, float const*) const at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioLibs/FFT/FFTReal.h:842
+  #6  0x4201bc8f in audio_tools::FFTDriverRealFFT::fft() at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioLibs/AudioRealFFT.h:44
+  #7  0x4201218a in void audio_tools::AudioFFTBase::fft<short>() at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioLibs/AudioFFT.h:539
+      (inlined by) void audio_tools::AudioFFTBase::processSamples<short>(void const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioLibs/AudioFFT.h:515
+      (inlined by) audio_tools::AudioFFTBase::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioLibs/AudioFFT.h:299
+  #8  0x420f009e in audio_tools::AdapterAudioStreamToAudioOutput::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioIO.h:267
+  #9  0x4200f046 in audio_tools::MultiOutput::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioIO.h:395
+  #10 0x42017a95 in audio_tools::FadeStream::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/Fade.h:297
+  #11 0x42018d5d in audio_tools::VolumeStream::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/VolumeStream.h:151
+  #12 0x42008dfe in libhelix::MP3DecoderHelix::provideResult(_MP3FrameInfo&) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/libhelix/src/MP3DecoderHelix.h:153
+      (inlined by) libhelix::MP3DecoderHelix::decode() at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/libhelix/src/MP3DecoderHelix.h:125
+  #13 0x42009bf9 in libhelix::CommonHelix::writeChunk(void const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/libhelix/src/CommonHelix.h:221
+  #14 0x420efe06 in libhelix::CommonHelix::write(void const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/libhelix/src/CommonHelix.h:82
+  #15 0x4200b7e9 in audio_tools::MP3DecoderHelix::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioCodecs/CodecMP3Helix.h:110
+  #16 0x4200d2b9 in audio_tools::MetaDataFilter::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioMetaData/MetaDataFilter.h:64 (discriminator 1)
+  #17 0x4200d608 in audio_tools::MetaDataFilterDecoder::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioMetaData/MetaDataFilter.h:207
+  #18 0x420114b7 in audio_tools::EncodedAudioOutput::write(unsigned char const*, unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/AudioCodecs/AudioEncoded.h:199 (discriminator 4)
+  #19 0x4201dc95 in audio_tools::StreamCopyT<unsigned char>::write(unsigned int, unsigned int&) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/StreamCopy.h:399
+  #20 0x4201df1f in audio_tools::StreamCopyT<unsigned char>::copyBytes(unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/StreamCopy.h:163
+  #21 0x4201e47a in audio_tools::AudioPlayer::copy(unsigned int) at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioPlayer.h:373 (discriminator 2)
+  #22 0x4201ed0b in audio_tools::AudioPlayer::copy() at .pio/libdeps/dbg-smalltv-esp32s3-rev0-16mb/audio-tools/src/AudioTools/CoreAudio/AudioPlayer.h:356
+      (inlined by) service::AudioPlayer::task() at src/services/audio_player/AudioPlayer.cpp:194
+  #23 0x4201ee1d in service::AudioPlayer::start(service::audio_player::AudioContext*)::{lambda(void*)#1}::_FUN(void*) at src/services/audio_player/AudioPlayer.cpp:65
+      (inlined by) _FUN at src/services/audio_player/AudioPlayer.cpp:66
+
+
+
+
+
+ELF file SHA256: a1c52babff1291bb
+
+E (17350) esp_core_dump_flash: Core dump flash config is corrupted! CRC=0x7bd5c66f instead of 0x0
+Rebooting...
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x28 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x420f3856
+  #0  0x420f3856 in esp_pm_impl_waiti at /home/runner/work/esp32-arduino-lib-builder/esp32-arduino-lib-builder/esp-idf/components/esp_pm/pm_impl.c:855
+
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce3808,len:0x4bc
+load:0x403c9700,len:0xbd8
+load:0x403cc700,len:0x2a0c
+entry 0x403c98d0
+[   262][D][esp32-hal-tinyusb.c:680] tinyusb_enable_interface(): Interface MSC enabled
+E (270) esp_core_dump_flash: No core dump partition found!
+E (270) esp_core_dump_flash: No core dump partition found!
+[   272][I][esp32-hal-psram.c:96] psramInit(): PSRAM enabled
+[  1806][I][Settings.cpp:15] data(): begin database
+[  1832][I][SDCard.cpp:44] begin(): Initializing SD card
+[  1883][I][SDCard.cpp:82] begin(): SD card mounted at: /sdcard
+
+Name: SD16G
+Type: SDHC/SDXC
+Speed: 40 MHz
+Size: 7624MB
+NetworkConnection: begin
+NetworkConnection: connect on boot
+[  3123][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 0 - WIFI_READY
+[  3167][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 2 - STA_START
+[  3175][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 10 - AP_START
+[  3195][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 11 - AP_STOP
+[  3202][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 10 - AP_START
+DateAndTimeClass: begin
+[  3219][I][SettingsWebApp.cpp:11] begin(): begin
+[  3226][I][Settings.cpp:27] sets(): begin settings
+Strorage mount point: /sdcard
+Storage total bytes: 7608.121094
+Storage used bytes: 2795.074219
+[  3352][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 4 - STA_CONNECTED
+[  4059][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 7 - STA_GOT_IP
+[  4067][D][WiFiGeneric.cpp:1103] _eventCallback(): STA IP: 192.168.0.104, MASK: 255.255.255.0, GW: 192.168.0.1
+NetworkConnection: connected: 192.168.0.104
+[  4096][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 11 - AP_STOP
+[  4105][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 10 - AP_START
+[  4112][D][WiFiGeneric.cpp:1040] _eventCallback(): Arduino Event: 11 - AP_STOP
+[  4180][I][SettingsWebApp.cpp:125] onFocusChange(): focus: YES
