@@ -28,6 +28,7 @@ namespace service::audio_player
         void onVolumeSettingsChanged();
         void fetchFormats(String& output);
         void fetchPlaylists(const String& format, String& output);
+        void fetchPlaylist(String& output);
 
     private:
         bool m_started;

@@ -14,7 +14,7 @@ namespace service
         static void s_fftCallback(audio_tools::AudioFFTBase& fft);
         static void s_metadataCallback(audio_tools::MetaDataType type, const char* str, int len);
 
-        enum class Command : uint8_t { Volume, Pause, Resume, Next, Prev, Stop };
+        enum class Command : uint8_t { Volume, Pause, Resume, Next, Prev, Index, Stop };
 
     public:
         AudioPlayer();
@@ -22,6 +22,7 @@ namespace service
         void begin();
         bool start(audio_player::AudioContext* context);
         void setVolume(float volume);
+        void setPlaylistIndex(int index);
         void pause(bool yes);
         void next(bool fwd);
         void stop();
@@ -30,6 +31,7 @@ namespace service
         bool isPlaying();
 
         audio_player::AudioPlayerUI& getUI() { return m_ui; }
+        audio_player::AudioContext*  getContext() { return m_context.get(); }
 
     private:
         void task();
@@ -50,7 +52,8 @@ namespace service
         QueueHandle_t m_cmdQueue;
         TaskHandle_t m_handle;
         task::Mutex m_mutex;
-        float m_volume;        
+        float m_volume;
+        int m_index;       
     };
 
     extern AudioPlayer audioPlayer;

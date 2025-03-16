@@ -9,6 +9,51 @@
 
 namespace service::audio_player
 {
+    AudioContext::AudioContext() 
+        : m_source(nullptr)
+        , m_decode(nullptr)
+        , m_newStreamCb(nullptr)
+        , m_direction(1)
+        , m_index(-1)
+        , m_loop(false)
+    {
+    }
+
+    bool AudioContext::updatePlayistIndex(int offset)
+    {
+        if (!m_playlist.empty())
+        {
+            const auto size = m_playlist.size();
+            const auto next = m_index + offset;
+
+            if (m_loop || (next >= 0 && next < size))
+            {
+                m_direction = offset;
+                m_index += offset;
+
+                if (m_index < 0) 
+                    m_index += size;
+                else 
+                    m_index %= size;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool AudioContext::setPlayistIndex(int index)
+    {
+        if (index >= 0 && index < m_playlist.size())
+        {
+            m_direction = 1;
+            m_index = index;
+            return true;
+        }
+        return false;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
     StorageAudioContext* StorageAudioContext::s_this = nullptr;
     
     Stream* StorageAudioContext::s_nextStreamCallback(int offset)
@@ -16,12 +61,16 @@ namespace service::audio_player
         return (s_this ? s_this->nextStreamCallback(offset) : nullptr);
     }
 
-    StorageAudioContext::StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop)
-        : AudioContext()
-        , m_index(-1)
-        , m_loop(loop)
+    Stream *StorageAudioContext::s_indexStreamCallback(int index)
     {
+        return (s_this ? s_this->indexStreamCallback(index) : nullptr);
+    }
+
+    StorageAudioContext::StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop)
+    {
+        // TODO: check s_this instance!
         s_this = this;
+
         if (!ext.isEmpty() && !dir.isEmpty())
         {
             auto strExt = ext;
@@ -32,8 +81,8 @@ namespace service::audio_player
 
             if (file && file.isDirectory())
             {
-                m_list.reserve(256);
-                while (m_list.size() < m_list.capacity())
+                m_playlist.reserve(256);
+                while (m_playlist.size() < m_playlist.capacity())
                 {
                     auto path = file.getNextFileName();
                     if (path.isEmpty()) break;
@@ -44,15 +93,16 @@ namespace service::audio_player
 
                     if (strName[0] != '.' && strName.endsWith('.' + strExt))
                     {
-                        m_list.push_back(path.substring(i));
+                        m_playlist.push_back(path.substring(i));
                     }
                 }
 
                 if (shuffle)
                 {
                     std::mt19937 rnd(millis());
-                    std::shuffle(m_list.begin(), m_list.end(), rnd);
+                    std::shuffle(m_playlist.begin(), m_playlist.end(), rnd);
                 }
+                m_loop = loop;
             }
         }
     }
@@ -67,7 +117,10 @@ namespace service::audio_player
         if (!AudioContext::m_source && !AudioContext::m_decode)
         {
             // audio source
-            m_source.reset(new AudioSourceCallback(&s_nextStreamCallback));
+            auto source = new AudioSourceCallback();
+            source->setCallbackNextStream(&s_nextStreamCallback);
+            source->setCallbackSelectStream(&s_indexStreamCallback);
+            m_source.reset(source);
             AudioContext::m_source = m_source.get();
 
             // decode chain
@@ -88,43 +141,30 @@ namespace service::audio_player
 
     Stream* StorageAudioContext::nextStreamCallback(int offset)
     {
-        if (!m_list.empty() && updateListIndex(offset))
-        {
-            log_i("[%d / %d] try to open", m_index, m_list.size());
-            auto path = m_path + "/" + m_list[m_index];
-            m_file = driver::storage.getFS().open(path);
-
-            if (m_file)
-            {
-                String name { m_file.name() };
-                auto len = name.lastIndexOf('.');
-                if (len < 0) len = name.length();
-                m_newStreamCb(name.c_str(), len);
-
-                log_i("[%d / %d] open success: %s", m_index, m_list.size(), m_file.path());
-                return &m_file;
-            }
-        }
-
-        log_i("[%d of %d] open fail", m_index, m_list.size());
-        return nullptr;
+        return (updatePlayistIndex(offset) ? openPlaylistItemStream() : nullptr);
     }
 
-    bool StorageAudioContext::updateListIndex(int offset)
+    Stream *StorageAudioContext::indexStreamCallback(int index)
     {
-        const auto size = m_list.size();
-        const auto next = m_index + offset;
+        return (setPlayistIndex(index) ? openPlaylistItemStream() : nullptr);
+    }
 
-        if (m_loop || (next >= 0 && next < size))
+    Stream *StorageAudioContext::openPlaylistItemStream()
+    {
+        auto path = m_path + "/" + m_playlist[m_index];
+        m_file = driver::storage.getFS().open(path);
+
+        if (m_file)
         {
-            m_index += offset;
-            if (m_index < 0) 
-                m_index += size;
-            else 
-                m_index %= size;
-            return true;
+            String name { m_file.name() };
+            auto len = name.lastIndexOf('.');
+            if (len < 0) len = name.length();
+            m_newStreamCb(name.c_str(), len);
+
+            log_i("[%d / %d] open file: %s", m_index, m_playlist.size(), m_file.path());
+            return &m_file;
         }
-        return false;
+        return nullptr;
     }
 
     ////////////////////////////////////////////////////////////////////////////

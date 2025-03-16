@@ -15,11 +15,12 @@ namespace service::audio_player
 {
     class AudioContext
     {
-        using onNewStreamCb = std::function<void(const char* str, int len)>;
-
     public:
-        AudioContext() : m_source(nullptr), m_decode(nullptr), m_newStreamCb(nullptr) {}
-        virtual ~AudioContext() {}
+        using onNewStreamCb = std::function<void(const char* str, int len)>;
+        using Playlist = std::vector<String>;
+
+        AudioContext();
+        virtual ~AudioContext() = default;
 
         virtual void begin() = 0;
         virtual void end() = 0;
@@ -29,10 +30,21 @@ namespace service::audio_player
         audio_tools::AudioSource& getSource() { return *m_source; }
         audio_tools::AudioDecoder& getDecoder() { return *m_decode; }
 
+        const Playlist& getPlaylist() const { return m_playlist; }
+        const int16_t&  getDirection() const { return m_direction; }
+        const int16_t&  getIndex() const { return m_index; }
+
+        bool updatePlayistIndex(int offset);
+        bool setPlayistIndex(int index);
+
     protected:
         audio_tools::AudioSource* m_source;
         audio_tools::AudioDecoder* m_decode;
         onNewStreamCb m_newStreamCb;
+        Playlist m_playlist;
+        int16_t m_direction;
+        int16_t m_index;
+        bool m_loop;
     };
 
     ////////////////////////////////////////////////////////////////////////////
@@ -41,6 +53,7 @@ namespace service::audio_player
     {
         static StorageAudioContext* s_this;
         static Stream* s_nextStreamCallback(int offset);
+        static Stream* s_indexStreamCallback(int index);
 
     public:
         StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop);
@@ -51,7 +64,8 @@ namespace service::audio_player
 
     private:
         Stream* nextStreamCallback(int offset);
-        bool updateListIndex(int offset);
+        Stream* indexStreamCallback(int index);
+        Stream* openPlaylistItemStream();
 
     private:
         std::unique_ptr<audio_tools::AudioSource > m_source;
@@ -59,9 +73,6 @@ namespace service::audio_player
         std::unique_ptr<audio_tools::AudioDecoder> m_filter;
 
         String m_path;
-        std::vector<String> m_list;
-        int16_t m_index;
-        bool m_loop;
         File m_file;
     };
 

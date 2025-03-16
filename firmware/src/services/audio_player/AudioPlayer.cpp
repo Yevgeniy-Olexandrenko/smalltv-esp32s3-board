@@ -86,6 +86,19 @@ namespace service
         }
     }
 
+    void AudioPlayer::setPlaylistIndex(int index)
+    {
+        m_mutex.lock();
+        m_index = index;
+        m_mutex.unlock();
+
+        if (isStarted())
+        {
+            auto command { Command::Index };
+            xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+        }
+    }
+
     void AudioPlayer::pause(bool yes)
     {
         if (isStarted())
@@ -146,8 +159,8 @@ namespace service
         m_context->begin();
         m_context->setOnNewStreamCb([this](const char *str, int len)
         {
-            m_ui.setTitle(String(str, len));
-            m_ui.setArtist("Unknown");
+            m_ui.setTitle ("<unknown>");
+            m_ui.setArtist("<unknown>");
         });
         {
             task::LockGuard lock(m_mutex);
@@ -173,6 +186,7 @@ namespace service
                     case Command::Resume: m_player.play(); break;
                     case Command::Next:   keepPlaying &= m_player.next(); break;
                     case Command::Prev:   keepPlaying &= m_player.previous(); break;
+                    case Command::Index:  keepPlaying &= m_player.setIndex(m_index); break;
                 }
                 if (command == Command::Stop || !keepPlaying) break;
             }

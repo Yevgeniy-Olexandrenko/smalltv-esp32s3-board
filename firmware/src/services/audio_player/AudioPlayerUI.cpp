@@ -46,10 +46,20 @@ namespace service::audio_player
     {
         sets::Group g(b, "Audio player");
         if (m_started)
-        {
+        {    
+            String playlist;
+            fetchPlaylist(playlist);
+            int index = audioPlayer.getContext()->getIndex();
+
+            b.beginRow();
+            if (b.Select("file"_h, "File", playlist, &index))
+            {
+                audioPlayer.setPlaylistIndex(index);
+            }
+            b.endRow();
+            
             b.Label("title"_h, "Title", m_title);
             b.Label("artist"_h, "Artist", m_artist);
-
             {
                 sets::Buttons buttons(b);
                 b.Button("stop"_h, "Stop");
@@ -94,10 +104,6 @@ namespace service::audio_player
                     String format = Text(formats).getSub(m_format, ';');
                     String filelist = Text(filelists).getSub(m_playlist, ';');
                     playStorage(format, filelist);
-                    //bool shuffle = settings::data()[db::audio_player_shuffle];
-                    //bool loop = settings::data()[db::audio_player_loop];
-                    //audioPlayer.start(new StorageAudioContext(format, filelist, shuffle, loop));
-                    b.reload();
                 }
             }
         }
@@ -120,8 +126,9 @@ namespace service::audio_player
         {
             settings::sets().reload();
         }
-        else
+        else if (m_started)
         {
+            u.update("file"_h, audioPlayer.getContext()->getIndex());
             u.update("title"_h, m_title);
             u.update("artist"_h, m_artist);
         }
@@ -138,7 +145,7 @@ namespace service::audio_player
     void AudioPlayerUI::onVolumeSettingsChanged()
     {
         auto volume = (float(settings::data()[db::audio_volume]) * 0.01f);
-        service::audioPlayer.setVolume(volume);
+        audioPlayer.setVolume(volume);
     }
 
     void AudioPlayerUI::fetchFormats(String &output)
@@ -165,6 +172,25 @@ namespace service::audio_player
                     output += ';';
                 }
             }
+        }
+    }
+
+    void AudioPlayerUI::fetchPlaylist(String &output)
+    {
+        const auto& playlist = audioPlayer.getContext()->getPlaylist();
+        const auto  size = playlist.size(); 
+
+        for (int i = 0; i < size; ++i)
+        {
+            if (size > 10 && (i % 10) == 0)
+            {
+                output += "[" + String(i + 1) + " / " + String(size) + "]";
+            }
+
+            auto item = playlist[i];
+            item.replace('[', '(');
+            item.replace(']', ')');
+            output += item + ";";
         }
     }
 }
