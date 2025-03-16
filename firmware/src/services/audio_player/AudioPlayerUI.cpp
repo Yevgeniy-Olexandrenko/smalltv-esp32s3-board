@@ -11,6 +11,7 @@ namespace service::audio_player
     AudioPlayerUI::AudioPlayerUI()
         : m_started(false)
         , m_playing(false)
+        , m_filelistsUpd(false)
     {
     }
 
@@ -79,23 +80,19 @@ namespace service::audio_player
         {
             if (m_sources.empty())
             {
-                audio_player::StorageAudioContext::fetchExts(m_sources.items);
+                context_utils::fetchStorageExts(m_sources.items);
                 m_sources.sort();
             }
-            if (m_filelists.empty() && !m_sources.empty())
+            if (m_filelists.empty())
             {
-                const auto& source = m_sources.item();
-                audio_player::StorageAudioContext::fetchFilelistsForExt(source, m_filelists.items);
-                m_filelists.sort();
+                m_filelistsUpd = true;
             }
 
             String sources;
             fillSourcesOptions(sources);
             if (b.Select("Source", sources, &m_sources.index))
             {
-                const auto& source = m_sources.item();
-                audio_player::StorageAudioContext::fetchFilelistsForExt(source, m_filelists.items);
-                m_filelists.sort();
+                m_filelists.clear();
                 b.reload();
             }
             if (!m_filelists.empty())
@@ -119,6 +116,17 @@ namespace service::audio_player
     void AudioPlayerUI::settingsUpdate(sets::Updater &u)
     {
         bool reload = false;
+        if (m_filelistsUpd)
+        {
+            m_filelistsUpd = false;
+            if (!m_sources.empty())
+            {
+                const auto& source = m_sources.item();
+                context_utils::fetchStorageFilelistsForExt(source, m_filelists.items);
+                m_filelists.sort();
+                reload = true;
+            }
+        }
         if (m_started != audioPlayer.isStarted())
         {
             m_started ^= true;
@@ -132,10 +140,8 @@ namespace service::audio_player
         if (reload)
         {
             settings::sets().reload();
-            return;
         }
-
-        if (m_started)
+        else if (m_started)
         {
             auto index = audioPlayer.getContext()->getIndex();
             u.update("file"_h, index);

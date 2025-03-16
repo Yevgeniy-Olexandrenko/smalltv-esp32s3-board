@@ -46,6 +46,7 @@ namespace service::audio_player
         bool m_playing;
         UIList m_sources;
         UIList m_filelists;
+        bool m_filelistsUpd;
         String m_title;
         String m_artist;
     };

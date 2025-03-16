@@ -66,70 +66,6 @@ namespace service::audio_player
         return (s_this ? s_this->indexStreamCallback(index) : nullptr);
     }
 
-    void StorageAudioContext::fetchExts(std::vector<String>& exts)
-    {
-        exts.clear();
-
-        const auto basePath = String("/audio");
-        const auto prefixSize = basePath.length() + 1;
-
-        File file = driver::storage.getFS().open(basePath);
-        if (!file.isDirectory()) return;
-
-        while (true)
-        {
-            auto isDir = false;
-            auto filePath = file.getNextFileName(&isDir);
-            if (filePath.isEmpty()) break;
-
-            if (isDir)
-                exts.push_back(filePath.substring(prefixSize));
-        }
-    }
-
-    void StorageAudioContext::fetchFilelistsForExt(const String &ext, std::vector<String> &filelists)
-    {
-        std::function<void(const String&, const size_t&, std::vector<String>&)> fetchFilelists;
-        fetchFilelists = [&](const String& path, const size_t& prefixSize, std::vector<String>& filelists) 
-        {
-            File file = driver::storage.getFS().open(path);
-            if (!file.isDirectory()) return;
-
-            std::vector<String> waitCheck;
-            while (filelists.size() < filelists.capacity())
-            {
-                auto isDir = false;
-                auto filePath = file.getNextFileName(&isDir);
-                if (filePath.isEmpty()) break;
-
-                if (isDir)
-                {
-                    filelists.push_back(filePath.substring(prefixSize));
-                    waitCheck.push_back(filePath);
-                }
-            }
-
-            file.close();
-            for (const auto& pathToCheck : waitCheck)
-                fetchFilelists(pathToCheck, prefixSize, filelists);
-        };
-
-        if (!ext.isEmpty())
-        {
-            auto strExt = ext;
-            strExt.toLowerCase();
-
-            const auto basePath = "/audio/" + ext;
-            const auto prefixSize = basePath.length() + 1;
-
-            filelists.clear();
-            filelists.reserve(256);
-
-            fetchFilelists(basePath, prefixSize, filelists);
-            filelists.shrink_to_fit();
-        }
-    }
-
     StorageAudioContext::StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop)
     {
         // TODO: check s_this instance!
@@ -148,16 +84,16 @@ namespace service::audio_player
                 m_playlist.reserve(256);
                 while (m_playlist.size() < m_playlist.capacity())
                 {
-                    auto path = file.getNextFileName();
-                    if (path.isEmpty()) break;
+                    auto filePath = file.getNextFileName();
+                    if (filePath.isEmpty()) break;
 
-                    auto i = path.lastIndexOf('/') + 1;
-                    auto strName = path.substring(i);
+                    auto i = filePath.lastIndexOf('/') + 1;
+                    auto strName = filePath.substring(i);
                     strName.toLowerCase();
 
                     if (strName[0] != '.' && strName.endsWith('.' + strExt))
                     {
-                        m_playlist.push_back(path.substring(i));
+                        m_playlist.push_back(filePath.substring(i));
                     }
                 }
                 m_playlist.shrink_to_fit();
@@ -233,5 +169,100 @@ namespace service::audio_player
     }
 
     ////////////////////////////////////////////////////////////////////////////
+
+    void context_utils::fetchStorageExts(std::vector<String>& exts)
+    {
+        exts.clear();
+
+        const auto basePath = String("/audio");
+        const auto prefixSize = basePath.length() + 1;
+
+        File file = driver::storage.getFS().open(basePath);
+        if (!file.isDirectory()) return;
+
+        while (true)
+        {
+            auto isDir = false;
+            auto filePath = file.getNextFileName(&isDir);
+            if (filePath.isEmpty()) break;
+
+            if (isDir)
+                exts.push_back(filePath.substring(prefixSize));
+        }
+    }
+
+    void context_utils::fetchStorageFilelistsForExt(const String &ext, std::vector<String> &filelists)
+    {
+        if (!ext.isEmpty())
+        {
+            auto strExt = ext;
+            strExt.toLowerCase();
+
+            const auto basePath = "/audio/" + ext;
+            const auto prefixSize = basePath.length() + 1;
+
+            std::function<bool(const String&)> hasFilesWithExt = 
+            [&](const String& path)
+            {
+                bool isOK = false;
+                File file = driver::storage.getFS().open(path);
+
+                while (file)
+                {
+                    auto filePath = file.getNextFileName();
+                    if (filePath.isEmpty())
+                    {
+                        isOK = false;
+                        break;
+                    }
+
+                    auto i = filePath.lastIndexOf('/') + 1;
+                    auto strName = filePath.substring(i);
+                    strName.toLowerCase();
+
+                    if (strName[0] != '.' && strName.endsWith('.' + strExt))
+                    {
+                        isOK = true;
+                        break;
+                    }
+                }
+
+                file.close();
+                return isOK;
+            };
+
+            std::function<void(const String&, std::vector<String>&)> fetchFilelists =
+            [&](const String& path, std::vector<String>& filelists) 
+            {
+                File file = driver::storage.getFS().open(path);
+                if (!file.isDirectory()) return;
+
+                std::vector<String> waitCheck;
+                while (filelists.size() < filelists.capacity())
+                {
+                    auto isDir = false;
+                    auto filePath = file.getNextFileName(&isDir);
+                    if (filePath.isEmpty()) break;
+
+                    if (isDir)
+                    {
+                        waitCheck.push_back(filePath);
+                        if (hasFilesWithExt(filePath))
+                            filelists.push_back(filePath.substring(prefixSize));
+                    }
+                }
+
+                file.close();
+                for (const auto& pathToCheck : waitCheck)
+                    fetchFilelists(pathToCheck, filelists);
+            };
+
+            filelists.clear();
+            filelists.reserve(256);
+
+            fetchFilelists(basePath, filelists);
+            filelists.shrink_to_fit();
+        }
+    }
 }
 #endif
