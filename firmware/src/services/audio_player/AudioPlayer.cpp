@@ -48,7 +48,7 @@ namespace service
             m_fftOut.begin(fftCfg);
 
             // configure MultiOutput
-            m_output.add(m_fftOut);
+            // m_output.add(m_fftOut);
             m_output.add(m_i2sOut);
         }
     }

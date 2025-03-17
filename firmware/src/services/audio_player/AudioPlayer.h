@@ -2,6 +2,7 @@
 #ifndef NO_AUDIO
 
 #include <AudioTools.h>
+#include <AudioTools/AudioLibs/AudioRealFFT.h>
 #include "AudioContext.h"
 #include "AudioPlayerUI.h"
 #include "shared/tasks/Mutex.h"
