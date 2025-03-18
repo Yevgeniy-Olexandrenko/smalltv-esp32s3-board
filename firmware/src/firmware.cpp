@@ -38,11 +38,11 @@ void setup()
     services::begin();
 
     // test
-    if (driver::storage.getFSMountPoint())
+    if (driver::storage.getFS().isMounted())
     {
-        Serial.printf("Strorage mount point: %s\n", driver::storage.getFSMountPoint());
-        Serial.printf("Storage total bytes: %f\n", driver::storage.getFSTotalBytes() / (1024.f * 1024.f));
-        Serial.printf("Storage used bytes: %f\n", driver::storage.getFSUsedBytes() / (1024.f * 1024.f));
+        Serial.printf("Strorage mount point: %s\n", driver::storage.getFS().mountPoint());
+        Serial.printf("Storage total bytes: %f\n", driver::storage.getFS().totalBytes() / (1024.f * 1024.f));
+        Serial.printf("Storage used bytes: %f\n", driver::storage.getFS().usedBytes() / (1024.f * 1024.f));
     }
 
 #ifndef NO_VIDEO

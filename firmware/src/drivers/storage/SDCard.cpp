@@ -1,4 +1,5 @@
-//#include <vfs_api.h>
+#ifndef NO_SDCARD
+
 #include <esp_vfs_fat.h>
 #include <driver/sdmmc_defs.h>
 #include <driver/sdmmc_host.h>
@@ -40,9 +41,7 @@ namespace driver
         gpio_num_t d3)
     {
         if (isMounted()) return true;
-
         log_i("Initializing SD card");
-        task::LockGuard lock(m_mutex);
 
         m_oneBitMode = (d1 == GPIO_NUM_NC || d2 == GPIO_NUM_NC || d3 == GPIO_NUM_NC);
         sdmmc_host_t m_host = SDMMC_HOST_DEFAULT();
@@ -95,9 +94,7 @@ namespace driver
         gpio_num_t cs)
     {
         if (isMounted()) return true;
-
         log_i("Initializing SD card");
-        task::LockGuard lock(m_mutex);
 
         sdmmc_host_t m_host = SDSPI_HOST_DEFAULT();
         m_spiSlot = m_host.slot = SPI3_HOST;
@@ -152,8 +149,6 @@ namespace driver
     void SDCard::end()
     {
         if (!isMounted()) return; 
-        
-        task::LockGuard lock(m_mutex);
         esp_vfs_fat_sdcard_unmount(mountPoint(), m_card);
         spi_bus_free(spi_host_device_t(m_spiSlot));
         resMountPoint();
@@ -194,21 +189,16 @@ namespace driver
 
     ////////////////////////////////////////////////////////////////////////////
 
-    bool SDCard::writeSectors(uint8_t *src, size_t startSector, size_t sectorCount)
+    bool SDCard::mscWrBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
     {
-        task::LockGuard lock(m_mutex);
-        esp_err_t res = sdmmc_write_sectors(m_card, src, startSector, sectorCount);
+        esp_err_t res = sdmmc_write_sectors(m_card, buffer, lba, size / sectorSize());
         return (res == ESP_OK);
     }
 
-    bool SDCard::readSectors(uint8_t *dst, size_t startSector, size_t sectorCount)
+    bool SDCard::mscRdBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
     {
-        task::LockGuard lock(m_mutex);
-        esp_err_t res = sdmmc_read_sectors(m_card, dst, startSector, sectorCount);
+        esp_err_t res = sdmmc_read_sectors(m_card, buffer, lba, size / sectorSize());
         return (res == ESP_OK);
     }
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    SDCard sdcard;
 }
+#endif

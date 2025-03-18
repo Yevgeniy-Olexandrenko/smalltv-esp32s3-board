@@ -16,36 +16,28 @@ namespace driver
         void begin(Type type);
         void end();
 
-        // storage properties
         Type getType() const;
-        bool isLarge() const;
-        bool isFast()  const;
-        uint64_t getSectorSize() const;
-        uint64_t getSectorCount() const;
-        uint64_t getPartitionSize() const;
-        
-        // file system and its properties
+        bool isLarge() const { return (getType() == Type::SDCard); }
+        bool isFast()  const { return (getType() == Type::Flash ); }
         FatFS& getFS() const;
-        const char* getFSMountPoint() const;
-        uint64_t getFSTotalBytes() const;
-        uint64_t getFSUsedBytes() const;
-        uint64_t getFSFreeBytes() const;
-        
-        // start MSC device mode
-        bool startMSC();
-        void onStopMSC();
-        bool isMSCRunning() const;
+
+        void startMSC();
+        bool isMSCRunning() const { return m_runMSC; }
 
     private:
-        bool initFlashStorage();
-        bool initSDCardStorage();
-        bool isFlashStorage() const;
-        bool isSDCardStorage() const;
+        Type beginFlash();
+        Type beginSDCard();
 
+        static bool mscOnStartStopCb(uint8_t power_condition, bool start, bool load_eject);
+        static int32_t mscOnReadCb(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
+        static int32_t mscOnWriteCb(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize);
+    
     private:
         Type m_type;
+        FatFS m_badFS;
+        FatFS* m_fatFS;
+        USBMSC m_usbMSC;
         bool m_runMSC;
-      USBMSC m_usbMSC;
     };
 
     extern Storage storage;

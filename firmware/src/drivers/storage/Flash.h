@@ -1,7 +1,7 @@
 #pragma once
+#ifndef NO_FLASH
 
 #include <wear_levelling.h>
-#include "shared/tasks/Mutex.h"
 #include "FatFS.h"
 
 namespace driver
@@ -24,13 +24,11 @@ namespace driver
         bool isMounted() const override;
 
         // direct access for MSC device mode
-        bool writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
-        bool readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
+        bool mscWrBuf(uint32_t lba, uint32_t offset, void* buffer, uint32_t size) override;
+        bool mscRdBuf(uint32_t lba, uint32_t offset, void* buffer, uint32_t size) override;
 
     private:
         wl_handle_t m_wlHandle;
-        task::Mutex m_mutex;
     };
-
-    extern Flash flash;
 }
+#endif

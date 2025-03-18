@@ -1,3 +1,5 @@
+#ifndef NO_FLASH
+
 #include <esp_vfs_fat.h>
 #include <diskio_wl.h>
 #include "Flash.h"
@@ -19,8 +21,6 @@ namespace driver
     bool Flash::begin(const char* mountPoint, const char* partitionLabel)
     {
         if (isMounted()) return true;
-
-        task::LockGuard lock(m_mutex);
         log_i("Initializing flash FAT");
 
         const esp_partition_t* partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, partitionLabel);
@@ -53,8 +53,6 @@ namespace driver
     void Flash::end()
     {
         if (!isMounted()) return;
-        
-        task::LockGuard lock(m_mutex);
         esp_vfs_fat_spiflash_unmount(mountPoint(), m_wlHandle);
         m_wlHandle = WL_INVALID_HANDLE;
         resMountPoint();
@@ -81,24 +79,20 @@ namespace driver
 
     ////////////////////////////////////////////////////////////////////////////
 
-    bool Flash::writeBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
+    bool Flash::mscWrBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
     {
-        task::LockGuard lock(m_mutex);
         size_t start_addr = (wl_sector_size(m_wlHandle) * lba + offset);
-        esp_err_t res = wl_erase_range(m_wlHandle, start_addr, bufsize);
-        if (res == ESP_OK) res = wl_write(m_wlHandle, start_addr, buffer, bufsize);
+        esp_err_t res = wl_erase_range(m_wlHandle, start_addr, size);
+        if (res == ESP_OK) res = wl_write(m_wlHandle, start_addr, buffer, size);
         return (res == ESP_OK);
     }
 
-    bool Flash::readBuffer(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
+    bool Flash::mscRdBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
     {
-        task::LockGuard lock(m_mutex);
         size_t start_addr = (wl_sector_size(m_wlHandle) * lba + offset);
-        esp_err_t res = wl_read(m_wlHandle, start_addr, buffer, bufsize);
+        esp_err_t res = wl_read(m_wlHandle, start_addr, buffer, size);
         return (res == ESP_OK);
     }
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    Flash flash;
 }
+
+#endif

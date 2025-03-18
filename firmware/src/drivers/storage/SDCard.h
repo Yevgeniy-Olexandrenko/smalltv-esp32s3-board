@@ -1,7 +1,7 @@
 #pragma once
+#ifndef NO_SDCARD
 
 #include <driver/sdmmc_types.h>
-#include "shared/tasks/Mutex.h"
 #include "FatFS.h"
 
 namespace driver
@@ -31,15 +31,13 @@ namespace driver
         bool isMounted() const override;
 
         // direct access for MSC device mode
-        bool writeSectors(uint8_t *src, size_t startSector, size_t sectorCount);
-        bool readSectors(uint8_t *dst, size_t startSector, size_t sectorCount);
+        bool mscWrBuf(uint32_t lba, uint32_t offset, void* buffer, uint32_t size) override;
+        bool mscRdBuf(uint32_t lba, uint32_t offset, void* buffer, uint32_t size) override;
 
     private:
         int m_spiSlot;
         bool m_oneBitMode;
         sdmmc_card_t* m_card;
-        task::Mutex m_mutex;
     };
-
-    extern SDCard sdcard;
 }
+#endif
