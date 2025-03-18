@@ -1,7 +1,6 @@
 #ifndef NO_AUDIO
 
 #include "AudioPlayer.h"
-#include "shared/tasks/Task.h"
 
 namespace service
 {
@@ -19,7 +18,6 @@ namespace service
 
     AudioPlayer::AudioPlayer()
         : m_cmdQueue(nullptr)
-        , m_handle(nullptr)
         , m_volume(0.f)
     {
     }
@@ -58,15 +56,7 @@ namespace service
         if (!isStarted() && context && !m_context)
         {
             m_context.reset(context);
-            return xTaskCreatePinnedToCore(
-                [](void* data) 
-                {
-                    auto instance = static_cast<AudioPlayer*>(data);
-                    instance->task();
-                },
-                "audio_player", 8192 * 2, this, task::priority::Realtime,
-                &m_handle, task::core::Application
-            ) == pdPASS;
+            return Task::start("audio_player");
         }
         return false;
     }
@@ -145,13 +135,13 @@ namespace service
     bool AudioPlayer::isStarted()
     {
         task::LockGuard lock(m_mutex);
-        return (m_handle != nullptr);
+        return Task::isAlive();
     }
 
     bool AudioPlayer::isPlaying()
     {
         task::LockGuard lock(m_mutex);
-        return (m_handle != nullptr && m_player.isActive());
+        return (Task::isAlive() && m_player.isActive());
     }
 
     void AudioPlayer::task()
@@ -198,9 +188,7 @@ namespace service
             task::LockGuard lock(m_mutex);
             m_player.end();
             m_context.reset();
-            m_handle = nullptr;
         }
-        vTaskDelete(nullptr);
     }
 
     void AudioPlayer::fftCallback(audio_tools::AudioFFTBase &fft)

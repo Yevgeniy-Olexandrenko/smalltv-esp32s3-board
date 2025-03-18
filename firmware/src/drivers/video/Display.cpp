@@ -1,8 +1,6 @@
 #ifndef NO_VIDEO
 
-#include <FreeRTOS.h>
 #include "Display.h"
-#include "shared/tasks/Task.h"
 
 #define LCD_BL_PWM_CHANNEL   0
 #define LCD_BL_PWM_FREQENCY  5000
@@ -19,15 +17,7 @@ namespace driver
             TFT_eSPI::fillScreen(TFT_BLACK);
 
             setBrightness(brightness);
-            xTaskCreatePinnedToCore(
-                [](void* data) 
-                {
-                    auto instance = static_cast<Display*>(data);
-                    instance->task();
-                },
-                "lcd_brightness", 1024, this, task::priority::Background,
-                nullptr, task::core::System
-            );
+            Task::start("lcd_brightness");
         }
     }
 

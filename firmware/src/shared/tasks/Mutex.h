@@ -9,19 +9,19 @@ namespace task
     class Mutex final
     {
     public:
-        // Create and destroy
+        // create and destroy
         Mutex() : m_semaphore(xSemaphoreCreateMutex()) {}
         ~Mutex() { vSemaphoreDelete(m_semaphore); }
 
-        // Get and release lock
+        // get and release lock
         void lock() { xSemaphoreTake(m_semaphore, portMAX_DELAY); }
         void unlock() { xSemaphoreGive(m_semaphore); }
 
-        // Disable copying
+        // disable copying
         Mutex(const Mutex &) = delete;
         Mutex &operator=(const Mutex &) = delete;
 
-        // Returns the underlying semaphore handle
+        // returns the underlying semaphore handle
         SemaphoreHandle_t getHandle() const { return m_semaphore; }
 
     private:
@@ -31,11 +31,11 @@ namespace task
     class LockGuard final
     {
     public:
-        // Acquire and release the mutex
+        // acquire and release the mutex
         explicit LockGuard(Mutex& mutex) : m_mutex(mutex) { m_mutex.lock(); }
         ~LockGuard() { m_mutex.unlock(); }
 
-        // Disable copying
+        // disable copying
         LockGuard(const LockGuard &) = delete;
         LockGuard &operator=(const LockGuard &) = delete;
 

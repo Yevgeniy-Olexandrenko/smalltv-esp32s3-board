@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shared/tasks/Task.h"
 #include "shared/settings/Settings.h"
 #include "tabs/Apps.h"
 #include "tabs/Main.h"
@@ -10,7 +11,8 @@ namespace service
     using namespace service_settings_webapp_impl;
     using RebootCorfirmCB = std::function<void(bool)>;
 
-    class SettingsWebApp
+    class SettingsWebApp 
+        : public task::Task<8192 * 2, task::core::Application, task::priority::Background>
     {
     public:
         void begin();
@@ -21,7 +23,7 @@ namespace service
         const Apps& apps() const { return m_tabApps; }
 
     private:
-        void task();
+        void task() override;
         void settingsBuild(sets::Builder& b);
         void settingsUpdate(sets::Updater& u);
         void onFocusChange(bool f);

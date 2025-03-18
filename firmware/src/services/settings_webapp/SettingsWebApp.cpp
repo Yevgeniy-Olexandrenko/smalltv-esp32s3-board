@@ -1,6 +1,5 @@
 #include <GyverNTP.h>
 #include "SettingsWebApp.h"
-#include "shared/tasks/Task.h"
 #include "drivers/video/Display.h"
 #include "drivers/onboard/SelfReboot.h"
 
@@ -9,15 +8,7 @@ namespace service
     void SettingsWebApp::begin()
     {
         log_i("begin");
-        xTaskCreatePinnedToCore(
-            [](void* data) 
-            {
-                auto instance = static_cast<SettingsWebApp*>(data);
-                instance->task();
-            },
-            "settings_webapp", 8192 * 2, this, task::priority::Background,
-            nullptr, task::core::Application
-        );
+        Task::start("settings_webapp");
     }
 
     void SettingsWebApp::requestReboot(RebootCorfirmCB cb)

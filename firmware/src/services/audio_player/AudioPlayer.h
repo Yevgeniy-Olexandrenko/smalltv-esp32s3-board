@@ -3,13 +3,15 @@
 
 #include <AudioTools.h>
 #include <AudioTools/AudioLibs/AudioRealFFT.h>
+#include "shared/tasks/Task.h"
+#include "shared/tasks/Mutex.h"
 #include "AudioContext.h"
 #include "AudioPlayerUI.h"
-#include "shared/tasks/Mutex.h"
 
 namespace service
 {
     class AudioPlayer
+        : public task::Task<8192, task::core::Application, task::priority::Realtime>
     {
         static AudioPlayer* s_this;
         static void s_fftCallback(audio_tools::AudioFFTBase& fft);
@@ -35,7 +37,7 @@ namespace service
         audio_player::AudioContext*  getContext() { return m_context.get(); }
 
     private:
-        void task();
+        void task() override;
         void fftCallback(audio_tools::AudioFFTBase& fft);
         void metadataCallback(audio_tools::MetaDataType type, const String& str);
 
@@ -51,7 +53,6 @@ namespace service
         // multi task access
         audio_tools::AudioPlayer m_player;
         QueueHandle_t m_cmdQueue;
-        TaskHandle_t m_handle;
         task::Mutex m_mutex;
         float m_volume;
         int m_index;       
