@@ -22,8 +22,8 @@ namespace driver
         uint64_t usedBytes() const;
 
         // direct access for MSC device mode
-        virtual bool mscWrBuf(uint32_t lba, uint32_t offset, void* buffer, uint32_t size);
-        virtual bool mscRdBuf(uint32_t lba, uint32_t offset, void* buffer, uint32_t size);
+        virtual bool mscWrBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size);
+        virtual bool mscRdBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size);
 
     protected:
         void setMountPoint(const char* mountPoint);

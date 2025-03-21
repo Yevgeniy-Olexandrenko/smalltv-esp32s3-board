@@ -18,7 +18,7 @@ namespace driver
 
         bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0);
         bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpio_num_t d2, gpio_num_t d3);
-        bool begin(const char* mountPoint, gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs);
+        bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t mosi, gpio_num_t miso, gpio_num_t cs);
         void end();
 
         // sd card properties
@@ -31,8 +31,8 @@ namespace driver
         bool isMounted() const override;
 
         // direct access for MSC device mode
-        bool mscWrBuf(uint32_t lba, uint32_t offset, void* buffer, uint32_t size) override;
-        bool mscRdBuf(uint32_t lba, uint32_t offset, void* buffer, uint32_t size) override;
+        bool mscWrBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size) override;
+        bool mscRdBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size) override;
 
     private:
         int m_spiSlot;

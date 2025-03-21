@@ -17,12 +17,7 @@ namespace driver
         , m_card(nullptr)
     {}
 
-    SDCard::~SDCard() 
-    { 
-        end();
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
+    SDCard::~SDCard() { end(); }
 
     // SDIO 1 bit mode
     bool SDCard::begin(const char *mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0)
@@ -88,9 +83,9 @@ namespace driver
     // SPI mode
     bool SDCard::begin(
         const char *mountPoint,
-        gpio_num_t miso,
-        gpio_num_t mosi,
         gpio_num_t clk,
+        gpio_num_t mosi,
+        gpio_num_t miso,
         gpio_num_t cs)
     {
         if (isMounted()) return true;
@@ -156,8 +151,6 @@ namespace driver
         m_spiSlot = -1; 
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
     SDCard::Type SDCard::getCardType() const
     {
         if(!m_card) return Type::NONE;
@@ -169,8 +162,6 @@ namespace driver
         if(!m_card) return Interface::NONE;
         return (m_spiSlot >= 0 ? Interface::SPI : (m_oneBitMode ? Interface::SDIO1 : Interface::SDIO4));
     }
-
-    ////////////////////////////////////////////////////////////////////////////
 
     uint64_t SDCard::sectorCount() const
     {
@@ -187,17 +178,15 @@ namespace driver
         return (m_card != nullptr);
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
-    bool SDCard::mscWrBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
+    bool SDCard::mscWrBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size)
     {
-        esp_err_t res = sdmmc_write_sectors(m_card, buffer, lba, size / sectorSize());
+        esp_err_t res = sdmmc_write_sectors(m_card, buf, lba, size / sectorSize());
         return (res == ESP_OK);
     }
 
-    bool SDCard::mscRdBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
+    bool SDCard::mscRdBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size)
     {
-        esp_err_t res = sdmmc_read_sectors(m_card, buffer, lba, size / sectorSize());
+        esp_err_t res = sdmmc_read_sectors(m_card, buf, lba, size / sectorSize());
         return (res == ESP_OK);
     }
 }

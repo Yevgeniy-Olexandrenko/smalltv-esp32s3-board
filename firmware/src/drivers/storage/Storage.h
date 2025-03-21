@@ -23,6 +23,7 @@ namespace driver
 
         void startMSC();
         bool isMSCRunning() const { return m_runMSC; }
+        bool isUSBMounted() const;
 
     private:
         Type beginFlash();
@@ -34,7 +35,7 @@ namespace driver
     
     private:
         Type m_type;
-        FatFS m_badFS;
+        FatFS m_invFS;
         FatFS* m_fatFS;
         USBMSC m_usbMSC;
         bool m_runMSC;

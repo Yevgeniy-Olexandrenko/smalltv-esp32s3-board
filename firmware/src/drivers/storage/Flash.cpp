@@ -11,12 +11,7 @@ namespace driver
         , m_wlHandle(WL_INVALID_HANDLE)
     {}
 
-    Flash::~Flash() 
-    { 
-        end();
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
+    Flash::~Flash() { end(); }
 
     bool Flash::begin(const char* mountPoint, const char* partitionLabel)
     {
@@ -58,8 +53,6 @@ namespace driver
         resMountPoint();
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
     uint64_t Flash::sectorCount() const
     {
         if (m_wlHandle == WL_INVALID_HANDLE) return 0;
@@ -77,8 +70,6 @@ namespace driver
         return (m_wlHandle != WL_INVALID_HANDLE);
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
     bool Flash::mscWrBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
     {
         size_t start_addr = (wl_sector_size(m_wlHandle) * lba + offset);
@@ -94,5 +85,4 @@ namespace driver
         return (res == ESP_OK);
     }
 }
-
 #endif

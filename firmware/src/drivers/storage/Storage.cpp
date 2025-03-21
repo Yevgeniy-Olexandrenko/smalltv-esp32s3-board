@@ -20,6 +20,7 @@ namespace driver
 
     void Storage::begin(Type type)
     {
+        USB.begin();
         if (!m_runMSC && !m_fatFS)
         {
             switch (type)
@@ -59,14 +60,13 @@ namespace driver
     FatFS& Storage::getFS() const
     {
         if (!m_runMSC && m_fatFS) return *m_fatFS;
-        return const_cast<FatFS&>(m_badFS);
+        return const_cast<FatFS&>(m_invFS);
     }
 
     void Storage::startMSC()
     {
         if (!m_runMSC && m_fatFS)
         {
-            m_runMSC = USB.begin();
             m_usbMSC.vendorID(STORAGE_MSC_VENDORID);
             m_usbMSC.productID(STORAGE_MSC_PRODUCTID);
             m_usbMSC.productRevision(STORAGE_MSC_PRODUCTREV);
@@ -78,8 +78,13 @@ namespace driver
 
             auto sectorSize = m_fatFS->sectorSize();
             auto sectorCount = m_fatFS->sectorCount();
-            m_runMSC &= m_usbMSC.begin(sectorCount, sectorSize);
+            m_runMSC = m_usbMSC.begin(sectorCount, sectorSize);
         }
+    }
+
+    bool Storage::isUSBMounted() const
+    {
+        return bool(USB);
     }
 
     Storage::Type Storage::beginFlash()
@@ -102,7 +107,7 @@ namespace driver
         SDCard* sdcard = new SDCard();
         #if defined(SDCARD_SPI)
         if (sdcard->begin(SDCard::DEFAULT_MOUNT_POINT, 
-            PIN_SD_MISO, PIN_SD_MOSI, PIN_SD_CLK, PIN_SD_CS))
+            PIN_SD_CLK, PIN_SD_MOSI, PIN_SD_MISO, PIN_SD_CS))
         #elif defined(SDCARD_SDIO1)
         if (sdcard->begin(SDCard::DEFAULT_MOUNT_POINT,
             PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0))
