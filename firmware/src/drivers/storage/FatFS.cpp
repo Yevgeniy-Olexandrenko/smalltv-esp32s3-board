@@ -50,8 +50,8 @@ namespace driver
         return 0;
     }
 
-    bool FatFS::mscWrBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size) { return false; }
-    bool FatFS::mscRdBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size) { return false; }
+    bool FatFS::writeSectors(uint8_t*, uint32_t, uint32_t) { return false; }
+    bool FatFS::readSectors (uint8_t*, uint32_t, uint32_t) { return false; }
 
     void FatFS::setMountPoint(const char* mountPoint) { _impl->mountpoint(mountPoint); }
     void FatFS::resMountPoint() { _impl->mountpoint(nullptr); }

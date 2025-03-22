@@ -178,15 +178,15 @@ namespace driver
         return (m_card != nullptr);
     }
 
-    bool SDCard::mscWrBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size)
+    bool SDCard::writeSectors(uint8_t* data, uint32_t startSector, uint32_t sectorCount)
     {
-        esp_err_t res = sdmmc_write_sectors(m_card, buf, lba, size / sectorSize());
+        esp_err_t res = sdmmc_write_sectors(m_card, data, startSector, sectorCount);
         return (res == ESP_OK);
     }
 
-    bool SDCard::mscRdBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size)
+    bool SDCard::readSectors(uint8_t* data, uint32_t startSector, uint32_t sectorCount)
     {
-        esp_err_t res = sdmmc_read_sectors(m_card, buf, lba, size / sectorSize());
+        esp_err_t res = sdmmc_read_sectors(m_card, data, startSector, sectorCount);
         return (res == ESP_OK);
     }
 }

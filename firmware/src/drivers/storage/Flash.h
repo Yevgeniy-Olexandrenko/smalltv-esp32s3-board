@@ -24,8 +24,8 @@ namespace driver
         bool isMounted() const override;
 
         // direct access for MSC device mode
-        bool mscWrBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size) override;
-        bool mscRdBuf(uint32_t lba, uint32_t off, void* buf, uint32_t size) override;
+        bool writeSectors(uint8_t* data, uint32_t startSector, uint32_t sectorCount) override;
+        bool readSectors(uint8_t* data, uint32_t startSector, uint32_t sectorCount) override;
 
     private:
         wl_handle_t m_wlHandle;

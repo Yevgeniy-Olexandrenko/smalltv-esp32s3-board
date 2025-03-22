@@ -70,18 +70,20 @@ namespace driver
         return (m_wlHandle != WL_INVALID_HANDLE);
     }
 
-    bool Flash::mscWrBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
+    bool Flash::writeSectors(uint8_t* data, uint32_t startSector, uint32_t sectorCount)
     {
-        size_t start_addr = (wl_sector_size(m_wlHandle) * lba + offset);
-        esp_err_t res = wl_erase_range(m_wlHandle, start_addr, size);
-        if (res == ESP_OK) res = wl_write(m_wlHandle, start_addr, buffer, size);
+        const size_t dataAddr = startSector * sectorSize();
+        const size_t dataSize = sectorCount * sectorSize();
+        esp_err_t res = wl_erase_range(m_wlHandle, dataAddr, dataSize);
+        if (res == ESP_OK) res = wl_write(m_wlHandle, dataAddr, data, dataSize);
         return (res == ESP_OK);
     }
 
-    bool Flash::mscRdBuf(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
+    bool Flash::readSectors(uint8_t* data, uint32_t startSector, uint32_t sectorCount)
     {
-        size_t start_addr = (wl_sector_size(m_wlHandle) * lba + offset);
-        esp_err_t res = wl_read(m_wlHandle, start_addr, buffer, size);
+        const size_t dataAddr = startSector * sectorSize();
+        const size_t dataSize = sectorCount * sectorSize();
+        esp_err_t res = wl_read(m_wlHandle, dataAddr, data, dataSize);
         return (res == ESP_OK);
     }
 }

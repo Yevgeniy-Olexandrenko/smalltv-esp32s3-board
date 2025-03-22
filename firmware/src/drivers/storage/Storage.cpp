@@ -20,7 +20,6 @@ namespace driver
 
     void Storage::begin(Type type)
     {
-        USB.begin();
         if (!m_runMSC && !m_fatFS)
         {
             switch (type)
@@ -79,6 +78,7 @@ namespace driver
             auto sectorSize = m_fatFS->sectorSize();
             auto sectorCount = m_fatFS->sectorCount();
             m_runMSC = m_usbMSC.begin(sectorCount, sectorSize);
+            USB.begin();
         }
     }
 
@@ -126,7 +126,7 @@ namespace driver
 
     bool Storage::mscOnStartStopCb(uint8_t power_condition, bool start, bool load_eject)
     {
-        if (!start && load_eject && storage.m_runMSC)
+        if (load_eject && storage.m_runMSC)
         {
             storage.m_usbMSC.end();
             storage.m_runMSC = false;
@@ -137,12 +137,14 @@ namespace driver
 
     int32_t Storage::mscOnReadCb(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
-        return storage.m_fatFS->mscRdBuf(lba, offset, buffer, bufsize) ? bufsize : 0;
+        const uint32_t sectorCount = bufsize / storage.m_fatFS->sectorSize();
+        return storage.m_fatFS->readSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0;
     }
 
     int32_t Storage::mscOnWriteCb(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize)
     {
-        return storage.m_fatFS->mscWrBuf(lba, offset, buffer, bufsize) ? bufsize : 0;
+        const uint32_t sectorCount = bufsize / storage.m_fatFS->sectorSize();
+        return storage.m_fatFS->writeSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0;
     }
 
     Storage storage;
