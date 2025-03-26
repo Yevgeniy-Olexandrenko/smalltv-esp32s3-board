@@ -123,8 +123,8 @@ namespace service::audio_player
             {
                 const auto& source = m_sources.item();
                 context_utils::fetchStorageFilelistsForExt(source, m_filelists.items);
+                reload = !m_filelists.empty();
                 m_filelists.sort();
-                reload = true;
             }
         }
         if (m_started != audioPlayer.isStarted())
