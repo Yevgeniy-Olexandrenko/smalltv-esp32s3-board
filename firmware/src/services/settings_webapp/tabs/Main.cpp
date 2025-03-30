@@ -1,7 +1,7 @@
 #include <GyverNTP.h>
 #include "Main.h"
 #include "drivers/Drivers.h"
-#include "services/network_connection/NetworkConnection.h"
+#include "services/wifi_connection/WiFiConnection.h"
 #include "services/settings_webapp/SettingsWebApp.h"
 #include "services/audio_player/AudioPlayer.h"
 #include "settings.h"
@@ -25,7 +25,7 @@ namespace service_settings_webapp_impl
 {
     void Main::settingsBuild(sets::Builder &b)
     {
-        bool hasInternet = service::networkConnection.isInternetAccessible();
+        bool hasInternet = service::wifiConnection.isInternetAccessible();
         bool ntpSynced = NTP.synced();
 
         //if (hasInternet && ntpSynced)
@@ -63,7 +63,7 @@ namespace service_settings_webapp_impl
             #ifndef NO_VINSENSE
             b.Label("power_source"_h, "Power source", getPowerSourceInfo());
             #endif
-            if (!service::networkConnection.isInAccessPointMode())
+            if (!service::wifiConnection.isInAccessPointMode())
             {
                 b.Label("wifi_signal"_h, "WiFi signal", getWiFiSignalInfo());
             }
@@ -76,7 +76,7 @@ namespace service_settings_webapp_impl
 
     void Main::settingsUpdate(sets::Updater &u)
     {
-        bool hasInternet = service::networkConnection.isInternetAccessible();
+        bool hasInternet = service::wifiConnection.isInternetAccessible();
         bool ntpSynced = NTP.synced();
 
         //if (hasInternet && ntpSynced)
@@ -95,7 +95,7 @@ namespace service_settings_webapp_impl
         #ifndef NO_VINSENSE
         u.update("power_source"_h, getPowerSourceInfo());
         #endif
-        if (!service::networkConnection.isInAccessPointMode())
+        if (!service::wifiConnection.isInAccessPointMode())
         {
             u.update("wifi_signal"_h, getWiFiSignalInfo());
         }
@@ -163,13 +163,13 @@ namespace service_settings_webapp_impl
 
     String Main::getWiFiSignalInfo() const
     {
-        String info = String(service::networkConnection.getSignalRSSI()) + "dBm";
-        switch (service::networkConnection.getSignalStrength())
+        String info = String(service::wifiConnection.getSignalRSSI()) + "dBm";
+        switch (service::wifiConnection.getSignalStrength())
         {
-            case service::NetworkConnection::Signal::Excellent: info += " Excellent"; break;
-            case service::NetworkConnection::Signal::Good: info += " Good"; break;
-            case service::NetworkConnection::Signal::Fair: info += " Fair"; break;
-            case service::NetworkConnection::Signal::Bad: info += " Bad"; break;
+            case service::WiFiConnection::Signal::Excellent: info += " Excellent"; break;
+            case service::WiFiConnection::Signal::Good: info += " Good"; break;
+            case service::WiFiConnection::Signal::Fair: info += " Fair"; break;
+            case service::WiFiConnection::Signal::Bad: info += " Bad"; break;
         }
         return info;
     }

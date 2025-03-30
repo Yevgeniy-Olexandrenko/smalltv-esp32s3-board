@@ -1,5 +1,6 @@
 #include <Esp.h>
 #include "SelfReboot.h"
+#include "drivers/video/Display.h"
 
 namespace driver
 {
@@ -7,6 +8,9 @@ namespace driver
     {
         // TODO
 
+        #ifndef NO_VIDEO
+        display.fadeOut();
+        #endif
         ESP.restart();
     }
 

@@ -39,10 +39,8 @@ namespace service
             settings::sets().tick();
             if (m_rebootPending)
             {
+                m_currentTab = 1;
                 m_rebootPending = false;
-                #ifndef NO_VIDEO
-                driver::display.fadeOut();
-                #endif
                 driver::selfReboot.reboot();
             }
             vTaskDelay(pdMS_TO_TICKS(10));

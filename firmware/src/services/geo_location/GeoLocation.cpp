@@ -1,5 +1,5 @@
 #include "GeoLocation.h"
-#include "../network_connection/NetworkConnection.h"
+#include "services/wifi_connection/WiFiConnection.h"
 
 #define UPDATE_PERIOD (60 * 1000)
 
@@ -17,7 +17,7 @@ namespace service
         auto now = millis();
         if (now - m_fetchTS >= UPDATE_PERIOD)
         {
-            if (service::networkConnection.isInternetAccessible())
+            if (service::wifiConnection.isInternetAccessible())
             {
                 m_location = m_geoip.getGeoFromWiFi();
                 if (m_location.status)

@@ -6,7 +6,7 @@ namespace services
 {
     void begin()
     {
-        service::networkConnection.begin();
+        service::wifiConnection.begin();
         service::geoLocation.begin();
         service::dateAndTime.begin();
         service::weatherForecast.begin();
@@ -19,7 +19,7 @@ namespace services
 
     void update()
     {
-        service::networkConnection.update();
+        service::wifiConnection.update();
         service::geoLocation.update();
         service::dateAndTime.update();
         service::weatherForecast.update();

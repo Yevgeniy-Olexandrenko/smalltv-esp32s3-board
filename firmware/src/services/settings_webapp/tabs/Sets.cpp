@@ -7,7 +7,7 @@ namespace service_settings_webapp_impl
 {
     void Sets::settingsBuild(sets::Builder &b)
     {
-        service::networkConnection.settingsBuild(b);
+        service::wifiConnection.getUI().settingsBuild(b);
         storageSettingsBuild(b);
         service::geoLocation.settingsBuild(b);
         service::dateAndTime.settingsBuild(b);
@@ -16,7 +16,7 @@ namespace service_settings_webapp_impl
 
     void Sets::settingsUpdate(sets::Updater &u)
     {
-        service::networkConnection.settingsUpdate(u);
+        service::wifiConnection.getUI().settingsUpdate(u);
         storageSettingsUpdate(u);
         service::geoLocation.settingsUpdate(u);
         service::dateAndTime.settingsUpdate(u);

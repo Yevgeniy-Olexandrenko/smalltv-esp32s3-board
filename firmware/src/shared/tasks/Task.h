@@ -1,6 +1,7 @@
 #pragma once
 
 #include <FreeRTOS.h>
+#include <freertos/task.h>
 
 namespace task
 {
