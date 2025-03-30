@@ -77,6 +77,7 @@ namespace service_settings_webapp_impl
 
     void Sets::fillStorageSpecs(String &specs) const
     {
+        #ifndef NO_SDCARD
         if (driver::storage.getType() == driver::Storage::Type::SDCard)
         {
             const auto size = driver::storage.getFS().partitionSize() / (1000.f * 1000.f);
@@ -90,12 +91,16 @@ namespace service_settings_webapp_impl
                 case driver::SDCard::Interface::SDIO4 : specs += " / SDIO-4B"; break;
             }
         }
-        else if (driver::storage.getType() == driver::Storage::Type::Flash)
+        else
+        #endif
+        #ifndef NO_FLASH
+        if (driver::storage.getType() == driver::Storage::Type::Flash)
         {
             const auto size = driver::storage.getFS().partitionSize() / (1024.f * 1024.f);
             specs = "FLASH " + String(size, 0) + "MB / SPI";
             
         }
+        #endif
     }
 
     ////////////////////////////////////////////////////////////////////////////

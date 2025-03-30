@@ -142,6 +142,7 @@ namespace service_settings_webapp_impl
 
     String Main::getPowerSourceInfo() const
     {
+        #ifndef NO_VINSENSE
         auto voltage = driver::powerSource.getInputVoltage();
         switch(driver::powerSource.getType())
         {
@@ -156,6 +157,7 @@ namespace service_settings_webapp_impl
             case driver::PowerSource::Type::USB:
                 return "USB " + String(voltage) + "V";
         }
+        #endif
         return "";
     }
 

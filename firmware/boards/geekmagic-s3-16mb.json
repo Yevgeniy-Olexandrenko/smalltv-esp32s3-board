@@ -24,7 +24,7 @@
       "-DPIN_LCD_DC=GPIO_NUM_7",
       "-DPIN_LCD_BL=GPIO_NUM_14",
       "-DLCD_BL_INV",
-      "-DNO_SOUND",
+      "-DNO_AUDIO",
       "-DNO_MICROPHONE",
       "-DPIN_TOUCH0=TOUCH_PAD_NUM9",
       "-DNO_TOUCH1",
@@ -37,8 +37,8 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
-        "0x1001"
+        "0X1A86",
+        "0x7523"
       ]
     ],
     "mcu": "esp32s3",
