@@ -11,7 +11,7 @@ R"raw(
 <html>
 <body>
 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-<img src="https://www.espressif.com/sites/default/files/chips/ESP32-S3_L.png" style="height:100px; width:auto;">
+<img src="https://github.com/Yevgeniy-Olexandrenko/smalltv-esp32s3-board/blob/main/datasheet/images/smalltv_yellow.png?raw=true" style="height:100px; width:auto;">
 <div style="text-align:right; padding-right: 10px;">
 <div style="font-size:50px;">%s</div>
 <div style="font-size:20px;">%s</div>
@@ -31,12 +31,15 @@ namespace service_settings_webapp_impl
         //if (hasInternet && ntpSynced)
         {
             b.HTML("html"_h, "", getHTML());
+            b.Label("📍 Kharkov", "Clouds +26 °C 🌤");
         }
+
         {
             sets::Row r(b, "", sets::DivType::Line);
             b.Label("internet"_h, "🌐 Internet", getInet());
             b.Label("uptime"_h, "⏳ Uptime", getUptime());
         }
+        
         {
             sets::Row r(b, "", sets::DivType::Line);
             #ifndef NO_VIDEO
@@ -50,6 +53,7 @@ namespace service_settings_webapp_impl
             service::audioPlayer.getUI().settingsBuildVolume(b);
             #endif
         }
+        
         #ifndef NO_AUDIO
         service::audioPlayer.getUI().settingsBuild(b);
         #endif
