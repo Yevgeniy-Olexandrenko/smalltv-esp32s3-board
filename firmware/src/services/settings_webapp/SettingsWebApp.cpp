@@ -59,7 +59,7 @@ namespace service
             return;
         }
 
-        if (b.Tabs("SETS;MAIN;APPS", &m_currentTab))
+        if (b.Tabs("🛠 SETS;💜 MAIN;🚀 APPS", &m_currentTab))
         {
             b.reload();
             return;

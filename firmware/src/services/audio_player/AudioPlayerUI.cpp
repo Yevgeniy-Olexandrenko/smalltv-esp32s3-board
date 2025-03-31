@@ -38,7 +38,7 @@ namespace service::audio_player
 
     void AudioPlayerUI::settingsBuild(sets::Builder &b)
     {
-        sets::Group g(b, "Audio player");
+        sets::Group g(b, "🎼 Audio player");
         if (m_started)
         {
             m_sources.clear();
@@ -152,7 +152,7 @@ namespace service::audio_player
 
     void AudioPlayerUI::settingsBuildVolume(sets::Builder &b)
     {
-        if (b.Slider(db::audio_volume, "Volume", 0, 100))
+        if (b.Slider(db::audio_volume, "🔈 Volume", 0, 100))
         {
             onVolumeSettingsChanged();
         }
@@ -189,7 +189,7 @@ namespace service::audio_player
                 output += letter;
                 output += ']';
             }
-            output += item;
+            output += "💿 " + item;
             output += ';';
         }
     }
@@ -209,7 +209,7 @@ namespace service::audio_player
             auto item = playlist[i];
             item.replace('[', '(');
             item.replace(']', ')');
-            output += item + ";";
+            output += "🎶 " + item + ";";
         }
     }
 }

@@ -36,7 +36,7 @@ namespace service_settings_webapp_impl
             choice += ";External SD Card;Auto";
             #endif
 
-            sets::Group g(b, "Storage");
+            sets::Group g(b, "💾 Storage");
             if (b.Select(db::storage_type, "Type", choice))
             {
                 m_typeChanged = (settings::data()[db::storage_type] != m_typeRollback);

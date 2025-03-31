@@ -30,4 +30,15 @@ namespace settings
         }
         return m_settings;
     }
+
+    const String Provider::led(Led led) const
+    {
+        switch(led)
+        {
+            case Led::R: return "🔴";
+            case Led::Y: return "🟡";
+            case Led::G: return "🟢";
+        }
+        return "";
+    }
 }

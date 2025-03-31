@@ -34,13 +34,13 @@ namespace service_settings_webapp_impl
         }
         {
             sets::Row r(b, "", sets::DivType::Line);
-            b.LED("internet"_h, "Internet", hasInternet);
-            b.Label("uptime"_h, "Uptime", getUptime());
+            b.Label("internet"_h, "🌐 Internet", getInet());
+            b.Label("uptime"_h, "⏳ Uptime", getUptime());
         }
         {
             sets::Row r(b, "", sets::DivType::Line);
             #ifndef NO_VIDEO
-            if (b.Slider(db::lcd_brightness, "Brightness", 0, 100))
+            if (b.Slider(db::lcd_brightness, "🔆 Brightness", 0, 100))
             {
                 auto brightness = (float(b.build.value) * 0.01f);
                 driver::display.setBrightness(brightness);
@@ -54,7 +54,7 @@ namespace service_settings_webapp_impl
         service::audioPlayer.getUI().settingsBuild(b);
         #endif
         {
-            sets::Group g(b, "Hardware");
+            sets::Group g(b, "📄 Hardware");
             b.Label("ESP32 module", getESPModuleInfo());
             b.Label("ram_usage"_h, "RAM usage", getRAMUsageInfo());
             #ifndef NO_PSRAM
@@ -86,7 +86,7 @@ namespace service_settings_webapp_impl
         #ifndef NO_AUDIO
         service::audioPlayer.getUI().settingsUpdate(u);
         #endif
-        u.update("internet"_h, hasInternet);
+        u.update("internet"_h, getInet());
         u.update("uptime"_h, getUptime());
         u.update("ram_usage"_h, getRAMUsageInfo());
         #ifndef NO_PSRAM
@@ -106,6 +106,12 @@ namespace service_settings_webapp_impl
         char buffer[sizeof(custom_html) + 20];
         sprintf(buffer, custom_html, NTP.timeToString().c_str(), NTP.dateToString().c_str());
         return String(buffer);
+    }
+
+    String Main::getInet() const
+    {
+        if (service::wifiConnection.isInternetAccessible()) return led(Led::G);
+        return led(Led::R);
     }
 
     String Main::getUptime() const
@@ -147,15 +153,15 @@ namespace service_settings_webapp_impl
         switch(driver::powerSource.getType())
         {
             case driver::PowerSource::Type::Unknown:
-                return String(voltage) + "V";
+                return String(voltage) + "V ⚡";
 
             case driver::PowerSource::Type::Battery:
             {   auto level = driver::powerSource.getBatteryLevelPercents();
-                return "BAT " + String(voltage) + "V / " + String(level) + "%";
+                return "BAT " + String(voltage) + "V / " + String(level) + "% 🔋";
             }
 
             case driver::PowerSource::Type::USB:
-                return "USB " + String(voltage) + "V";
+                return "USB " + String(voltage) + "V 🔌";
         }
         #endif
         return "";
@@ -163,13 +169,22 @@ namespace service_settings_webapp_impl
 
     String Main::getWiFiSignalInfo() const
     {
-        String info = String(service::wifiConnection.getSignalRSSI()) + "dBm";
-        switch (service::wifiConnection.getSignalStrength())
+        auto rssi = service::wifiConnection.getSignalRSSI();
+        String info = String(rssi) + "dBm";
+        switch (service::wifiConnection.getSignalQuality(rssi))
         {
-            case service::WiFiConnection::Signal::Excellent: info += " Excellent"; break;
-            case service::WiFiConnection::Signal::Good: info += " Good"; break;
-            case service::WiFiConnection::Signal::Fair: info += " Fair"; break;
-            case service::WiFiConnection::Signal::Bad: info += " Bad"; break;
+            case service::WiFiConnection::Signal::Excellent:
+                info += " Excellent " + led(Led::G);
+                break;
+            case service::WiFiConnection::Signal::Good:
+                info += " Good " + led(Led::G);
+                break;
+            case service::WiFiConnection::Signal::Fair:
+                info += " Fair " + led(Led::Y); 
+                break;
+            case service::WiFiConnection::Signal::Bad:
+                info += " Bad " + led(Led::R); 
+                break;
         }
         return info;
     }

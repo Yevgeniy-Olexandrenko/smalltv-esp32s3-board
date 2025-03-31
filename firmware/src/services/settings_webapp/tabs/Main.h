@@ -12,6 +12,7 @@ namespace service_settings_webapp_impl
 
     private:
         String getHTML() const;
+        String getInet() const;
         String getUptime() const;
         String getESPModuleInfo() const;
         String getRAMUsageInfo() const;
