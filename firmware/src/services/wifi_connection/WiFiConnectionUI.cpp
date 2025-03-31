@@ -1,22 +1,18 @@
 #include "WiFiConnectionUI.h"
+#include "WiFiConnection.h"
 #include "settings.h"
 
 namespace service::wifi_connection
 {
     void WiFiConnectionUI::begin()
     {
-        // set default and get current settings
-        settings::data().init(db::wifi_ssid, "bla-wifi");
-        settings::data().init(db::wifi_pass, "347279524");
-        settings::data().init(db::wifi_tout, 20);
         m_ssid = settings::data()[db::wifi_ssid];
         m_pass = settings::data()[db::wifi_pass];
-
     }
 
     void WiFiConnectionUI::settingsBuild(sets::Builder &b)
     {
-        sets::Group g(b, "WiFi");
+        sets::Group g(b, "📶 WiFi");
         if (isScanning())         
             b.Label("Scanning...");
         else if (isConnecting())
@@ -92,6 +88,8 @@ namespace service::wifi_connection
 
     void WiFiConnectionUI::settingsUpdate(sets::Updater &u)
     {
+        return;
+
         if (isScanning() || isConnecting())
         {
             settings::sets().reload();
@@ -125,8 +123,17 @@ namespace service::wifi_connection
             const String ssid = WiFi.SSID(i);
             if (ssid.isEmpty()) continue;
 
-            options += WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? "🔐" : "🔓";
-            options += " " + ssid + ";";
+            auto open = (WiFi.encryptionType(i) == WIFI_AUTH_OPEN);
+            auto quality = int(service::wifiConnection.getSignalQuality(WiFi.RSSI(i)));
+
+            switch (quality)
+            {
+                case 0:
+                case 1: options += led(Led::G) + " "; break;
+                case 2: options += led(Led::Y) + " "; break;
+                case 3: options += led(Led::R) + " "; break;
+            }
+            options += (open ? "🔓 " : "🔐 ") + ssid + ";";
             values.push_back(ssid);
         }
     }

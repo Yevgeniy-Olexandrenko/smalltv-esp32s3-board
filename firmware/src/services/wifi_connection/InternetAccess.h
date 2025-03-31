@@ -1,6 +1,6 @@
 #pragma once
 
-namespace service_network_connection_impl
+namespace service::wifi_connection
 {
     class InternetAccess
     {

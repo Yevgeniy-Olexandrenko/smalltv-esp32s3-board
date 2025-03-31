@@ -19,7 +19,6 @@ namespace services
 
     void update()
     {
-        service::wifiConnection.update();
         service::geoLocation.update();
         service::dateAndTime.update();
         service::weatherForecast.update();

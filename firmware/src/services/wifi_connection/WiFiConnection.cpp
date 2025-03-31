@@ -1,4 +1,3 @@
-#include <WiFiConnector.h>
 #include "WiFiConnection.h"
 #include "settings.h"
 #include "defines.h"
@@ -7,161 +6,121 @@ namespace service
 {
     void WiFiConnection::begin()
     {
-        log_i("start wifi");
-        //Task::start("wifi_connection");
-
+        settings::data().init(db::wifi_ssid, "");
+        settings::data().init(db::wifi_pass, "");
+        settings::data().init(db::wifi_tout, 20);
+ 
         m_ui.begin();
-
-        // configure AP name and connection timeout
         WiFi.setHostname(NETWORK_HOST_NAME);
-        WiFiConnector.setName(NETWORK_ACCESS_POINT);
-        WiFiConnector.setTimeout(settings::data()[db::wifi_tout]);
-
-        // try to connect on firmware startup
-        WiFiConnector.onConnect([]() 
-        {
-            log_i("wifi connected: %s", WiFi.localIP().toString().c_str());
-            // TODO
-        });
-
-        WiFiConnector.onError([]() 
-        {
-            log_i("wifi connection failed, start ap: %s", WiFi.softAPIP().toString().c_str());
-            // TODO
-        });
-
-        log_i("wifi connection on boot");
-        WiFiConnector.connect(m_ui.getSSID(), m_ui.getPass());
+        WiFi.setAutoReconnect(true);
+ 
+        log_i("connect to wifi on boot");
+        connect(settings::data()[db::wifi_ssid], settings::data()[db::wifi_pass]);
+        Task::start("wifi_connection");
     }
 
-    void WiFiConnection::update()
+    void WiFiConnection::connect(const String &ssid, const String &pass)
     {
-        // TODO
-
-        WiFiConnector.tick();
-
-        switch(m_state)
-        {
-            case State::ConnectRequested:
-                Serial.println("NetworkConnection: connect");
-                driver::ledAndButton.setLedMode(driver::LedAndButton::LedMode::Off);
-                WiFiConnector.connect(m_ssid, m_pass);
-                m_state = State::Connecting;
-                break;
-
-            case State::Connecting:
-                if (!WiFiConnector.connecting())
-                {
-                    m_state = (WiFiConnector.connected() 
-                        ? State::Connected 
-                        : State::NotConnected);
-                    settings::sets().reload();
-                }
-                break;
-
-            case State::ScanRequested:
-                Serial.println("NetworkConnection: scan start");
-                WiFi.scanNetworks(true, false, false);
-                m_state = State::Scanning;
-                break;
-
-            case State::Scanning:
-                if (WiFi.scanComplete() != WIFI_SCAN_RUNNING)
-                {
-                    Serial.println("NetworkConnection: scan finish");
-                    settings::sets().reload();
-                    m_state = State::Connecting;
-                }
-                break;
-        }
+        uint8_t tout = settings::data()[db::wifi_tout];
+        m_connect.tout = tout * 1000ul;
+        m_connect.ssid = ssid;
+        m_connect.pass = pass;
+        beginConnection();
     }
 
-    int WiFiConnection::getSignalRSSI() const
+    WiFiConnection::Signal WiFiConnection::getSignalQuality(int8_t rssi) const
     {
-        return WiFi.RSSI();
-    }
-
-    WiFiConnection::Signal WiFiConnection::getSignalStrength() const
-    {
-        const int rssi = getSignalRSSI();
         if (rssi >= -50) return Signal::Excellent;
         if (rssi >= -70) return Signal::Good;
         if (rssi >= -80) return Signal::Fair;
         return Signal::Bad;
     }
 
-    bool WiFiConnection::isInAccessPointMode() const
-    {
-        // TODO
-        return false;
-    }
-
-    bool WiFiConnection::isInternetAccessible() const
-    {
-        // TODO
-        return false;
-    }
-
     void WiFiConnection::task()
     {
-        // TODO
+        while (true)
+        {
+            updateConnection();
+            m_internet.update();
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
     }
 
-    void WiFiConnection::beginConnection(const String &ssid, const String &pass, uint8_t tout)
+    void WiFiConnection::beginConnection()
     {
-        if (ssid.isEmpty())
+        if (m_connect.ssid.isEmpty())
         {
-            m_conTrying = false;
-            startAccessPoint();
+            // new network is not set, so do not 
+            // try to connect, just turn on the AP
+            WiFi.mode(WIFI_AP);
+            WiFi.softAP(NETWORK_ACCESS_POINT, "");
+            m_connect.trying = false;
+
+            log_i("start AP: %s (%s)", 
+                WiFi.softAPSSID().c_str(), 
+                WiFi.softAPIP().toString().c_str());
         }
         else
         {
-            m_conTrying  = true;
-            m_conStartTS = millis();
-            m_conTimeout = tout * 1000ul;
-            startStationAndAccessPoint(ssid.c_str(), pass.c_str());
+            log_i("try connect to: %s", m_connect.ssid.c_str());
+
+            // start connection attempt, turn on the 
+            // AP and try to  connect to a new network
+            WiFi.mode(WIFI_AP_STA);
+            WiFi.softAP(NETWORK_ACCESS_POINT, "");
+            WiFi.begin(m_connect.ssid, m_connect.pass);
+            m_connect.time = millis();
+            m_connect.trying = true;
+
+            log_i("start AP+STA: %s (%s)", 
+                WiFi.softAPSSID().c_str(), 
+                WiFi.softAPIP().toString().c_str());
         }
     }
 
     void WiFiConnection::updateConnection()
     {
-        if (m_conTrying) 
+        if (m_connect.trying) 
         {
-            if (isConnected()) 
+            if (WiFi.isConnected()) 
             {
-                m_conTrying = false;
-                stopAccessPoint();
+                // save the current connected network
+                // for future possible rollback
+                settings::data()[db::wifi_ssid] = m_connect.ssid;
+                settings::data()[db::wifi_pass] = m_connect.pass;
+                m_connect.trying = false;
+
+                log_i("connected to: %s (%s)",
+                    WiFi.SSID().c_str(),
+                    WiFi.localIP().toString().c_str());
+
+                // turn off the AP mode
+                if (WiFi.getMode() == WIFI_AP_STA) 
+                {
+                    WiFi.softAPdisconnect(true);
+                    WiFi.mode(WIFI_STA);
+
+                    log_i("stop AP");
+                }
             } 
-            else if (millis() - m_conStartTS >= m_conTimeout) 
+            else if (millis() - m_connect.time >= m_connect.tout) 
             {
-                m_conTrying = false;
-                startAccessPoint();
+                // trying to rollback to a previously
+                // connected network
+                String ssid = settings::data()[db::wifi_ssid];
+                String pass = settings::data()[db::wifi_pass];
+
+                if (ssid.isEmpty())
+                    log_i("rollback impossible");
+                else
+                    log_i("try rollback to: %s", ssid.c_str());
+
+                // disable rollback repeat and connect
+                settings::data()[db::wifi_ssid] = "";
+                settings::data()[db::wifi_pass] = "";
+                connect(ssid, pass);
             }
         }
-    }
-
-    bool WiFiConnection::isConnected() const
-    {
-        return (WiFi.status() == WL_CONNECTED);
-    }
-
-    void WiFiConnection::startStationAndAccessPoint(const char *ssid, const char *pass)
-    {
-        WiFi.mode(WIFI_AP_STA);
-        WiFi.softAP(NETWORK_ACCESS_POINT, "");
-        WiFi.begin(ssid, pass);
-    }
-
-    void WiFiConnection::startAccessPoint()
-    {
-        WiFi.disconnect();
-        WiFi.mode(WIFI_AP);
-        WiFi.softAP(NETWORK_ACCESS_POINT, "");
-    }
-
-    void WiFiConnection::stopAccessPoint()
-    {
-        WiFi.softAPdisconnect(true);
     }
 
     WiFiConnection wifiConnection;
