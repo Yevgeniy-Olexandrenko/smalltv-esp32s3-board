@@ -25,11 +25,13 @@ namespace service
 
     void DateAndTime::settingsBuild(sets::Builder &b)
     {
+        b.beginGuest();
         sets::Group g(b, "Date & time");
         if (b.Input(ntp::gmt, "Time zone")) NTP.setGMT(b.build.value);
         if (b.Input(ntp::host, "NTP server")) NTP.setHost(b.build.value);
         b.LED("synced"_h, "Synced", NTP.synced());
         b.Label("local_time"_h, "Local time", NTP.toString());
+        b.endGuest();
     }
 
     void DateAndTime::settingsUpdate(sets::Updater &u)

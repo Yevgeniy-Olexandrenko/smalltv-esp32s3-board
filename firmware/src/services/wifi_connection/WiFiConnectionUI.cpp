@@ -12,6 +12,7 @@ namespace service::wifi_connection
 
     void WiFiConnectionUI::settingsBuild(sets::Builder &b)
     {
+        b.beginGuest();
         sets::Group g(b, "📶 WiFi");
         if (isScanning())         
             b.Label("Scanning...");
@@ -78,12 +79,7 @@ namespace service::wifi_connection
                 }
             }
         }
-
-
-
-
-
-        
+        b.endGuest();
     }
 
     void WiFiConnectionUI::settingsUpdate(sets::Updater &u)

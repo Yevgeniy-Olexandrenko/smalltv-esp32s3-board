@@ -55,18 +55,22 @@ namespace service
     {
         if (m_connectedToPC)
         {
+            b.beginGuest();
             b.Paragraph("Connected to PC", 
                 "This device is connected to your computer as an external "
                 "storage device. Please use \"Safely Remove\" or \"Eject\" "
                 "operation to stop working with it!");
+            b.endGuest();
             return;
         }
 
+        b.beginGuest();
         if (b.Tabs("🛠 SETS;💜 MAIN;🚀 APPS", &m_currentTab))
         {
             b.reload();
             return;
         }
+        b.endGuest();
 
         switch(m_currentTab)
         {
@@ -75,6 +79,7 @@ namespace service
         case 2: m_apps.settingsBuild(b); break;
         }
 
+        b.beginGuest();
         if (b.Confirm("reboot_confirm"_h, "This operation requires a device reboot!"))
         {
             if (m_rebootConfirmCB)
@@ -87,6 +92,7 @@ namespace service
                 settings::sets().reload();
             }
         }
+        b.endGuest();
     }
 
     void SettingsWebApp::settingsUpdate(sets::Updater &u)

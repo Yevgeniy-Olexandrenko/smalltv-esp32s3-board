@@ -12,6 +12,13 @@ namespace service::settings_webapp
         void settingsUpdate(sets::Updater& u) override;
 
     private:
+        void briefInfoBuild(sets::Builder& b);
+        void briefInfoUpdate(sets::Updater& u);
+        void audioPlayerBuild(sets::Builder& b);
+        void audioPlayerUpdate(sets::Updater& u);
+        void hardwareInfoBuild(sets::Builder& b);
+        void hardwareInfoUpdate(sets::Updater& u);
+
         String getHTML() const;
         String getInet() const;
         String getUptime() const;

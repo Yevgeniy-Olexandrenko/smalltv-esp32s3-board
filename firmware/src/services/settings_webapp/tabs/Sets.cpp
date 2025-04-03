@@ -73,6 +73,7 @@ namespace service::settings_webapp
 
     void Sets::storageSettingsBuild(sets::Builder &b)
     {
+        b.beginGuest();
         if (m_typeRollback < 0)
             m_typeRollback = settings::data()[db::storage_type];
 
@@ -106,6 +107,7 @@ namespace service::settings_webapp
                 #endif
             }
         }
+        b.endGuest();
     }
 
     void Sets::storageSettingsUpdate(sets::Updater &u)
