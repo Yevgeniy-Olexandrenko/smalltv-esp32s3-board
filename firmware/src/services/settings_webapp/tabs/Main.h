@@ -2,7 +2,7 @@
 
 #include "shared/settings/Settings.h"
 
-namespace service_settings_webapp_impl
+namespace service::settings_webapp
 {
     class Main : public settings::Provider
     {

@@ -21,7 +21,7 @@ R"raw(
 </html>
 )raw";
 
-namespace service_settings_webapp_impl
+namespace service::settings_webapp
 {
     void Main::settingsBuild(sets::Builder &b)
     {

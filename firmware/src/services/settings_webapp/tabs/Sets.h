@@ -3,7 +3,7 @@
 #include "shared/settings/Settings.h"
 #include "drivers/storage/Storage.h"
 
-namespace service_settings_webapp_impl
+namespace service::settings_webapp
 {
     class Sets : public settings::Provider
     {

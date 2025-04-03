@@ -19,17 +19,17 @@ namespace service
 
     void SettingsWebApp::task()
     {
-        m_tabSets.begin();
-        m_tabMain.begin();
-        m_tabApps.begin();
+        m_sets.begin();
+        m_main.begin();
+        m_apps.begin();
 
         settings::sets().onBuild([this](sets::Builder& b) { this->settingsBuild(b); });
         settings::sets().onUpdate([this](sets::Updater& u) { this->settingsUpdate(u); });
         settings::sets().onFocusChange([this]() { this->onFocusChange(settings::sets().focused()); });
         settings::sets().rtc.onSync([](uint32_t unix) { NTP.sync(unix); });
 
-        settings::sets().config.theme = sets().getThemeColor();
         settings::sets().config.updateTout = 1000;
+        settings::sets().config.theme = m_sets.getThemeColor();
         settings::sets().setProjectInfo("home page", WEBAPP_PROJECT_HOME);
         settings::sets().setPass("0000");
 
@@ -53,7 +53,6 @@ namespace service
 
     void SettingsWebApp::settingsBuild(sets::Builder &b)
     {
-        sets::GuestAccess g(b);
         if (m_connectedToPC)
         {
             b.Paragraph("Connected to PC", 
@@ -71,9 +70,9 @@ namespace service
 
         switch(m_currentTab)
         {
-        case 0: m_tabSets.settingsBuild(b); break;
-        case 1: m_tabMain.settingsBuild(b); break;
-        case 2: m_tabApps.settingsBuild(b); break;
+        case 0: m_sets.settingsBuild(b); break;
+        case 1: m_main.settingsBuild(b); break;
+        case 2: m_apps.settingsBuild(b); break;
         }
 
         if (b.Confirm("reboot_confirm"_h, "This operation requires a device reboot!"))
@@ -101,9 +100,9 @@ namespace service
 
         switch(m_currentTab)
         {
-        case 0: m_tabSets.settingsUpdate(u); break;
-        case 1: m_tabMain.settingsUpdate(u); break;
-        case 2: m_tabApps.settingsUpdate(u); break;
+        case 0: m_sets.settingsUpdate(u); break;
+        case 1: m_main.settingsUpdate(u); break;
+        case 2: m_apps.settingsUpdate(u); break;
         }
 
         if (m_rebootRequest)

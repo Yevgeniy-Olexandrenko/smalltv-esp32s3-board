@@ -8,7 +8,7 @@
 
 namespace service
 {
-    using namespace service_settings_webapp_impl;
+    using namespace service::settings_webapp;
     using RebootCorfirmCB = std::function<void(bool)>;
 
     class SettingsWebApp 
@@ -18,9 +18,9 @@ namespace service
         void begin();
         void requestReboot(RebootCorfirmCB cb);
 
-        const Sets& sets() const { return m_tabSets; }
-        const Main& main() const { return m_tabMain; }
-        const Apps& apps() const { return m_tabApps; }
+        const Sets& sets() const { return m_sets; }
+        const Main& main() const { return m_main; }
+        const Apps& apps() const { return m_apps; }
 
     private:
         void task() override;
@@ -36,9 +36,9 @@ namespace service
         bool m_rebootPending;
         RebootCorfirmCB m_rebootConfirmCB;
 
-        Sets m_tabSets;
-        Main m_tabMain;
-        Apps m_tabApps;
+        Sets m_sets;
+        Main m_main;
+        Apps m_apps;
     };
 
     extern SettingsWebApp settingsWebApp;

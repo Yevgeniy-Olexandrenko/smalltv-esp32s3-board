@@ -3,7 +3,7 @@
 #include "services/Services.h"
 #include "settings.h"
 
-namespace service_settings_webapp_impl
+namespace service::settings_webapp
 {
     const char casingColors[] = "White;Black;Yellow;Orange;Pink;Silver;Gold";
     const char themeColors [] = "Aqua;Blue;Gray;Green;Mint;Orange;Pink;Red;Violet";
