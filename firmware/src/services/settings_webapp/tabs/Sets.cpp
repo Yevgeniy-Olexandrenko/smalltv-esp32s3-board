@@ -5,8 +5,30 @@
 
 namespace service_settings_webapp_impl
 {
+    const char casingColors[] = "White;Black;Yellow;Orange;Pink;Silver;Gold";
+    const char themeColors [] = "Aqua;Blue;Gray;Green;Mint;Orange;Pink;Red;Violet";
+    const sets::Colors themeColorsRGB[] = 
+    { 
+        sets::Colors::Aqua,
+        sets::Colors::Blue,
+        sets::Colors::Gray,
+        sets::Colors::Green,
+        sets::Colors::Mint,
+        sets::Colors::Orange,
+        sets::Colors::Pink,
+        sets::Colors::Red,
+        sets::Colors::Violet
+    };
+
+    void Sets::begin()
+    {
+        settings::data().init(db::color_casing, 0);
+        settings::data().init(db::color_theme,  0);
+    }
+
     void Sets::settingsBuild(sets::Builder &b)
     {
+        colorsSettingsBuild(b);
         service::wifiConnection.getUI().settingsBuild(b);
         storageSettingsBuild(b);
         service::geoLocation.settingsBuild(b);
@@ -23,7 +45,31 @@ namespace service_settings_webapp_impl
         service::weatherForecast.settingsUpdate(u);
     }
 
+    String Sets::getCasingColor() const
+    {
+        int index = settings::data()[db::color_casing];
+        return Text(casingColors).getSub(index, ';').toString();
+    }
+
+    sets::Colors Sets::getThemeColor() const
+    {
+        int index = settings::data()[db::color_theme];
+        return themeColorsRGB[index];
+    }
+
     ////////////////////////////////////////////////////////////////////////////
+
+    void Sets::colorsSettingsBuild(sets::Builder &b)
+    {
+        sets::Row r(b, "", sets::DivType::Line);
+        b.Select(db::color_casing, "Casing", casingColors);
+        if (b.Select(db::color_theme, "Theme", themeColors))
+        {
+            auto color = getThemeColor();
+            settings::sets().config.theme = color;
+            b.reload();
+        }
+    }
 
     void Sets::storageSettingsBuild(sets::Builder &b)
     {

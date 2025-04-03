@@ -9,6 +9,8 @@ DB_KEYS(db,
     lcd_brightness_n,
 
     // services
+    color_casing,
+    color_theme,
     wifi_ssid,
     wifi_pass,
     wifi_tout,

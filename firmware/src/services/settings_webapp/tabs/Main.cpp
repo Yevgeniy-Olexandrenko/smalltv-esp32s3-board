@@ -11,7 +11,7 @@ R"raw(
 <html>
 <body>
 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-<img src="https://github.com/Yevgeniy-Olexandrenko/smalltv-esp32s3-board/blob/main/datasheet/images/smalltv_yellow.png?raw=true" style="height:100px; width:auto;">
+<img src="https://github.com/Yevgeniy-Olexandrenko/smalltv-esp32s3-board/blob/main/datasheet/images/smalltv_%s.png?raw=true" style="height:100px; width:auto;">
 <div style="text-align:right; padding-right: 10px;">
 <div style="font-size:50px;">%s</div>
 <div style="font-size:20px;">%s</div>
@@ -107,8 +107,14 @@ namespace service_settings_webapp_impl
 
     String Main::getHTML() const
     {
-        char buffer[sizeof(custom_html) + 20];
-        sprintf(buffer, custom_html, NTP.timeToString().c_str(), NTP.dateToString().c_str());
+        String casingColor = service::settingsWebApp.sets().getCasingColor();
+        casingColor.toLowerCase();
+
+        char buffer[sizeof(custom_html) + 32];
+        sprintf(buffer, custom_html,
+            casingColor.c_str(),
+            NTP.timeToString().c_str(),
+            NTP.dateToString().c_str());
         return String(buffer);
     }
 
