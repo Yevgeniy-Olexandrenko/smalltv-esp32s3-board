@@ -152,7 +152,10 @@ namespace service::settings_webapp
         auto u = millis() / (60 * 1000);
         auto m = uint8_t(u % 60); u /= 60;
         auto h = uint8_t(u % 24); u /= 24;
-        return String(u) + "d " + String(h) + "h " + String(m) + "m";
+
+        char buffer[10];
+        sprintf(buffer, "%d:%02d:%02d", u, h, m);
+        return String(buffer);
     }
 
     String Main::getESPModuleInfo() const
