@@ -25,6 +25,7 @@ namespace service
         m_connect.tout = tout * 1000ul;
         m_connect.ssid = ssid;
         m_connect.pass = pass;
+        m_connect.ssid.trim();
         beginConnection();
     }
 
@@ -88,6 +89,7 @@ namespace service
                 // for future possible rollback
                 settings::data()[db::wifi_ssid] = m_connect.ssid;
                 settings::data()[db::wifi_pass] = m_connect.pass;
+                settings::data().update();
                 m_connect.trying = false;
 
                 log_i("connected to: %s (%s)",
@@ -118,6 +120,7 @@ namespace service
                 // disable rollback repeat and connect
                 settings::data()[db::wifi_ssid] = "";
                 settings::data()[db::wifi_pass] = "";
+                settings::data().update();
                 connect(ssid, pass);
             }
         }

@@ -6,52 +6,59 @@ namespace service::wifi_connection
 {
     void WiFiConnectionUI::begin()
     {
-        m_ssid = settings::data()[db::wifi_ssid];
-        m_pass = settings::data()[db::wifi_pass];
+        m_gotoManualReq = true;
+        m_scanRequested = false;
+        m_connRequested = false;
     }
 
     void WiFiConnectionUI::settingsBuild(sets::Builder &b)
     {
         b.beginGuest();
         sets::Group g(b, "📶 WiFi");
-        if (isScanning())         
+
+        if (m_gotoManualReq)
+        {
+            m_gotoManualReq = false;
+            m_ssid = settings::data()[db::wifi_ssid];
+            m_pass = settings::data()[db::wifi_pass];
+            WiFi.scanDelete();
+        }
+
+        if (m_scanRequested)     
             b.Label("Scanning...");
-        else if (isConnecting())
+        else if (m_connRequested)
             b.Label("Connecting...");
         else
         {
             if (isManualInput())
+            {
                 b.Input("SSID", &m_ssid);
+            }
             else
             {
                 String options;
                 std::vector<String> values;
-                fetchWiFiStationsOptions(options, values);
+                fetchAvailableAPOptions(options, values);
 
                 if (b.Select("SSID", options))
                 {
                     m_ssid = values[b.build.value];
                     m_pass = "";
+                    log_i("chosen ssid: %s", m_ssid);
                 }
             }
-            b.Pass ("Password", &m_pass);
+            if (isClosedNetwork())
+            {
+                b.Pass ("Password", &m_pass);
+            }
             b.Slider(db::wifi_tout, "Connection timeout", 10, 60, 5, " seconds");
             {
                 sets::Buttons buttons(b);
                 if (isManualInput())
                 {
                     if (b.Button("Scan"))
-                    {
-                        // TODO
-                        // m_state = State::ScanRequested;
-                        // m_ssid = settings::data()[wifi::ssid];
-                        // m_pass = settings::data()[wifi::pass];
-                        // b.reload();
-
-                        log_i("wifi start scanning");
-                        WiFi.scanNetworks(true, false, false);
-                        m_ssid = "";
-                        m_pass = "";
+                    {    
+                        m_scanRequested = true;
                         b.reload();
                     }
                 }
@@ -59,23 +66,14 @@ namespace service::wifi_connection
                 {
                     if (b.Button("Manual"))
                     {
-                        WiFi.scanDelete();
-                        m_ssid = settings::data()[db::wifi_ssid];
-                        m_pass = settings::data()[db::wifi_pass];
+                        m_gotoManualReq = true;
                         b.reload();
                     }
                 }
-                
                 if (b.Button("Connect")) 
                 {
-                    // TODO
-                    // m_ssid.trim();
-                    // m_state = State::ConnectRequested;
-                    // settings::data()[wifi::ssid] = m_ssid;
-                    // settings::data()[wifi::pass] = m_pass;
-                    // settings::data().update();
-                    // WiFi.scanDelete();
-                    // b.reload();
+                    m_connRequested = true;
+                    b.reload();
                 }
             }
         }
@@ -84,23 +82,32 @@ namespace service::wifi_connection
 
     void WiFiConnectionUI::settingsUpdate(sets::Updater &u)
     {
-        return;
-
-        if (isScanning() || isConnecting())
+        if (m_scanRequested)
         {
+            m_scanRequested = false;
+            WiFi.scanNetworks();
+
+            if (!isManualInput())
+            {
+                String options;
+                std::vector<String> values;
+                fetchAvailableAPOptions(options, values);
+
+                m_ssid = values[0];
+                m_pass = "";
+                log_i("chosen ssid: %s", m_ssid);
+            }
             settings::sets().reload();
         }
-    }
 
-    bool WiFiConnectionUI::isScanning() const
-    {
-        return (WiFi.scanComplete() == WIFI_SCAN_RUNNING);
-    }
+        if (m_connRequested)
+        {
+            m_connRequested = false;
+            wifiConnection.connect(m_ssid, m_pass);
 
-    bool WiFiConnectionUI::isConnecting() const
-    {
-        // TODO
-        return false;
+            m_gotoManualReq = true;
+            settings::sets().reload();
+        }
     }
 
     bool WiFiConnectionUI::isManualInput() const
@@ -109,11 +116,23 @@ namespace service::wifi_connection
         return (result == WIFI_SCAN_FAILED || result == 0);
     }
 
-    void WiFiConnectionUI::fetchWiFiStationsOptions(String &options, std::vector<String>& values)
+    bool WiFiConnectionUI::isClosedNetwork() const
     {
-        values.clear();
         const int16_t found = WiFi.scanComplete();
+        for (int i = 0; i < found; i++) 
+        {
+            const String ssid = WiFi.SSID(i);
+            if (!ssid.isEmpty() && ssid == m_ssid)
+            {
+                return (WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
+            }
+        }
+        return true;
+    }
 
+    void WiFiConnectionUI::fetchAvailableAPOptions(String &options, std::vector<String> &values)
+    {
+        const int16_t found = WiFi.scanComplete();
         for (int i = 0; i < found && values.size() < 10; i++) 
         {
             const String ssid = WiFi.SSID(i);
