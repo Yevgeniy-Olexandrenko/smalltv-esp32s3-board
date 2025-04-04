@@ -13,15 +13,15 @@ namespace service::wifi_connection
 
     private:
         bool isManualInput() const;
-        bool isClosedNetwork() const;
-        void fetchAvailableAPOptions(String& options, std::vector<String>& values);
+        bool isAuthClosedNetwork() const;
+        void fetchSSIDScanResultOptions(String& options);
+        void setSSIDFromScanResult(size_t index);
 
     private:
         String m_ssid;
         String m_pass;
-
-        bool m_gotoManualReq;
-        bool m_scanRequested;
-        bool m_connRequested;
+        bool m_reqScan;
+        bool m_reqConnect;
+        bool m_reqGoToManual;
     };
 }

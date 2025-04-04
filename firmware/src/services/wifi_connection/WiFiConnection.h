@@ -22,8 +22,8 @@ namespace service
         bool isInAccessPointMode() const { return !isConnectedToAP() && WiFi.getMode() == WIFI_MODE_AP; }
         bool isInternetAccessible() const { return m_internet.available(); }
     
-        int8_t getSignalRSSI() const { return WiFi.RSSI(); }
-        Signal getSignalQuality(int8_t rssi) const;
+        int8_t getRSSI() const { return WiFi.RSSI(); }
+        Signal getSignal(int8_t rssi) const;
 
         WiFiConnectionUI& getUI() { return m_ui; }
 

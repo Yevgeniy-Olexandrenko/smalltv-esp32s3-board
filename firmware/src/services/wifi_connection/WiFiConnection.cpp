@@ -29,7 +29,7 @@ namespace service
         beginConnection();
     }
 
-    WiFiConnection::Signal WiFiConnection::getSignalQuality(int8_t rssi) const
+    WiFiConnection::Signal WiFiConnection::getSignal(int8_t rssi) const
     {
         if (rssi >= -50) return Signal::Excellent;
         if (rssi >= -70) return Signal::Good;
@@ -43,7 +43,7 @@ namespace service
         {
             updateConnection();
             m_internet.update();
-            vTaskDelay(pdMS_TO_TICKS(100));
+            vTaskDelay(pdMS_TO_TICKS(300));
         }
     }
 

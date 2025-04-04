@@ -205,9 +205,9 @@ namespace service::settings_webapp
 
     String Main::getWiFiSignalInfo() const
     {
-        auto rssi = service::wifiConnection.getSignalRSSI();
+        auto rssi = service::wifiConnection.getRSSI();
         String info = String(rssi) + "dBm";
-        switch (service::wifiConnection.getSignalQuality(rssi))
+        switch (service::wifiConnection.getSignal(rssi))
         {
             case service::WiFiConnection::Signal::Excellent:
                 info += " Excellent " + led(Led::G);

@@ -6,9 +6,9 @@ namespace service::wifi_connection
 {
     void WiFiConnectionUI::begin()
     {
-        m_gotoManualReq = true;
-        m_scanRequested = false;
-        m_connRequested = false;
+        m_reqScan = false;
+        m_reqConnect = false;
+        m_reqGoToManual = true;
     }
 
     void WiFiConnectionUI::settingsBuild(sets::Builder &b)
@@ -16,17 +16,17 @@ namespace service::wifi_connection
         b.beginGuest();
         sets::Group g(b, "📶 WiFi");
 
-        if (m_gotoManualReq)
+        if (m_reqGoToManual)
         {
-            m_gotoManualReq = false;
+            m_reqGoToManual = false;
             m_ssid = settings::data()[db::wifi_ssid];
             m_pass = settings::data()[db::wifi_pass];
             WiFi.scanDelete();
         }
 
-        if (m_scanRequested)     
+        if (m_reqScan)     
             b.Label("Scanning...");
-        else if (m_connRequested)
+        else if (m_reqConnect)
             b.Label("Connecting...");
         else
         {
@@ -37,17 +37,13 @@ namespace service::wifi_connection
             else
             {
                 String options;
-                std::vector<String> values;
-                fetchAvailableAPOptions(options, values);
-
+                fetchSSIDScanResultOptions(options);
                 if (b.Select("SSID", options))
                 {
-                    m_ssid = values[b.build.value];
-                    m_pass = "";
-                    log_i("chosen ssid: %s", m_ssid);
+                    setSSIDFromScanResult(b.build.value);
                 }
             }
-            if (isClosedNetwork())
+            if (isAuthClosedNetwork())
             {
                 b.Pass ("Password", &m_pass);
             }
@@ -58,7 +54,7 @@ namespace service::wifi_connection
                 {
                     if (b.Button("Scan"))
                     {    
-                        m_scanRequested = true;
+                        m_reqScan = true;
                         b.reload();
                     }
                 }
@@ -66,13 +62,13 @@ namespace service::wifi_connection
                 {
                     if (b.Button("Manual"))
                     {
-                        m_gotoManualReq = true;
+                        m_reqGoToManual = true;
                         b.reload();
                     }
                 }
                 if (b.Button("Connect")) 
                 {
-                    m_connRequested = true;
+                    m_reqConnect = true;
                     b.reload();
                 }
             }
@@ -82,30 +78,19 @@ namespace service::wifi_connection
 
     void WiFiConnectionUI::settingsUpdate(sets::Updater &u)
     {
-        if (m_scanRequested)
+        if (m_reqScan)
         {
-            m_scanRequested = false;
+            m_reqScan = false;
             WiFi.scanNetworks();
-
-            if (!isManualInput())
-            {
-                String options;
-                std::vector<String> values;
-                fetchAvailableAPOptions(options, values);
-
-                m_ssid = values[0];
-                m_pass = "";
-                log_i("chosen ssid: %s", m_ssid);
-            }
+            setSSIDFromScanResult(0);
             settings::sets().reload();
         }
 
-        if (m_connRequested)
+        if (m_reqConnect)
         {
-            m_connRequested = false;
+            m_reqConnect = false;
             wifiConnection.connect(m_ssid, m_pass);
-
-            m_gotoManualReq = true;
+            m_reqGoToManual = true;
             settings::sets().reload();
         }
     }
@@ -116,10 +101,10 @@ namespace service::wifi_connection
         return (result == WIFI_SCAN_FAILED || result == 0);
     }
 
-    bool WiFiConnectionUI::isClosedNetwork() const
+    bool WiFiConnectionUI::isAuthClosedNetwork() const
     {
         const int16_t found = WiFi.scanComplete();
-        for (int i = 0; i < found; i++) 
+        for (int i = 0; i < found; ++i) 
         {
             const String ssid = WiFi.SSID(i);
             if (!ssid.isEmpty() && ssid == m_ssid)
@@ -130,16 +115,16 @@ namespace service::wifi_connection
         return true;
     }
 
-    void WiFiConnectionUI::fetchAvailableAPOptions(String &options, std::vector<String> &values)
+    void WiFiConnectionUI::fetchSSIDScanResultOptions(String &options)
     {
         const int16_t found = WiFi.scanComplete();
-        for (int i = 0; i < found && values.size() < 10; i++) 
+        for (int i = 0, count = 0; i < found && count < 10; ++i) 
         {
             const String ssid = WiFi.SSID(i);
             if (ssid.isEmpty()) continue;
 
             auto open = (WiFi.encryptionType(i) == WIFI_AUTH_OPEN);
-            auto quality = int(service::wifiConnection.getSignalQuality(WiFi.RSSI(i)));
+            auto quality = int(service::wifiConnection.getSignal(WiFi.RSSI(i)));
 
             switch (quality)
             {
@@ -149,7 +134,26 @@ namespace service::wifi_connection
                 case 3: options += led(Led::R) + " "; break;
             }
             options += (open ? "🔓 " : "🔐 ") + ssid + ";";
-            values.push_back(ssid);
+            count++;
+        }
+    }
+
+    void WiFiConnectionUI::setSSIDFromScanResult(size_t index)
+    {
+        std::vector<String> SSIDs;
+
+        const int16_t found = WiFi.scanComplete();
+        for (int i = 0; i < found && SSIDs.size() < 10; ++i) 
+        {
+            const String ssid = WiFi.SSID(i);
+            if (ssid.isEmpty()) continue;
+            SSIDs.push_back(ssid);
+        }
+        if (index < SSIDs.size())
+        {
+            m_ssid = SSIDs[index];
+            m_pass = "";
+            log_i("chosen ssid: %s", m_ssid);
         }
     }
 }
