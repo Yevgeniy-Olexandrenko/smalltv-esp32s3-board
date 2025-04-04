@@ -9,7 +9,7 @@ namespace service
     using namespace wifi_connection;
 
     class WiFiConnection
-        : public task::Task<1024 * 8, task::core::System, task::priority::Background>
+        : public task::Task<4096, task::core::System, task::priority::Background>
     {
     public:
         enum class Signal { Excellent, Good, Fair, Bad };

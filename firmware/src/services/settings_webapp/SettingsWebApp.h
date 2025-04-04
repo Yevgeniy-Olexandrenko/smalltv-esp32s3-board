@@ -12,7 +12,7 @@ namespace service
     using RebootCorfirmCB = std::function<void(bool)>;
 
     class SettingsWebApp 
-        : public task::Task<8192 * 2, task::core::Application, task::priority::Background>
+        : public task::Task<8192, task::core::Application, task::priority::Background>
     {
     public:
         void begin();
