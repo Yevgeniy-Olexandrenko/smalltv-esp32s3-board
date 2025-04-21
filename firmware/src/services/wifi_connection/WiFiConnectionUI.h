@@ -6,6 +6,8 @@ namespace service::wifi_connection
 {
     class WiFiConnectionUI : public settings::Provider
     {
+        enum class Request { None, Scan, Connect, GoToManual };
+
     public:
         void begin();
         void settingsBuild(sets::Builder& b) override;
@@ -18,10 +20,7 @@ namespace service::wifi_connection
         void setSSIDFromScanResult(size_t index);
 
     private:
-        String m_ssid;
-        String m_pass;
-        bool m_reqScan;
-        bool m_reqConnect;
-        bool m_reqGoToManual;
+        String m_ssid, m_pass;
+        Request m_request{ Request::None };
     };
 }
