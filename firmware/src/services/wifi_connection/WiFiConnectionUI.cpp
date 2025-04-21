@@ -41,11 +41,11 @@ namespace service::wifi_connection
                 }
                 else
                 {
-                    String options;
-                    fetchSSIDScanResultOptions(options);
-                    if (b.Select("SSID", options))
+                    String SSIDs;
+                    fillSSIDsOptions(SSIDs);
+                    if (b.Select("SSID", SSIDs))
                     {
-                        setSSIDFromScanResult(b.build.value);
+                        chooseSSIDByIndex(b.build.value);
                     }
                 }
                 if (isAuthClosedNetwork())
@@ -89,7 +89,7 @@ namespace service::wifi_connection
         {
             case Request::Scan:
                 WiFi.scanNetworks();
-                setSSIDFromScanResult(0);
+                chooseSSIDByIndex(0);
                 m_request = Request::None;
                 settings::sets().reload();
                 break;
@@ -122,7 +122,7 @@ namespace service::wifi_connection
         return true;
     }
 
-    void WiFiConnectionUI::fetchSSIDScanResultOptions(String& options)
+    void WiFiConnectionUI::fillSSIDsOptions(String& options)
     {
         const auto found = WiFi.scanComplete();
         for (int i = 0, count = 0; i < found && count < MAX_SSID_COUNT; ++i) 
@@ -145,7 +145,7 @@ namespace service::wifi_connection
         }
     }
 
-    void WiFiConnectionUI::setSSIDFromScanResult(size_t index)
+    void WiFiConnectionUI::chooseSSIDByIndex(size_t index)
     {
         std::vector<String> SSIDs;
         const auto found = WiFi.scanComplete();
