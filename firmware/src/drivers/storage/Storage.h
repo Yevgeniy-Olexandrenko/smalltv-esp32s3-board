@@ -1,5 +1,6 @@
 #pragma once
 
+#include <USB.h>
 #include <USBMSC.h>
 #include "FatFS.h"
 
@@ -7,6 +8,8 @@ namespace driver
 {
     class Storage
     {
+        using FSPtr = std::unique_ptr<FatFS>;
+
     public:
         enum class Type { None, Flash, SDCard, Auto };
 
@@ -23,7 +26,7 @@ namespace driver
 
         void startMSC();
         bool isMSCRunning() const { return m_runMSC; }
-        bool isUSBMounted() const;
+        bool isUSBMounted() const { return bool(USB); }
 
     private:
         Type beginFlash();
@@ -35,8 +38,7 @@ namespace driver
     
     private:
         Type m_type;
-        FatFS m_invFS;
-        FatFS* m_fatFS;
+        FSPtr m_fsPtr;
         USBMSC m_usbMSC;
         bool m_runMSC;
     };

@@ -8,21 +8,26 @@ namespace drivers
 
     void begin()
     {
-        // power source
+        // init power source
         #ifndef NO_VINSENSE
         powerSource.begin();
         #endif
 
-        // storage
-        #ifndef NO_SDCARD
-        settings::data().init(db::storage_type, int(Storage::Type::Auto));
+        // init storage
+        #if !defined(NO_SDCARD) && !defined(NO_FLASH)
+        auto storageType = Storage::Type::Auto;
+        #elif !defined(NO_SDCARD) && defined(NO_FLASH)
+        auto storageType = Storage::Type::SDCard;
+        #elif defined(NO_SDCARD) && !defined(NO_FLASH)
+        auto storageType = Storage::Type::Flash;
         #else
-        settings::data().init(db::storage_type, int(Storage::Type::Flash));
+        auto storageType = Storage::Type::None;
         #endif
-        auto storageType = Storage::Type(int(settings::data()[db::storage_type]));
+        settings::data().init(db::storage_type, int(storageType));
+        storageType = Storage::Type(int(settings::data()[db::storage_type]));
         storage.begin(storageType);
 
-        // display
+        // init display
         #ifndef NO_VIDEO
         settings::data().init(db::lcd_brightness, 50);
         auto brightness = float(settings::data()[db::lcd_brightness]) * 0.01f;

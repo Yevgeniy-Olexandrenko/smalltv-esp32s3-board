@@ -1,4 +1,3 @@
-#include <USB.h>
 #include "Flash.h"
 #include "SDCard.h"
 #include "Storage.h"
@@ -8,19 +7,14 @@ namespace driver
 {
     Storage::Storage()
         : m_type(Type::None)
-        , m_fatFS(nullptr)
         , m_runMSC(false)
-    {
-    }
+    {}
 
-    Storage::~Storage()
-    {
-        end();
-    }
+    Storage::~Storage() { end(); }
 
     void Storage::begin(Type type)
     {
-        if (!m_runMSC && !m_fatFS)
+        if (!m_runMSC && !m_fsPtr)
         {
             switch (type)
             {
@@ -43,28 +37,25 @@ namespace driver
 
     void Storage::end()
     {
-        if (!m_runMSC && m_fatFS)
-        {
-            delete m_fatFS;
-            m_fatFS = nullptr;
-        }   
+        if (!m_runMSC && m_fsPtr) m_fsPtr.reset();
     }
 
     Storage::Type Storage::getType() const
     {
-        if (!m_runMSC && m_fatFS) return m_type;
+        if (!m_runMSC && m_fsPtr) return m_type;
         return Type::None;
     }
 
     FatFS& Storage::getFS() const
     {
-        if (!m_runMSC && m_fatFS) return *m_fatFS;
-        return const_cast<FatFS&>(m_invFS);
+        if (!m_runMSC && m_fsPtr) return *m_fsPtr;
+        static FatFS s_invFS;
+        return s_invFS;
     }
 
     void Storage::startMSC()
     {
-        if (!m_runMSC && m_fatFS)
+        if (!m_runMSC && m_fsPtr)
         {
             m_usbMSC.vendorID(STORAGE_MSC_VENDORID);
             m_usbMSC.productID(STORAGE_MSC_PRODUCTID);
@@ -75,16 +66,11 @@ namespace driver
             m_usbMSC.onRead(&mscOnReadCb);
             m_usbMSC.onWrite(&mscOnWriteCb);
 
-            auto sectorSize = m_fatFS->sectorSize();
-            auto sectorCount = m_fatFS->sectorCount();
+            auto sectorSize = m_fsPtr->sectorSize();
+            auto sectorCount = m_fsPtr->sectorCount();
             m_runMSC = m_usbMSC.begin(sectorCount, sectorSize);
             USB.begin();
         }
-    }
-
-    bool Storage::isUSBMounted() const
-    {
-        return bool(USB);
     }
 
     Storage::Type Storage::beginFlash()
@@ -93,7 +79,7 @@ namespace driver
         Flash* flash = new Flash();
         if (flash->begin(Flash::DEFAULT_MOUNT_POINT))
         {
-            m_fatFS = flash;
+            m_fsPtr.reset(flash);
             return Type::Flash;
         }
         delete flash;
@@ -116,7 +102,7 @@ namespace driver
             PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0, PIN_SD_D1, PIN_SD_D2, PIN_SD_D3))
         #endif
         {
-            m_fatFS = sdcard;
+            m_fsPtr.reset(sdcard);
             return Type::SDCard;
         }
         delete sdcard;
@@ -137,14 +123,14 @@ namespace driver
 
     int32_t Storage::mscOnReadCb(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
     {
-        const uint32_t sectorCount = bufsize / storage.m_fatFS->sectorSize();
-        return storage.m_fatFS->readSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0;
+        const uint32_t sectorCount = bufsize / storage.m_fsPtr->sectorSize();
+        return storage.m_fsPtr->readSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0;
     }
 
     int32_t Storage::mscOnWriteCb(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize)
     {
-        const uint32_t sectorCount = bufsize / storage.m_fatFS->sectorSize();
-        return storage.m_fatFS->writeSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0;
+        const uint32_t sectorCount = bufsize / storage.m_fsPtr->sectorSize();
+        return storage.m_fsPtr->writeSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0;
     }
 
     Storage storage;
