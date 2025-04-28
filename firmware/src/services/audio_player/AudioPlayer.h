@@ -5,6 +5,7 @@
 #include <AudioTools/AudioLibs/AudioRealFFT.h>
 #include "shared/tasks/Task.h"
 #include "shared/tasks/Mutex.h"
+#include "shared/audio/FFTHandler.h"
 #include "AudioContext.h"
 #include "AudioPlayerUI.h"
 
@@ -35,6 +36,7 @@ namespace service
 
         audio_player::AudioPlayerUI& getUI() { return m_ui; }
         audio_player::AudioContext*  getContext() { return m_context.get(); }
+        void setFFTHandler(audio::FFTHandler* fftHandler);
 
     private:
         void task() override;
@@ -51,6 +53,7 @@ namespace service
         audio_tools::I2SStream m_i2sOut;
 
         // multi task access
+        audio::FFTHandler* m_fftHandler;
         audio_tools::AudioPlayer m_player;
         QueueHandle_t m_cmdQueue;
         task::Mutex m_mutex;

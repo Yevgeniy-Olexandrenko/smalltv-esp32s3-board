@@ -17,10 +17,10 @@ namespace service
     }
 
     AudioPlayer::AudioPlayer()
-        : m_cmdQueue(nullptr)
+        : m_fftHandler(nullptr)
+        , m_cmdQueue(nullptr)
         , m_volume(0.f)
-    {
-    }
+    {}
 
     void AudioPlayer::begin()
     {
@@ -46,7 +46,7 @@ namespace service
             m_fftOut.begin(fftCfg);
 
             // configure MultiOutput
-            // m_output.add(m_fftOut);
+            m_output.add(m_fftOut);
             m_output.add(m_i2sOut);
         }
     }
@@ -144,6 +144,13 @@ namespace service
         return (Task::isAlive() && m_player.isActive());
     }
 
+    void AudioPlayer::setFFTHandler(audio::FFTHandler* fftHandler)
+    {
+        task::LockGuard lock(m_mutex);
+        if (fftHandler) fftHandler->begin(m_fftOut);
+        m_fftHandler = fftHandler;
+    }
+
     void AudioPlayer::task()
     {
         m_context->begin();
@@ -191,9 +198,10 @@ namespace service
         }
     }
 
-    void AudioPlayer::fftCallback(audio_tools::AudioFFTBase &fft)
+    void AudioPlayer::fftCallback(audio_tools::AudioFFTBase& fft)
     {
-        // TODO
+        task::LockGuard lock(m_mutex);
+        if (m_fftHandler) m_fftHandler->update(fft);
     }
 
     void AudioPlayer::metadataCallback(audio_tools::MetaDataType type, const String& str)
