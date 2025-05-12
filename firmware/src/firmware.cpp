@@ -16,10 +16,10 @@ static bool s_buttonState = false;
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef NO_VIDEO
-#if 0
+#if 1
 #include "shared/image/Spectrum.h"
 TFT_eSprite sprite(&driver::display);
-image::Spectrum spectrum(32, 80, 16000);
+image::Spectrum spectrum(30, 80, 16000);
 #else
 #include "shared/image/QRCode.h"
 TFT_eSprite sprite(&driver::display);
@@ -27,6 +27,7 @@ const int ver = 1;
 const int scale = 5;
 image::QRCode qrcode(ver);
 #endif
+unsigned long lastDraw = 0;
 #endif
 
 void setup() 
@@ -58,13 +59,17 @@ void setup()
     driver::display.setTextColor(TFT_YELLOW);
     driver::display.setTextSize(1);
     driver::display.print("Hello World!");
+#if 1
+    sprite.createSprite(240, 120);
+    service::audioPlayer.setFFTHandler(&spectrum);
+#endif
 #endif    
 
 #ifndef NO_AUDIO
 #if 0
     // start the audio player
-    String format = "mp3", filelist = "Juno Dreams/bad";
-    service::audioPlayer.getUI().playStorage(format, filelist);
+    // String format = "mp3", filelist = "Juno Dreams/bad";
+    // service::audioPlayer.getUI().playStorage(format, filelist);
 #endif
 #endif
 }
@@ -93,6 +98,16 @@ void loop()
     // }
 
 #ifndef NO_VIDEO
+#if 1
+    if ((millis() - lastDraw) > 30)
+    {
+        spectrum.renderOn(sprite, 1);
+        sprite.pushSprite(0, 100);
+        lastDraw = millis();
+    }
+    
+#else
+
     if (NTP.synced() && NTP.newSecond())
     {
         qrcode.create(NTP.timeToString().c_str());
@@ -110,5 +125,6 @@ void loop()
         qrcode.renderOn(driver::display, scale, offsetX, offsetY);
     #endif
     }
+#endif
 #endif
 }

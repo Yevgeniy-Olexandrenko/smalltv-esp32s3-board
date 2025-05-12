@@ -29,9 +29,11 @@ namespace audio
 
             for (uint8_t i = 0, last = m_numBins - 1; i <= last; ++i)
             {
-                m_bins[i].i = parabolicMap(0, last, minBinIndex, maxBinIndex, i);
-                m_bins[i].f = fft.frequency(m_bins[i].i);
-                m_bins[i].m = 0.f;
+                m_bins[i].idx = parabolicMap(0, last, minBinIndex, maxBinIndex, i);
+                m_bins[i].frq = fft.frequency(m_bins[i].idx);
+                m_bins[i].mag = 0.f;
+
+                log_i("%d: %d - %d", i, m_bins[i].idx, m_bins[i].frq);
             }
         }
     }
@@ -40,31 +42,41 @@ namespace audio
     {
         for (uint8_t b = 0, last = m_numBins - 1; b <= last; ++b)
         {
-            float magnitude = fft.magnitude(m_bins[b].i);
+            if (b == 0)
+            {
+                static float mag = 0;
+                if (fft.magnitude(m_bins[b].idx) > mag)
+                {
+                    mag = fft.magnitude(m_bins[b].idx);
+                    log_i("%f", mag);
+                }
+            }
+
+            float magnitude = fft.magnitude(m_bins[b].idx);
 
             uint8_t binsBetween;
             if (b > 0 && b < last)
             {
-                binsBetween = m_bins[b].i - m_bins[b - 1].i;
+                binsBetween = m_bins[b].idx - m_bins[b - 1].idx;
                 for (uint8_t i = 0; i < binsBetween; ++i)
                 {
                     auto scale = float(i) / float(binsBetween);
-                    auto index = m_bins[b].i - binsBetween + i;
+                    auto index = m_bins[b].idx - binsBetween + i;
                     magnitude += scale * fft.magnitude(index);
                 }
 
-                binsBetween = m_bins[b + 1].i - m_bins[b].i;
+                binsBetween = m_bins[b + 1].idx - m_bins[b].idx;
                 for (uint8_t i = 0; i < binsBetween; ++i)
                 {
                     auto scale = float(i) / float(binsBetween);
-                    auto index = m_bins[b].i + binsBetween - i;
+                    auto index = m_bins[b].idx + binsBetween - i;
                     magnitude += scale * fft.magnitude(index);
                 }
             }
 
+            //
 
-            m_bins[b].m = 0;
+            m_bins[b].mag = constrain(0.000001f * magnitude, 0.f, 1.f);
         }
-        onUpdate();
     }
 }

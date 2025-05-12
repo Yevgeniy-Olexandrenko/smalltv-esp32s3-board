@@ -4,25 +4,30 @@ namespace image
 {
     Spectrum::Spectrum(uint8_t numBins, Frequency minFreq, Frequency maxFreq)
         : audio::FFTHandler(numBins, minFreq, maxFreq)
-        , m_bins(std::make_unique<uint8_t[]>(numBins))
+        , m_fgColor(TFT_WHITE)
+        , m_bgColor(TFT_BLACK)
     {
     }
 
-    void Spectrum::renderOn(TFT_eSprite &sprite)
+    void Spectrum::renderOn(TFT_eSprite& sprite, uint8_t gap)
     {
-        task::LockGuard lock(m_mutex);
-        sprite.fillSprite(TFT_BLACK);
-        
-        // TODO
-    }
+        auto numBars = getBinCount();
+        auto height = sprite.height();
+        auto width = sprite.width();
+        auto barWidth = float(width) / numBars - gap;
 
-    void Spectrum::onUpdate()
-    {
-        task::LockGuard lock(m_mutex);
-        for (uint8_t i = 0, c = getBinCount(); i < c; ++i)
+        sprite.fillSprite(m_bgColor);
+        for (int i = 0; i < numBars; i++) 
         {
-            // TODO
-            m_bins[i] = getMagnitude(i);
+            int barHeight = getMagnitude(i) * height;
+            
+            if (barHeight > height) barHeight = height;
+            if (barHeight < 0) barHeight = 0;
+
+            auto x = int(i * (barWidth + gap));
+            auto y = height - barHeight;
+
+            sprite.fillRect(x, y, barWidth, barHeight, m_fgColor);
         }
     }
 }

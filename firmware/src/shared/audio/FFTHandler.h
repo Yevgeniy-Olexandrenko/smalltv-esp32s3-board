@@ -17,18 +17,16 @@ namespace audio
         void update(audio_tools::AudioFFTBase& fft);
 
         uint8_t getBinCount() const { return m_numBins; }
-        Frequency getFrequency(uint8_t bin) const { return (bin < m_numBins ? m_bins[bin].f : 0); }
-        Magnitude getMagnitude(uint8_t bin) const { return (bin < m_numBins ? m_bins[bin].f : 0); }
-
-    protected:
-        virtual void onUpdate() {}
+        Frequency getFrequency(uint8_t bin) const { return (bin < m_numBins ? m_bins[bin].frq : 0); }
+        Magnitude getMagnitude(uint8_t bin) const { return (bin < m_numBins ? m_bins[bin].mag : 0); }
+        //Magnitude getMagnitude(uint8_t bin) const { return 0.5f; }
 
     private:
         const uint8_t m_numBins;
         const Frequency m_minFreq;
         const Frequency m_maxFreq;
 
-        struct Bin { int i; Frequency f; float m; };
+        struct Bin { int idx; Frequency frq; float mag; };
         std::unique_ptr<Bin[]> m_bins;
     };
 }
