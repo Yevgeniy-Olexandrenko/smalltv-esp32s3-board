@@ -21,8 +21,6 @@ namespace service
         enum class Command : uint8_t { Volume, Pause, Resume, Next, Prev, Index, Stop };
 
     public:
-        AudioPlayer();
-
         void begin();
         bool start(audio_player::AudioContext* context);
         void setVolume(float volume);
@@ -53,12 +51,16 @@ namespace service
         audio_tools::I2SStream m_i2sOut;
 
         // multi task access
-        audio::FFTHandler* m_fftHandler;
-        audio_tools::AudioPlayer m_player;
-        QueueHandle_t m_cmdQueue;
-        task::Mutex m_mutex;
-        float m_volume;
-        int m_index;       
+        struct {
+            task::Mutex mutex;
+            audio_tools::AudioPlayer player;
+            QueueHandle_t commands = nullptr;
+            float param = 0;
+        } m_play;
+        struct {
+            task::Mutex mutex;
+            audio::FFTHandler* handler = nullptr;
+        } m_fft;
     };
 
     extern AudioPlayer audioPlayer;

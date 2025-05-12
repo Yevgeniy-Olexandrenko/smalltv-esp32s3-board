@@ -1,6 +1,7 @@
 #ifndef NO_AUDIO
 
 #include "AudioPlayer.h"
+#include "defines.h"
 
 namespace service
 {
@@ -16,19 +17,13 @@ namespace service
         if (s_this) s_this->metadataCallback(type, String(str, len));
     }
 
-    AudioPlayer::AudioPlayer()
-        : m_fftHandler(nullptr)
-        , m_cmdQueue(nullptr)
-        , m_volume(0.f)
-    {}
-
     void AudioPlayer::begin()
     {
         if (!m_i2sOut && !m_fftOut)
         {
             m_ui.begin();
             s_this = this;
-            m_cmdQueue = xQueueCreate(4, sizeof(Command));
+            m_play.commands = xQueueCreate(4, sizeof(Command));
             audio_tools::AudioToolsLogger.begin(Serial, audio_tools::AudioToolsLogLevel::Warning);
 
             // configure I2S
@@ -63,29 +58,33 @@ namespace service
 
     void AudioPlayer::setVolume(float volume)
     {
-        m_mutex.lock();
-        m_volume =  0.1f;
-        m_volume += 0.9f * constrain(volume, 0.f, 1.f);
-        m_volume *= SND_PRE_AMP;
-        m_mutex.unlock();
+        m_play.mutex.lock();
+        m_play.param =  0.1f;
+        m_play.param += 0.9f * constrain(volume, 0.f, 1.f);
+        m_play.param *= SND_PRE_AMP;
+        m_play.mutex.unlock();
 
         if (isStarted())
         {
             auto command { Command::Volume };
-            xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+            xQueueSend(m_play.commands, &command, portMAX_DELAY);
+        }
+        else
+        {
+            m_play.player.setVolume(m_play.param);
         }
     }
 
     void AudioPlayer::setPlaylistIndex(int index)
     {
-        m_mutex.lock();
-        m_index = index;
-        m_mutex.unlock();
+        m_play.mutex.lock();
+        m_play.param = index;
+        m_play.mutex.unlock();
 
         if (isStarted())
         {
             auto command { Command::Index };
-            xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+            xQueueSend(m_play.commands, &command, portMAX_DELAY);
         }
     }
 
@@ -96,12 +95,12 @@ namespace service
             if (yes)
             {
                 auto command { Command::Pause };
-                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+                xQueueSend(m_play.commands, &command, portMAX_DELAY);
             }
             else
             {
                 auto command { Command::Resume };
-                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+                xQueueSend(m_play.commands, &command, portMAX_DELAY);
             }
         }
     }
@@ -113,12 +112,12 @@ namespace service
             if (fwd)
             {
                 auto command { Command::Next };
-                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+                xQueueSend(m_play.commands, &command, portMAX_DELAY);
             }
             else
             {
                 auto command { Command::Prev };
-                xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+                xQueueSend(m_play.commands, &command, portMAX_DELAY);
             }
         }
     }
@@ -128,27 +127,27 @@ namespace service
         if (isStarted())
         {
             auto command { Command::Stop };
-            xQueueSend(m_cmdQueue, &command, portMAX_DELAY);
+            xQueueSend(m_play.commands, &command, portMAX_DELAY);
         }
     }
 
     bool AudioPlayer::isStarted()
     {
-        task::LockGuard lock(m_mutex);
+        task::LockGuard lock(m_play.mutex);
         return Task::isAlive();
     }
 
     bool AudioPlayer::isPlaying()
     {
-        task::LockGuard lock(m_mutex);
-        return (Task::isAlive() && m_player.isActive());
+        task::LockGuard lock(m_play.mutex);
+        return (Task::isAlive() && m_play.player.isActive());
     }
 
     void AudioPlayer::setFFTHandler(audio::FFTHandler* fftHandler)
     {
-        task::LockGuard lock(m_mutex);
-        if (fftHandler) fftHandler->begin(m_fftOut);
-        m_fftHandler = fftHandler;
+        task::LockGuard lock(m_fft.mutex);
+        if (fftHandler) fftHandler->init(m_fftOut);
+        m_fft.handler = fftHandler;
     }
 
     void AudioPlayer::task()
@@ -160,48 +159,47 @@ namespace service
             m_ui.setArtist("<unknown>");
         });
         {
-            task::LockGuard lock(m_mutex);
-            m_player.setAudioSource(m_context->getSource());
-            m_player.setDecoder(m_context->getDecoder());
-            m_player.setOutput(m_output);
-            // m_player.setMetadataCallback(&s_metadataCallback);
-            m_player.setVolumeControl(m_volCtr);
-            m_player.begin();
-            m_player.setVolume(m_volume);
+            task::LockGuard lock(m_play.mutex);
+            m_play.player.setAudioSource(m_context->getSource());
+            m_play.player.setDecoder(m_context->getDecoder());
+            m_play.player.setOutput(m_output);
+        //  m_play.player.setMetadataCallback(&s_metadataCallback);
+            m_play.player.setVolumeControl(m_volCtr);
+            m_play.player.begin();
         }
-        while (m_player.getStream() != nullptr)
+        while (m_play.player.getStream() != nullptr)
         {
             Command command;
-            if (xQueueReceive(m_cmdQueue, &command, 0) == pdTRUE)
+            if (xQueueReceive(m_play.commands, &command, 0) == pdTRUE)
             {
                 if (command == Command::Stop) break;
 
-                task::LockGuard lock(m_mutex);   
+                task::LockGuard lock(m_play.mutex);   
                 switch (command)
                 {
-                    case Command::Volume: m_player.setVolume(m_volume); break;
-                    case Command::Pause:  m_player.stop(); break;
-                    case Command::Resume: m_player.play(); break;
-                    case Command::Next:   m_player.next(); break;
-                    case Command::Prev:   m_player.previous(); break;
-                    case Command::Index:  m_player.setIndex(m_index); break;
+                    case Command::Volume: m_play.player.setVolume(m_play.param); break;
+                    case Command::Pause:  m_play.player.stop(); break;
+                    case Command::Resume: m_play.player.play(); break;
+                    case Command::Next:   m_play.player.next(); break;
+                    case Command::Prev:   m_play.player.previous(); break;
+                    case Command::Index:  m_play.player.setIndex(int(m_play.param)); break;
                 }
             }
 
-            m_player.copy();
+            m_play.player.copy();
             vTaskDelay(pdMS_TO_TICKS(1));
         }
         {
-            task::LockGuard lock(m_mutex);
-            m_player.end();
+            task::LockGuard lock(m_play.mutex);
+            m_play.player.end();
             m_context.reset();
         }
     }
 
     void AudioPlayer::fftCallback(audio_tools::AudioFFTBase& fft)
     {
-        task::LockGuard lock(m_mutex);
-        if (m_fftHandler) m_fftHandler->update(fft);
+        task::LockGuard lock(m_fft.mutex);
+        if (m_fft.handler) m_fft.handler->update(fft);
     }
 
     void AudioPlayer::metadataCallback(audio_tools::MetaDataType type, const String& str)

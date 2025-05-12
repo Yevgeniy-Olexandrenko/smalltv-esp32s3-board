@@ -16,7 +16,7 @@ namespace audio
         , m_bins(std::make_unique<Bin[]>(numBins))
     {}
 
-    void FFTHandler::begin(audio_tools::AudioFFTBase &fft)
+    void FFTHandler::init(audio_tools::AudioFFTBase &fft)
     {
         auto topFreq = fft.audioInfoOut().sample_rate / 2;
         auto minFreq = constrain(m_minFreq, 20, topFreq);

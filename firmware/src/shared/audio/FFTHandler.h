@@ -13,7 +13,7 @@ namespace audio
 
         FFTHandler(uint8_t numBins = 32, Frequency minFreq = 80, Frequency maxFreq = 16000);
 
-        void begin(audio_tools::AudioFFTBase& fft);
+        void init(audio_tools::AudioFFTBase& fft);
         void update(audio_tools::AudioFFTBase& fft);
 
         uint8_t getBinCount() const { return m_numBins; }
