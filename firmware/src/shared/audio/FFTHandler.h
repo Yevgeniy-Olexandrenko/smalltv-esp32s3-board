@@ -3,6 +3,9 @@
 #include <memory>
 #include <AudioTools/AudioLibs/AudioFFT.h>
 
+#define MAX_UPDATE_TIME 100
+#define MAX_SMOOTH_STEP 0.1
+
 namespace audio
 {
     class FFTHandler
@@ -13,13 +16,12 @@ namespace audio
 
         FFTHandler(uint8_t numBins = 32, Frequency minFreq = 80, Frequency maxFreq = 16000);
 
-        void init(audio_tools::AudioFFTBase& fft);
-        void update(audio_tools::AudioFFTBase& fft);
+        virtual void init(audio_tools::AudioFFTBase& fft);
+        virtual void update(audio_tools::AudioFFTBase& fft);
 
         uint8_t getBinCount() const { return m_numBins; }
         Frequency getFrequency(uint8_t bin) const { return (bin < m_numBins ? m_bins[bin].frq : 0); }
         Magnitude getMagnitude(uint8_t bin) const { return (bin < m_numBins ? m_bins[bin].mag : 0); }
-        //Magnitude getMagnitude(uint8_t bin) const { return 0.5f; }
 
     private:
         const uint8_t m_numBins;
@@ -28,5 +30,9 @@ namespace audio
 
         struct Bin { int idx; Frequency frq; float mag; };
         std::unique_ptr<Bin[]> m_bins;
+
+        unsigned long m_maxUpdate;
+        float m_maxNewMag;
+        float m_maxOldMag;
     };
 }

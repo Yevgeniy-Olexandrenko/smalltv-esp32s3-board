@@ -10,23 +10,42 @@ namespace image
     {
     }
 
+    void Spectrum::init(audio_tools::AudioFFTBase& fft)
+    {
+        FFTHandler::init(fft);
+        // TODO
+    }
+
+    void Spectrum::update(audio_tools::AudioFFTBase& fft)
+    {
+        task::LockGuard lock(m_mutex);
+        FFTHandler::update(fft);
+        m_isUpdated = true;
+    }
+
     void Spectrum::renderOn(TFT_eSprite& sprite, uint8_t gap, float smooth)
     {
-        auto bars = getBinCount();
-        auto sprH = sprite.height();
-        auto sprW = sprite.width();
-        auto barW = float(sprW) / bars - gap;
-
-        sprite.fillSprite(m_bgColor);
-        for (int i = 0; i < bars; i++) 
+        task::LockGuard lock(m_mutex);
+        if (m_isUpdated)
         {
-            uint8_t barH = getMagnitude(i) * sprH * smooth + m_barH[i] * (1.f - smooth);
-            m_barH[i] = barH;
-            
-            auto x = int32_t(i * (barW + gap));
-            auto y = int32_t(sprH - barH);
+            m_isUpdated = false;
 
-            sprite.fillRect(x, y, barW, barH, m_fgColor);
+            auto bars = getBinCount();
+            auto sprH = sprite.height();
+            auto sprW = sprite.width();
+            auto barW = float(sprW) / bars - gap;
+
+            sprite.fillSprite(m_bgColor);
+            for (int i = 0; i < bars; i++) 
+            {
+                uint8_t barH = getMagnitude(i) * sprH * smooth + m_barH[i] * (1.f - smooth);
+                m_barH[i] = barH;
+                
+                auto x = int32_t(i * (barW + gap));
+                auto y = int32_t(sprH - barH);
+
+                sprite.fillRect(x, y, barW, barH, m_fgColor);
+            }
         }
     }
 }

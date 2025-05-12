@@ -36,24 +36,20 @@ namespace audio
                 log_i("%d: %d - %d", i, m_bins[i].idx, m_bins[i].frq);
             }
         }
+
+        m_maxUpdate = millis();
+        m_maxOldMag = 1000000;
+        m_maxNewMag = 0;
     }
 
     void FFTHandler::update(audio_tools::AudioFFTBase &fft)
     {
-        for (uint8_t b = 0, last = m_numBins - 1; b <= last; ++b)
+        const float normalization = 1.f / m_maxOldMag;
+        for (uint8_t binsBetween, b = 0, last = m_numBins - 1; b <= last; ++b)
         {
-            {
-                static float mag = 0;
-                if (fft.magnitude(m_bins[b].idx) > mag)
-                {
-                    mag = fft.magnitude(m_bins[b].idx);
-                    log_i("%f", mag);
-                }
-            }
-
             float magnitude = fft.magnitude(m_bins[b].idx);
-
-            uint8_t binsBetween;
+            if (magnitude > m_maxNewMag) m_maxNewMag = magnitude;
+            
             if (b > 0 && b < last)
             {
                 binsBetween = m_bins[b].idx - m_bins[b - 1].idx;
@@ -73,8 +69,16 @@ namespace audio
                 }
             }
 
-            magnitude = constrain(0.000001f * magnitude, 0.f, 1.f);
+            magnitude = constrain(magnitude * normalization, 0.f, 1.f);
             m_bins[b].mag = magnitude;
+        }
+
+        if (millis() - m_maxUpdate >= MAX_UPDATE_TIME)
+        {
+            m_maxUpdate += MAX_UPDATE_TIME;
+            m_maxOldMag *= (1.f - MAX_SMOOTH_STEP);
+            m_maxOldMag += m_maxNewMag * MAX_SMOOTH_STEP;
+            m_maxNewMag = 0;
         }
     }
 }

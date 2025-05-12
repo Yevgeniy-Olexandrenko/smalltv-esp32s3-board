@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TFT_eSPI.h>
+#include "shared/tasks/Mutex.h"
 #include "shared/audio/FFTHandler.h"
 
 namespace image
@@ -13,11 +14,17 @@ namespace image
 
         Spectrum(uint8_t numBins = 32, Frequency minFreq = 80, Frequency maxFreq = 16000);
 
+        void init(audio_tools::AudioFFTBase& fft) override;
+        void update(audio_tools::AudioFFTBase& fft) override;
+
         void renderOn(TFT_eSprite& sprite, uint8_t gap, float smooth);
 
     private:
         uint32_t m_bgColor;
         uint32_t m_fgColor;
         std::unique_ptr<uint8_t[]> m_barH;
+
+        task::Mutex m_mutex;
+        bool m_isUpdated;
     };
 }
