@@ -99,9 +99,9 @@ void loop()
 
 #ifndef NO_VIDEO
 #if 1
-    if ((millis() - lastDraw) > 30)
+    if ((millis() - lastDraw) >= 17)
     {
-        spectrum.renderOn(sprite, 1);
+        spectrum.renderOn(sprite, 1, 0.3f);
         sprite.pushSprite(0, 100);
         lastDraw = millis();
     }

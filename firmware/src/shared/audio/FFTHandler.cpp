@@ -42,7 +42,6 @@ namespace audio
     {
         for (uint8_t b = 0, last = m_numBins - 1; b <= last; ++b)
         {
-            if (b == 0)
             {
                 static float mag = 0;
                 if (fft.magnitude(m_bins[b].idx) > mag)
@@ -74,9 +73,8 @@ namespace audio
                 }
             }
 
-            //
-
-            m_bins[b].mag = constrain(0.000001f * magnitude, 0.f, 1.f);
+            magnitude = constrain(0.000001f * magnitude, 0.f, 1.f);
+            m_bins[b].mag = magnitude;
         }
     }
 }

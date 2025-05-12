@@ -13,10 +13,11 @@ namespace image
 
         Spectrum(uint8_t numBins = 32, Frequency minFreq = 80, Frequency maxFreq = 16000);
 
-        void renderOn(TFT_eSprite& sprite, uint8_t gap);
+        void renderOn(TFT_eSprite& sprite, uint8_t gap, float smooth);
 
     private:
         uint32_t m_bgColor;
         uint32_t m_fgColor;
+        std::unique_ptr<uint8_t[]> m_barH;
     };
 }

@@ -6,28 +6,27 @@ namespace image
         : audio::FFTHandler(numBins, minFreq, maxFreq)
         , m_fgColor(TFT_WHITE)
         , m_bgColor(TFT_BLACK)
+        , m_barH(std::make_unique<uint8_t[]>(numBins))
     {
     }
 
-    void Spectrum::renderOn(TFT_eSprite& sprite, uint8_t gap)
+    void Spectrum::renderOn(TFT_eSprite& sprite, uint8_t gap, float smooth)
     {
-        auto numBars = getBinCount();
-        auto height = sprite.height();
-        auto width = sprite.width();
-        auto barWidth = float(width) / numBars - gap;
+        auto bars = getBinCount();
+        auto sprH = sprite.height();
+        auto sprW = sprite.width();
+        auto barW = float(sprW) / bars - gap;
 
         sprite.fillSprite(m_bgColor);
-        for (int i = 0; i < numBars; i++) 
+        for (int i = 0; i < bars; i++) 
         {
-            int barHeight = getMagnitude(i) * height;
+            uint8_t barH = getMagnitude(i) * sprH * smooth + m_barH[i] * (1.f - smooth);
+            m_barH[i] = barH;
             
-            if (barHeight > height) barHeight = height;
-            if (barHeight < 0) barHeight = 0;
+            auto x = int32_t(i * (barW + gap));
+            auto y = int32_t(sprH - barH);
 
-            auto x = int(i * (barWidth + gap));
-            auto y = height - barHeight;
-
-            sprite.fillRect(x, y, barWidth, barHeight, m_fgColor);
+            sprite.fillRect(x, y, barW, barH, m_fgColor);
         }
     }
 }
