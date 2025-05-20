@@ -1,7 +1,7 @@
 #pragma once
 
-#include "shared/tasks/Task.h"
-#include "shared/settings/Settings.h"
+#include "core/tasks/Task.h"
+#include "core/settings/Settings.h"
 #include "tabs/Apps.h"
 #include "tabs/Main.h"
 #include "tabs/Sets.h"

@@ -1,6 +1,6 @@
 #include <Esp.h>
 #include "SelfReboot.h"
-#include "drivers/video/Display.h"
+#include "drivers/graphics/Display.h"
 
 namespace driver
 {

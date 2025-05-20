@@ -1,7 +1,7 @@
 #pragma once
 
 #include <GeoIP.h>
-#include "shared/settings/Settings.h"
+#include "core/settings/Settings.h"
 
 namespace service
 {

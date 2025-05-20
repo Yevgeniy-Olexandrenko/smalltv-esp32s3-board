@@ -1,6 +1,5 @@
 #include <GyverNTP.h>
 #include "SettingsWebApp.h"
-#include "drivers/video/Display.h"
 #include "drivers/onboard/SelfReboot.h"
 
 namespace service

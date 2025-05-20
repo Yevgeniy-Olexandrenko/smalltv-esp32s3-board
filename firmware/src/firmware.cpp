@@ -17,11 +17,11 @@ static bool s_buttonState = false;
 
 #ifndef NO_VIDEO
 #if 1
-#include "shared/image/Spectrum.h"
+#include "core/graphics/Spectrum.h"
 TFT_eSprite sprite(&driver::display);
 image::Spectrum spectrum(30, 80, 16000);
 #else
-#include "shared/image/QRCode.h"
+#include "core/graphics/QRCode.h"
 TFT_eSprite sprite(&driver::display);
 const int ver = 1;
 const int scale = 5;

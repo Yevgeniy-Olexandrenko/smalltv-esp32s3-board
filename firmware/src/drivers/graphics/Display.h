@@ -2,7 +2,7 @@
 #ifndef NO_VIDEO
 
 #include <TFT_eSPI.h>
-#include "shared/tasks/Task.h"
+#include "core/tasks/Task.h"
 
 namespace driver
 {

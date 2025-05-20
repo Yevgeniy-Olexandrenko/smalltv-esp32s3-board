@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shared/settings/Settings.h"
+#include "core/settings/Settings.h"
 
 namespace service
 {

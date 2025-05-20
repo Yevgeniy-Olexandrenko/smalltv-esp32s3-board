@@ -1,7 +1,7 @@
 #pragma once
 #ifndef NO_AUDIO
 
-#include "shared/settings/Settings.h"
+#include "core/settings/Settings.h"
 
 namespace service::audio_player
 {

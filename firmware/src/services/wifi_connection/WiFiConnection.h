@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shared/tasks/Task.h"
+#include "core/tasks/Task.h"
 #include "WiFiConnectionUI.h"
 #include "InternetAccess.h"
 

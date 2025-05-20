@@ -6,7 +6,7 @@
 #include "storage/Flash.h"
 #include "storage/SDCard.h"
 #include "storage/Storage.h"
-#include "video/Display.h"
+#include "graphics/Display.h"
 
 namespace drivers
 {

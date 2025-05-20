@@ -1,5 +1,5 @@
 #include "Services.h"
-#include "shared/settings/Settings.h"
+#include "core/settings/Settings.h"
 #include "settings.h"
 
 namespace services

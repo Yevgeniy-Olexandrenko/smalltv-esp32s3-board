@@ -3,9 +3,9 @@
 
 #include <AudioTools.h>
 #include <AudioTools/AudioLibs/AudioRealFFT.h>
-#include "shared/tasks/Task.h"
-#include "shared/tasks/Mutex.h"
-#include "shared/audio/FFTHandler.h"
+#include "core/tasks/Task.h"
+#include "core/tasks/Mutex.h"
+#include "core/audio/FFTHandler.h"
 #include "AudioContext.h"
 #include "AudioPlayerUI.h"
 

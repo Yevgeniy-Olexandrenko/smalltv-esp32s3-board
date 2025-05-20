@@ -1,8 +1,8 @@
 #pragma once
 
 #include <TFT_eSPI.h>
-#include "shared/tasks/Mutex.h"
-#include "shared/audio/FFTHandler.h"
+#include "core/tasks/Mutex.h"
+#include "core/audio/FFTHandler.h"
 
 namespace image
 {
