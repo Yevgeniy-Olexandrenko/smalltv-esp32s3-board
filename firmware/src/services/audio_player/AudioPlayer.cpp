@@ -36,7 +36,7 @@ namespace service
             // configure FFT
             auto fftCfg = m_fftOut.defaultConfig();
             fftCfg.copyFrom(i2sCfg);
-            fftCfg.length = 1024;
+            fftCfg.length = 2048;
             fftCfg.callback = &s_fftCallback;
             m_fftOut.begin(fftCfg);
 

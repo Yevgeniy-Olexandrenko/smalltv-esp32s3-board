@@ -5,7 +5,7 @@ namespace image
     Spectrum::Spectrum(uint8_t numBins, Frequency minFreq, Frequency maxFreq)
         : audio::FFTHandler(numBins, minFreq, maxFreq)
         , m_fgColor(TFT_WHITE)
-        , m_bgColor(TFT_BLACK)
+        , m_bgColor(TFT_NAVY)
         , m_barH(std::make_unique<uint8_t[]>(numBins))
     {
     }
@@ -13,7 +13,7 @@ namespace image
     void Spectrum::init(audio_tools::AudioFFTBase& fft)
     {
         FFTHandler::init(fft);
-        // TODO
+        m_isUpdated = true;
     }
 
     void Spectrum::update(audio_tools::AudioFFTBase& fft)

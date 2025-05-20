@@ -27,7 +27,9 @@ const int ver = 1;
 const int scale = 5;
 image::QRCode qrcode(ver);
 #endif
-unsigned long lastDraw = 0;
+int g_fps = 0;
+int g_fpsCount = 0;
+unsigned long g_lastTS = 0;
 #endif
 
 void setup() 
@@ -55,14 +57,8 @@ void setup()
 #ifndef NO_VIDEO
     // tft test text
     driver::display.fillScreen(TFT_NAVY);
-    driver::display.setCursor(8, 8);
-    driver::display.setTextColor(TFT_YELLOW);
-    driver::display.setTextSize(1);
-    driver::display.print("Hello World!");
-#if 1
-    sprite.createSprite(240, 120);
+    sprite.createSprite(240, 240);
     service::audioPlayer.setFFTHandler(&spectrum);
-#endif
 #endif    
 
 #ifndef NO_AUDIO
@@ -99,13 +95,19 @@ void loop()
 
 #ifndef NO_VIDEO
 #if 1
-    if ((millis() - lastDraw) >= 17)
+    if (millis() - g_lastTS >= 1000)
     {
-        spectrum.renderOn(sprite, 1, 0.3f);
-        sprite.pushSprite(0, 100);
-        lastDraw = millis();
+        g_lastTS = millis();
+        g_fps = g_fpsCount;
+        g_fpsCount = 0;
     }
-    
+    spectrum.renderOn(sprite, 1, 0.3f);
+    sprite.setCursor(8, 8);
+    sprite.setTextColor(TFT_YELLOW);
+    sprite.setTextSize(2);
+    sprite.print(g_fps);
+    sprite.pushSprite(0, 0);
+    g_fpsCount++;
 #else
 
     if (NTP.synced() && NTP.newSecond())

@@ -19,9 +19,9 @@ namespace audio
         virtual void init(audio_tools::AudioFFTBase& fft);
         virtual void update(audio_tools::AudioFFTBase& fft);
 
-        uint8_t getBinCount() const { return m_numBins; }
-        Frequency getFrequency(uint8_t bin) const { return (bin < m_numBins ? m_bins[bin].frq : 0); }
-        Magnitude getMagnitude(uint8_t bin) const { return (bin < m_numBins ? m_bins[bin].mag : 0); }
+        uint8_t getBinCount() const;
+        Frequency getFrequency(uint8_t bin) const;
+        Magnitude getMagnitude(uint8_t bin) const;
 
     private:
         const uint8_t m_numBins;
