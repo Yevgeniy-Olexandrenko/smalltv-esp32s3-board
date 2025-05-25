@@ -35,9 +35,7 @@ namespace service::geo_location
                 lat = m_json["latitude"].as<float>();
                 lon = m_json["longitude"].as<float>();
                 auto off = m_json["utc_offset"].as<int>();
-                log_i("off: %d", off);
-                tzh = int8_t(off / 100);
-                tzm = int8_t(off % 100);
+                tzh = off / 100, tzm = off % 100;
                 return success();
             }
         }  
