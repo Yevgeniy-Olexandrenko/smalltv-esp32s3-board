@@ -19,13 +19,6 @@ namespace service::wifi_connection
         sets::Group g(b, "📶 WiFi");
         switch (m_action)
         {
-            case Action::GoToManual:
-                m_action = Action::None;
-                m_ssid = settings::data()[db::wifi_ssid];
-                m_pass = settings::data()[db::wifi_pass];
-                WiFi.scanDelete();
-                break;
-
             case Action::DoScan:
                 b.Label("Scanning...");
                 break;
@@ -34,6 +27,13 @@ namespace service::wifi_connection
                 b.Label("Connecting...");
                 break;
 
+            case Action::GoToManual:
+                m_action = Action::None;
+                m_ssid = settings::data()[db::wifi_ssid];
+                m_pass = settings::data()[db::wifi_pass];
+                WiFi.scanDelete();
+                // fall down
+                
             default:
                 if (isManualInput())
                 {
