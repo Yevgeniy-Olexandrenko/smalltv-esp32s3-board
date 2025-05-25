@@ -1,6 +1,5 @@
 #pragma once
 
-#include <GeoIP.h>
 #include "core/settings/Settings.h"
 #include "FromIPAddress.h"
 #include "FromWiFiStations.h"
@@ -9,6 +8,8 @@ namespace service
 {
     class GeoLocation : public settings::Provider
     {
+        using Timestamp = unsigned long;
+
     public:
         enum class Method { Manual, FromIPAddress, FromWiFiStations };
 
@@ -21,8 +22,17 @@ namespace service
         Method getMethod() const;
         float  getLatitude() const;
         float  getLongitude() const;
+        int    getTimeZoneOff() const;
 
     private:
+        void requestNewData();
+        void confirmDataReceived();
+        bool hasNewData();
+
+        String getTimeZone() const;
+
+    private:
+        Timestamp m_fetchTS;
         geo_location::FromIPAddress m_fromIPAddress;
         geo_location::FromWiFiStations m_fromWiFiStations;
     };
