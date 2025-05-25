@@ -10,27 +10,27 @@ namespace service::wifi_connection
 {
     void WiFiConnectionUI::begin()
     {
-        m_request = Request::GoToManual;
+        m_action = Action::GoToManual;
     }
 
     void WiFiConnectionUI::settingsBuild(sets::Builder& b)
     {
         b.beginGuest();
         sets::Group g(b, "📶 WiFi");
-        switch (m_request)
+        switch (m_action)
         {
-            case Request::GoToManual:
-                m_request = Request::None;
+            case Action::GoToManual:
+                m_action = Action::None;
                 m_ssid = settings::data()[db::wifi_ssid];
                 m_pass = settings::data()[db::wifi_pass];
                 WiFi.scanDelete();
                 break;
 
-            case Request::Scan:
+            case Action::DoScan:
                 b.Label("Scanning...");
                 break;
 
-            case Request::Connect:
+            case Action::DoConnect:
                 b.Label("Connecting...");
                 break;
 
@@ -48,7 +48,7 @@ namespace service::wifi_connection
                         chooseSSIDByIndex(b.build.value);
                     }
                 }
-                if (isAuthClosedNetwork())
+                if (isPassClosedNetwork())
                 {
                     b.Pass ("Password", &m_pass);
                 }
@@ -60,7 +60,7 @@ namespace service::wifi_connection
                     {
                         if (b.Button("Scan"))
                         {    
-                            m_request = Request::Scan;
+                            m_action = Action::DoScan;
                             b.reload();
                         }
                     }
@@ -68,13 +68,13 @@ namespace service::wifi_connection
                     {
                         if (b.Button("Manual"))
                         {
-                            m_request = Request::GoToManual;
+                            m_action = Action::GoToManual;
                             b.reload();
                         }
                     }
                     if (b.Button("Connect")) 
                     {
-                        m_request = Request::Connect;
+                        m_action = Action::DoConnect;
                         b.reload();
                     }
                 }
@@ -85,18 +85,18 @@ namespace service::wifi_connection
 
     void WiFiConnectionUI::settingsUpdate(sets::Updater& u)
     {
-        switch (m_request)
+        switch (m_action)
         {
-            case Request::Scan:
+            case Action::DoScan:
                 WiFi.scanNetworks();
                 chooseSSIDByIndex(0);
-                m_request = Request::None;
+                m_action = Action::None;
                 settings::sets().reload();
                 break;
 
-            case Request::Connect:
+            case Action::DoConnect:
                 wifiConnection.connect(m_ssid, m_pass);
-                m_request = Request::GoToManual;
+                m_action = Action::GoToManual;
                 settings::sets().reload();
                 break;
         }
@@ -108,7 +108,7 @@ namespace service::wifi_connection
         return (result == WIFI_SCAN_FAILED || result == 0);
     }
 
-    bool WiFiConnectionUI::isAuthClosedNetwork() const
+    bool WiFiConnectionUI::isPassClosedNetwork() const
     {
         const auto found = WiFi.scanComplete();
         for (int i = 0; i < found; ++i) 

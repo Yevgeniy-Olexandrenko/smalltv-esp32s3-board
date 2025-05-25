@@ -6,7 +6,7 @@ namespace service::wifi_connection
 {
     class WiFiConnectionUI : public settings::Provider
     {
-        enum class Request { None, Scan, Connect, GoToManual };
+        enum class Action { None, DoScan, DoConnect, GoToManual };
 
     public:
         void begin();
@@ -15,12 +15,12 @@ namespace service::wifi_connection
 
     private:
         bool isManualInput() const;
-        bool isAuthClosedNetwork() const;
+        bool isPassClosedNetwork() const;
         void fillSSIDsOptions(String& options);
         void chooseSSIDByIndex(size_t index);
 
     private:
         String m_ssid, m_pass;
-        Request m_request{ Request::None };
+        Action m_action{ Action::None };
     };
 }
