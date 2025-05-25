@@ -2,13 +2,15 @@
 
 #include <GeoIP.h>
 #include "core/settings/Settings.h"
+#include "FromIPAddress.h"
+#include "FromWiFiStations.h"
 
 namespace service
 {
     class GeoLocation : public settings::Provider
     {
     public:
-        enum class Method { Manual, ByIPAddress, ByWiFiStations };
+        enum class Method { Manual, FromIPAddress, FromWiFiStations };
 
         void begin();
         void update();
@@ -16,17 +18,13 @@ namespace service
         void settingsBuild(sets::Builder& b) override;
         void settingsUpdate(sets::Updater& u) override;
 
-        Method GetMethod() const { return m_method; }
-        void SetMethod(Method method);
-
-        float GetLatitude() const { return m_latitude; }
-        float GetLongitude() const { return m_longitude; }
+        Method getMethod() const;
+        float  getLatitude() const;
+        float  getLongitude() const;
 
     private:
-        float m_latitude =  50.4500f; // from -90.0 to +90.0
-        float m_longitude = 30.5233f; // from -180.0 to +180.0
-
-        Method m_method = Method::ByIPAddress;
+        geo_location::FromIPAddress m_fromIPAddress;
+        geo_location::FromWiFiStations m_fromWiFiStations;
     };
 
     extern GeoLocation geoLocation;

@@ -1,11 +1,14 @@
 #include "GeoLocation.h"
 #include "services/wifi_connection/WiFiConnection.h"
+#include "settings.h"
 
 namespace service
 {
     void GeoLocation::begin()
     {
-        // TODO
+        settings::data().init(db::geo_method, int(Method::FromIPAddress));
+        settings::data().init(db::geo_latitude, 50.4500f);
+        settings::data().init(db::geo_longitude, 30.5233f); 
     }
 
     void GeoLocation::update()
@@ -17,24 +20,23 @@ namespace service
     {
         sets::Group g(b, "📍 Geolocation");
 
-        auto options = "Manual;By IP Address (ipapi.co);By WiFi Stations (Google)";
-        auto selection = int(m_method);
-
-        if (b.Select("Method", options, &selection))
+        auto options = "Manual;From IP Address (ipapi.co);From WiFi Stations (Google)";
+        if (b.Select(db::geo_method, "Method", options))
         {
-            SetMethod(Method(selection));
+            // TODO: on method change
+
             b.reload();
             return;
         }
-        if (m_method == Method::Manual)
+        if (getMethod() == Method::Manual)
         {
-            b.Number("Latitude", &m_latitude, -90.f, +90.f);
-            b.Number("Longitude", &m_longitude, -180.f, +180.f);
+            b.Number(db::geo_latitude, "Latitude", nullptr, -90.f, +90.f);
+            b.Number(db::geo_longitude, "Longitude", nullptr, -180.f, +180.f);
         }
         else
         {
-            b.LabelFloat("Latitude", m_latitude, 4);
-            b.LabelFloat("Longitude", m_longitude, 4);
+            b.LabelFloat("Latitude", getLatitude(), 4);
+            b.LabelFloat("Longitude", getLongitude(), 4);
         }
     }
 
@@ -43,14 +45,19 @@ namespace service
         // TODO
     }
 
-    void GeoLocation::SetMethod(Method method)
+    GeoLocation::Method GeoLocation::getMethod() const
     {
-        if (method != m_method)
-        {
-            m_method = method;
+        return Method(int(settings::data()[db::geo_method]));
+    }
 
-            // TODO
-        }
+    float GeoLocation::getLatitude() const
+    {
+        return settings::data()[db::geo_latitude];
+    }
+
+    float GeoLocation::getLongitude() const
+    {
+        return settings::data()[db::geo_longitude];
     }
 
     GeoLocation geoLocation;
