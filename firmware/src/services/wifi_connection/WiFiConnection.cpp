@@ -37,6 +37,12 @@ namespace service
         return Signal::Bad;
     }
 
+    String WiFiConnection::getDeviceID() const
+    {
+        String mac = WiFi.macAddress();
+        return mac.substring(12, 14) + mac.substring(15);
+    }
+
     void WiFiConnection::task()
     {
         while (true)

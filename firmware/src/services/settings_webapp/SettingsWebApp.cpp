@@ -1,6 +1,8 @@
 #include <GyverNTP.h>
 #include "SettingsWebApp.h"
 #include "drivers/onboard/SelfReboot.h"
+#include "services/wifi_connection/WiFiConnection.h"
+#include "defines.h"
 
 namespace service
 {
@@ -29,7 +31,13 @@ namespace service
 
         settings::sets().config.updateTout = 1000;
         settings::sets().config.theme = m_sets.getThemeColor();
+
+        String title;
+        title += WEBAPP_TITLE;
+        title += " (" + service::wifiConnection.getDeviceID() + ")";
+        settings::sets().setTitle(title);
         settings::sets().setProjectInfo("home page", WEBAPP_PROJECT_HOME);
+        settings::sets().setVersion(PROJECT_VERSION);
         settings::sets().setPass("0000");
 
         m_currentTab = 1;

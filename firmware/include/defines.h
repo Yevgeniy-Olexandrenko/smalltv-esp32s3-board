@@ -8,7 +8,7 @@
 #define PROJECT_VERSION         "1.0.0"
 #define PROJECT_ICON            "📺"
 
-#define WEBAPP_TITLE            (PROJECT_ICON " " PROJECT_NAME " v" PROJECT_VERSION)
+#define WEBAPP_TITLE            (PROJECT_ICON " " PROJECT_NAME)
 #define WEBAPP_PROJECT_HOME     "https://github.com/Yevgeniy-Olexandrenko/smalltv-esp32s3-board"
 
 #define NETWORK_ACCESS_POINT    PROJECT_NAME
