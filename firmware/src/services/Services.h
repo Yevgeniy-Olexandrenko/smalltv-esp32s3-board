@@ -1,11 +1,14 @@
 #pragma once
 
-#include "audio_player/AudioPlayer.h"
-#include "date_and_time/DateAndTime.h"
+#include "date_time/DateTime.h"
 #include "geo_location/GeoLocation.h"
-#include "settings_webapp/SettingsWebApp.h"
-#include "weather_forecast/WeatherForecast.h"
 #include "wifi_connection/WiFiConnection.h"
+#include "weather_forecast/WeatherForecast.h"
+#include "settings_webapp/SettingsWebApp.h"
+
+#ifndef NO_AUDIO
+#include "audio_player/AudioPlayer.h"
+#endif
 
 namespace services
 {

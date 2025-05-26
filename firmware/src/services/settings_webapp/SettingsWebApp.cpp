@@ -1,6 +1,6 @@
-#include <GyverNTP.h>
 #include "SettingsWebApp.h"
 #include "drivers/onboard/SelfReboot.h"
+#include "services/date_time/DateTime.h"
 #include "services/wifi_connection/WiFiConnection.h"
 #include "defines.h"
 
@@ -27,7 +27,7 @@ namespace service
         settings::sets().onBuild([this](sets::Builder& b) { this->settingsBuild(b); });
         settings::sets().onUpdate([this](sets::Updater& u) { this->settingsUpdate(u); });
         settings::sets().onFocusChange([this]() { this->onFocusChange(settings::sets().focused()); });
-        settings::sets().rtc.onSync([](uint32_t unix) { NTP.sync(unix); });
+        settings::sets().rtc.onSync([](uint32_t unix) { service::dateTime.setUTC(unix); });
 
         settings::sets().config.updateTout = 1000;
         settings::sets().config.theme = m_sets.getThemeColor();

@@ -11,7 +11,6 @@ static bool s_buttonState = false;
 #include <dirent.h>
 #include <sys/stat.h>
 #include <string.h>
-#include <GyverNTP.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 

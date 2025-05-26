@@ -1,9 +1,6 @@
-#include <GyverNTP.h>
 #include "Main.h"
 #include "drivers/Drivers.h"
-#include "services/wifi_connection/WiFiConnection.h"
-#include "services/settings_webapp/SettingsWebApp.h"
-#include "services/audio_player/AudioPlayer.h"
+#include "services/Services.h"
 #include "settings.h"
 
 const char custom_html[] = 
@@ -136,8 +133,8 @@ namespace service::settings_webapp
         char buffer[sizeof(custom_html) + 32];
         sprintf(buffer, custom_html,
             casingColor.c_str(),
-            NTP.timeToString().c_str(),
-            NTP.dateToString().c_str());
+            service::dateTime.timeToString().c_str(),
+            service::dateTime.dateToString().c_str());
         return String(buffer);
     }
 

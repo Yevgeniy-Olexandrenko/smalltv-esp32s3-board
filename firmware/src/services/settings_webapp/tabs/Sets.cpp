@@ -32,7 +32,6 @@ namespace service::settings_webapp
         service::wifiConnection.getUI().settingsBuild(b);
         storageSettingsBuild(b);
         service::geoLocation.settingsBuild(b);
-        service::dateAndTime.settingsBuild(b);
         service::weatherForecast.settingsBuild(b);
     }
 
@@ -41,7 +40,6 @@ namespace service::settings_webapp
         service::wifiConnection.getUI().settingsUpdate(u);
         storageSettingsUpdate(u);
         service::geoLocation.settingsUpdate(u);
-        service::dateAndTime.settingsUpdate(u);
         service::weatherForecast.settingsUpdate(u);
     }
 

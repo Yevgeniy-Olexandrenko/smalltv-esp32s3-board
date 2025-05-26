@@ -1,14 +1,13 @@
 #include "Services.h"
-#include "core/settings/Settings.h"
 #include "settings.h"
 
 namespace services
 {
     void begin()
     {
-        service::wifiConnection.begin();
+        service::dateTime.begin();
         service::geoLocation.begin();
-        service::dateAndTime.begin();
+        service::wifiConnection.begin();
         service::weatherForecast.begin();
         service::settingsWebApp.begin();
 
@@ -20,7 +19,6 @@ namespace services
     void update()
     {
         service::geoLocation.update();
-        service::dateAndTime.update();
         service::weatherForecast.update();
     }
 }
