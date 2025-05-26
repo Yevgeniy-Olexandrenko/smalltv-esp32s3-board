@@ -11,7 +11,7 @@ namespace service
         using Timestamp = unsigned long;
 
     public:
-        enum class Method { Manual, FromIPAddress, FromWiFiStations };
+        enum class Method { Manual, IPAddress, WiFiStations };
 
         void begin();
         void update();

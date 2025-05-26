@@ -1,5 +1,5 @@
 #include "GeoLocation.h"
-#include "services/wifi_connection/WiFiConnection.h"
+#include "services/date_time/DateTime.h"
 #include "settings.h"
 
 #define FETCH_PERIOD (30 * 60 * 1000) // 30 minutes
@@ -9,10 +9,10 @@ namespace service
 {
     void GeoLocation::begin()
     {
-        settings::data().init(db::geo_method, int(Method::FromIPAddress));
-        settings::data().init(db::geo_latitude, 50.4500f);
+        settings::data().init(db::geo_method, int(Method::IPAddress));
+        settings::data().init(db::geo_latitude,  50.4500f);
         settings::data().init(db::geo_longitude, 30.5233f);
-        settings::data().init(db::geo_timezone, +2 * 100);
+        settings::data().init(db::geo_timezone,  200);
         requestNewData();
     }
 
@@ -20,8 +20,7 @@ namespace service
     {
         if (millis() - m_fetchTS >= FETCH_PERIOD)
         {
-            bool hasInternet = service::wifiConnection.isInternetAccessible();
-            if (hasInternet && hasNewData())
+            if (service::dateTime.isSynced() && hasNewData())
                 confirmDataReceived();
             else
                 requestNewData();
@@ -33,7 +32,7 @@ namespace service
         b.beginGuest();
         sets::Group g(b, "📍 Geolocation");
 
-        auto options = "Manual;From IP Address (ipapi.co);From WiFi Stations (Google)";
+        auto options = "Manual;IP Address (ipapi.co);WiFi Stations (Google)";
         if (b.Select(db::geo_method, "Method", options))
         {
             requestNewData();
@@ -116,22 +115,23 @@ namespace service
     bool GeoLocation::hasNewData()
     {
         float lat, lon; int tzh, tzm;
-        auto updateOnSuccess = [&lat, &lon, &tzh, tzm](bool success)
+        auto updateOnSuccess = [&lat, &lon, &tzh, &tzm](bool success)
         {
             if (success)
             {
+                int off = (tzh * 100 + tzm);
                 settings::data()[db::geo_latitude ] = lat;
                 settings::data()[db::geo_longitude] = lon;
-                settings::data()[db::geo_timezone ] = tzh * 100 + tzm;
+                settings::data()[db::geo_timezone ] = off;
             }
             return success;
         };
 
         switch (getMethod())
         {
-            case Method::FromIPAddress: 
+            case Method::IPAddress: 
                 return updateOnSuccess(m_fromIPAddress.request(lat, lon, tzh, tzm));
-            case Method::FromWiFiStations:
+            case Method::WiFiStations:
                 return updateOnSuccess(m_fromWiFiStations.request(lat, lon, tzh, tzm));
         }
         return true;
@@ -140,7 +140,7 @@ namespace service
     String GeoLocation::getTimeZone() const
     {
         int off = settings::data()[db::geo_timezone];
-        int tzh = off / 100, tzm = off % 100;
+        int tzh = off / 100, tzm = abs(off) % 100;
 
         char buffer[6];
         if (tzm == 0)
