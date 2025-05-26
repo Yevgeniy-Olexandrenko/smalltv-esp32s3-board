@@ -1,3 +1,6 @@
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+
 #include "GeoLocation.h"
 #include "services/date_time/DateTime.h"
 #include "settings.h"
@@ -20,7 +23,7 @@ namespace service
     {
         if (millis() - m_fetchTS >= FETCH_PERIOD)
         {
-            if (service::dateTime.isSynced() && hasNewData())
+            if (service::dateTime.isSynced() && fetchNewData())
                 confirmDataReceived();
             else
                 requestNewData();
@@ -45,17 +48,10 @@ namespace service
             b.Number(db::geo_latitude, "Latitude", nullptr, -90.f, +90.f);
             b.Number(db::geo_longitude, "Longitude", nullptr, -180.f, +180.f);
 
-            int off = settings::data()[db::geo_timezone];
-            int tzh = off / 100, tzm = off % 100;
+            int tzh, tzm;
+            decodeTimeZone(tzh, tzm);
             int num = (tzm == 0 ? tzh : tzh * 60 + tzm);
-            if (b.Number("Time zone", &num))
-            {
-                if (num >= -14 && num <= +12)
-                    tzh = num, tzm = 0;
-                else
-                    tzh = num / 60, tzm = num % 60;
-                settings::data()[db::geo_timezone ] = tzh * 100 + tzm;
-            }
+            if (b.Number("Time zone", &num)) setTimeZone(num);
         }
         else
         {
@@ -93,9 +89,41 @@ namespace service
 
     int GeoLocation::getTimeZoneOff() const
     {
-        int off = settings::data()[db::geo_timezone];
-        int tzh = off / 100, tzm = off % 100;
+        int tzh, tzm;
+        decodeTimeZone(tzh, tzm);
         return (tzh * 60 + tzm) * 60;
+    }
+
+    void GeoLocation::encodeTimeZone(int &tzh, int &tzm) const
+    {
+        int off = (tzh * 100 + tzm);
+        settings::data()[db::geo_timezone ] = off;
+    }
+
+    void GeoLocation::decodeTimeZone(int &tzh, int &tzm) const
+    {
+        int off = settings::data()[db::geo_timezone];
+        tzh = off / 100, tzm = abs(off) % 100;
+    }
+
+    String GeoLocation::getTimeZone() const
+    {
+        int tzh, tzm;
+        decodeTimeZone(tzh, tzm);
+        char buffer[6];
+        if (tzm == 0) sprintf(buffer, "%+d", tzh);
+        else sprintf(buffer, "%+d:%02d", tzh, tzm);
+        return String(buffer);
+    }
+
+    void GeoLocation::setTimeZone(int num)
+    {
+        int tzh, tzm;
+        if (num >= -14 && num <= +12)
+            tzh = num, tzm = 0;
+        else
+            tzh = num / 60, tzm = abs(num) % 60;
+        encodeTimeZone(tzh, tzm);
     }
 
     void GeoLocation::requestNewData()
@@ -112,17 +140,16 @@ namespace service
         log_i("confirm data received!");
     }
 
-    bool GeoLocation::hasNewData()
+    bool GeoLocation::fetchNewData()
     {
         float lat, lon; int tzh, tzm;
-        auto updateOnSuccess = [&lat, &lon, &tzh, &tzm](bool success)
+        auto updateOnSuccess = [&](bool success)
         {
             if (success)
             {
-                int off = (tzh * 100 + tzm);
                 settings::data()[db::geo_latitude ] = lat;
                 settings::data()[db::geo_longitude] = lon;
-                settings::data()[db::geo_timezone ] = off;
+                encodeTimeZone(tzh, tzm);
             }
             return success;
         };
@@ -130,24 +157,41 @@ namespace service
         switch (getMethod())
         {
             case Method::IPAddress: 
-                return updateOnSuccess(m_fromIPAddress.request(lat, lon, tzh, tzm));
+                return updateOnSuccess(fetchDataUsingIPAddress(lat, lon, tzh, tzm));
             case Method::WiFiStations:
-                return updateOnSuccess(m_fromWiFiStations.request(lat, lon, tzh, tzm));
+                return updateOnSuccess(fetchDataUsingWiFiStations(lat, lon, tzh, tzm));
         }
         return true;
     }
 
-    String GeoLocation::getTimeZone() const
+    bool GeoLocation::fetchDataUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm) 
     {
-        int off = settings::data()[db::geo_timezone];
-        int tzh = off / 100, tzm = abs(off) % 100;
+        HTTPClient http;
+        if (http.begin("https://ipapi.co/json/")) 
+        {
+            if (http.GET() == HTTP_CODE_OK) 
+            {
+                JsonDocument doc;
+                DeserializationError error = deserializeJson(doc, http.getStream());
+                if (!error)
+                {
+                    lat = doc["latitude"].as<float>();
+                    lon = doc["longitude"].as<float>();
+                    int off = doc["utc_offset"].as<int>();
+                    tzh = off / 100, tzm = abs(off) % 100;
+                    http.end();
+                    return true;
+                }                
+            }
+            http.end();
+        }
+        return false;
+    }
 
-        char buffer[6];
-        if (tzm == 0)
-            sprintf(buffer, "%+d", tzh);
-        else
-            sprintf(buffer, "%+d:%02d", tzh, tzm);
-        return String(buffer);
+    bool GeoLocation::fetchDataUsingWiFiStations(float &lat, float &lon, int &tzh, int &tzm)
+    {
+        // TODO
+        return false;
     }
 
     GeoLocation geoLocation;

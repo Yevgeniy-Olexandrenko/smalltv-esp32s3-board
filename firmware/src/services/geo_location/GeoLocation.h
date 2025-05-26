@@ -1,8 +1,6 @@
 #pragma once
 
 #include "core/settings/Settings.h"
-#include "FromIPAddress.h"
-#include "FromWiFiStations.h"
 
 namespace service
 {
@@ -25,16 +23,20 @@ namespace service
         int    getTimeZoneOff() const;
 
     private:
+        void encodeTimeZone(int& tzh, int& tzm) const;
+        void decodeTimeZone(int& tzh, int& tzm) const;
+        String getTimeZone() const;
+        void setTimeZone(int num);
+
         void requestNewData();
         void confirmDataReceived();
-        bool hasNewData();
+        bool fetchNewData();
 
-        String getTimeZone() const;
+        bool fetchDataUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm);
+        bool fetchDataUsingWiFiStations(float& lat, float& lon, int& tzh, int& tzm);
 
     private:
         Timestamp m_fetchTS;
-        geo_location::FromIPAddress m_fromIPAddress;
-        geo_location::FromWiFiStations m_fromWiFiStations;
     };
 
     extern GeoLocation geoLocation;
