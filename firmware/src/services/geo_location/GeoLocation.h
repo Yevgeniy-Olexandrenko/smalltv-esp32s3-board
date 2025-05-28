@@ -35,6 +35,9 @@ namespace service
         bool fetchDataUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm);
         bool fetchDataUsingWiFiStations(float& lat, float& lon, int& tzh, int& tzm);
 
+        bool callGoogleGeolocationApi(float& lat, float& lon);
+        bool callGoogleTimeZoneApi(float lat, float lon, long timestamp, int& tzh, int& tzm);
+
     private:
         Timestamp m_fetchTS;
     };

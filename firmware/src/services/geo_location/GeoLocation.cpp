@@ -190,7 +190,86 @@ namespace service
 
     bool GeoLocation::fetchDataUsingWiFiStations(float &lat, float &lon, int &tzh, int &tzm)
     {
-        // TODO
+        bool result = false;
+        WiFi.scanNetworks();
+        if (callGoogleGeolocationApi(lat, lon))
+        {
+            long timestamp = service::dateTime.getNow();
+            result = callGoogleTimeZoneApi(lat, lon, timestamp, tzh, tzm);
+        }
+        WiFi.scanDelete();
+        return false;
+    }
+
+    bool GeoLocation::callGoogleGeolocationApi(float &lat, float &lon)
+    {
+        auto found = min(int(WiFi.scanComplete()), 5);
+        if (found <= 0) return false;
+
+        JsonDocument doc;
+        JsonArray aps = doc["wifiAccessPoints"].to<JsonArray>();
+        for (int i = 0; i < found; ++i)
+        {
+            JsonObject ap = aps.add<JsonObject>();
+            ap["macAddress"] = WiFi.BSSIDstr(i);
+            ap["signalStrength"] = WiFi.RSSI(i);
+        }
+
+        char payload[512];
+        auto payloadLen = serializeJson(doc, payload, sizeof(payload));
+        auto key = settings::apikey(db::apikey_google);
+        auto url = "https://www.googleapis.com/geolocation/v1/geolocate?key=" + key;
+
+        log_i("url:\n%s", url.c_str());
+        log_i("payload:\n%s", payload);
+
+        HTTPClient http;
+        http.begin(url);
+        http.addHeader("Content-Type", "application/json");
+        if (http.POST((uint8_t*)payload, payloadLen) == HTTP_CODE_OK) 
+        {
+            JsonDocument doc;
+            DeserializationError error = deserializeJson(doc, http.getStream());
+            if (!error)
+            {
+                lat = doc["location"]["lat"].as<float>();
+                lon = doc["location"]["lng"].as<float>();
+                http.end();
+                return true;
+            }
+            http.end();
+        }
+        return false;
+    }
+
+    bool GeoLocation::callGoogleTimeZoneApi(float lat, float lon, long timestamp, int &tzh, int &tzm)
+    {
+        auto key = settings::apikey(db::apikey_google);
+        auto url = String("https://maps.googleapis.com/maps/api/timezone/json?location=")
+            + String(lat, 6) + "," + String(lon, 6)
+            + "&timestamp=" + String(timestamp)
+            + "&key=" + key;
+
+        log_i("url:\n%s", url.c_str());
+
+        HTTPClient http;
+        http.begin(url);
+        if (http.GET() == HTTP_CODE_OK) 
+        {
+            JsonDocument doc;
+            DeserializationError error = deserializeJson(doc, http.getStream());
+            if (!error)
+            {
+                auto raw = doc["rawOffset"].as<long>();
+                auto dst = doc["dstOffset"].as<long>();
+                auto off  = raw + dst;
+                tzh = off / 3600;
+                tzm = (abs(off) % 3600) / 60;
+                http.end();
+                return true;
+            }
+            http.end();
+        }
         return false;
     }
 
