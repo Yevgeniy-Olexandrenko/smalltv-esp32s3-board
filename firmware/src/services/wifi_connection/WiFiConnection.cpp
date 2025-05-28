@@ -1,13 +1,14 @@
 #include "WiFiConnection.h"
 #include "settings.h"
 #include "defines.h"
+#include "secrets.h"
 
 namespace service
 {
     void WiFiConnection::begin()
     {
-        settings::data().init(db::wifi_ssid, "");
-        settings::data().init(db::wifi_pass, "");
+        settings::data().init(db::wifi_ssid, WIFI_SSID);
+        settings::data().init(db::wifi_pass, WIFI_PASS);
         settings::data().init(db::wifi_tout, 20);
  
         m_ui.begin();

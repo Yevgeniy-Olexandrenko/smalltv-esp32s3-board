@@ -22,6 +22,8 @@ DB_KEYS(db,
     audio_volume_n,
     audio_player_shuffle,
     audio_player_loop,
+    apikey_google,
+    apikey_openweather,
     
     // reboot
     reboot_to_msc

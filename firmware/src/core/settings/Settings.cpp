@@ -31,6 +31,16 @@ namespace settings
         return m_settings;
     }
 
+    void apikey(size_t hash, const String& def)
+    { 
+        data().init(hash, def);
+    }
+
+    const String apikey(size_t hash)
+    { 
+        return data()[hash];
+    }
+
     const String Provider::led(Led led) const
     {
         switch(led)

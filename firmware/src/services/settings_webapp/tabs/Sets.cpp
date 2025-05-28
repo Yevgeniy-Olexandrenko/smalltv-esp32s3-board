@@ -33,6 +33,7 @@ namespace service::settings_webapp
         storageSettingsBuild(b);
         service::geoLocation.settingsBuild(b);
         service::weatherForecast.settingsBuild(b);
+        apiKeysSettingsBuild(b);
     }
 
     void Sets::settingsUpdate(sets::Updater &u)
@@ -147,6 +148,13 @@ namespace service::settings_webapp
             
         }
         #endif
+    }
+
+    void Sets::apiKeysSettingsBuild(sets::Builder &b)
+    {
+        sets::Group g(b, "🔑 API Keys");
+        b.Input(db::apikey_google, "Google");
+        b.Input(db::apikey_openweather, "OpenWeather");
     }
 
     ////////////////////////////////////////////////////////////////////////////

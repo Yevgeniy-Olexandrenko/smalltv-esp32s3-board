@@ -8,6 +8,9 @@ namespace settings
     GyverDBFile& data();
     SettingsGyver& sets();
 
+    void apikey(size_t hash, const String& def);
+    const String apikey(size_t hash);
+
     class Provider
     {
     public:

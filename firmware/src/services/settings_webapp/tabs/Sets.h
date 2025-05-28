@@ -20,6 +20,7 @@ namespace service::settings_webapp
         void storageSettingsBuild(sets::Builder &b);
         void storageSettingsUpdate(sets::Updater &u);
         void fillStorageSpecs(String &specs) const;
+        void apiKeysSettingsBuild(sets::Builder &b);
 
     private:
         int m_typeRollback = -1;
