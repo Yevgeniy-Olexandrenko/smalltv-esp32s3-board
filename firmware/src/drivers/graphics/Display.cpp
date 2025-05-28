@@ -71,7 +71,7 @@ namespace driver
 
                 ledcWrite(LCD_BL_PWM_CHANNEL, pwm);
             }
-            vTaskDelay(pdMS_TO_TICKS(1));
+            sleep(1);
         }
     }
 

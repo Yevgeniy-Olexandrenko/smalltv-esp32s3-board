@@ -54,8 +54,9 @@ namespace task
             }
         }
 
-        bool isAlive() const { return m_handle != nullptr; }
-        TaskHandle_t getHandle() const  { return m_handle; }
+        void sleep(int ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
+        bool isAlive() const  { return m_handle != nullptr; }
+        TaskHandle_t getHandle() const   { return m_handle; }
 
         virtual void task() = 0;
 

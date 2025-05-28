@@ -50,7 +50,7 @@ namespace service
         {
             updateConnection();
             m_internet.update();
-            vTaskDelay(pdMS_TO_TICKS(300));
+            sleep(300);
         }
     }
 

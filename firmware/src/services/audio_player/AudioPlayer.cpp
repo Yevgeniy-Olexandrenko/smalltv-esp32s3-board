@@ -187,7 +187,7 @@ namespace service
             }
 
             m_play.player.copy();
-            vTaskDelay(pdMS_TO_TICKS(1));
+            sleep(1);
         }
         {
             task::LockGuard lock(m_play.mutex);
