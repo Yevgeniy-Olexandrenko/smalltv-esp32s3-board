@@ -7,6 +7,7 @@ namespace service::wifi_connection
     class WiFiConnectionUI : public settings::Provider
     {
         enum class Action { None, DoScan, DoConnect, GoToManual };
+        struct Station { String ssid; bool open; int signal; };
 
     public:
         void begin();
@@ -14,13 +15,14 @@ namespace service::wifi_connection
         void settingsUpdate(sets::Updater& u) override;
 
     private:
-        bool isManualInput() const;
-        bool isPassClosedNetwork() const;
-        void fillSSIDsOptions(String& options);
-        void chooseSSIDByIndex(size_t index);
+        void scanForStations();
+        bool isPassClosedStation() const;
+        void fillOptionsWithStations(String& options);
+        void chooseStationByIndex(size_t index);
 
     private:
         String m_ssid, m_pass;
         Action m_action{ Action::None };
+        std::vector<Station> m_stations;
     };
 }

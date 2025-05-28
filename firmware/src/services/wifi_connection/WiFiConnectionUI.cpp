@@ -2,9 +2,9 @@
 #include "WiFiConnection.h"
 #include "settings.h"
 
-#define MAX_SSID_COUNT 10
-#define MIN_CONN_TOUT  10
-#define MAX_CONN_TOUT  60
+#define MAX_STA_COUNT 10
+#define MIN_CONN_TOUT 10
+#define MAX_CONN_TOUT 60
 
 namespace service::wifi_connection
 {
@@ -31,24 +31,24 @@ namespace service::wifi_connection
                 m_action = Action::None;
                 m_ssid = settings::data()[db::wifi_ssid];
                 m_pass = settings::data()[db::wifi_pass];
-                WiFi.scanDelete();
+                m_stations.clear();
                 // fall down
                 
             default:
-                if (isManualInput())
+                if (m_stations.empty())
                 {
                     b.Input("SSID", &m_ssid);
                 }
                 else
                 {
-                    String SSIDs;
-                    fillSSIDsOptions(SSIDs);
-                    if (b.Select("SSID", SSIDs))
+                    String options;
+                    fillOptionsWithStations(options);
+                    if (b.Select("SSID", options))
                     {
-                        chooseSSIDByIndex(b.build.value);
+                        chooseStationByIndex(b.build.value);
                     }
                 }
-                if (isPassClosedNetwork())
+                if (isPassClosedStation())
                 {
                     b.Pass ("Password", &m_pass);
                 }
@@ -56,7 +56,7 @@ namespace service::wifi_connection
                      MIN_CONN_TOUT, MAX_CONN_TOUT, 5, " seconds");
                 {
                     sets::Buttons buttons(b);
-                    if (isManualInput())
+                    if (m_stations.empty())
                     {
                         if (b.Button("Scan"))
                         {    
@@ -88,8 +88,8 @@ namespace service::wifi_connection
         switch (m_action)
         {
             case Action::DoScan:
-                WiFi.scanNetworks();
-                chooseSSIDByIndex(0);
+                scanForStations();
+                chooseStationByIndex(0);
                 m_action = Action::None;
                 settings::sets().reload();
                 break;
@@ -102,61 +102,54 @@ namespace service::wifi_connection
         }
     }
 
-    bool WiFiConnectionUI::isManualInput() const
+    void WiFiConnectionUI::scanForStations()
     {
-        const auto result = WiFi.scanComplete();
-        return (result == WIFI_SCAN_FAILED || result == 0);
-    }
-
-    bool WiFiConnectionUI::isPassClosedNetwork() const
-    {
+        WiFi.scanNetworks();
         const auto found = WiFi.scanComplete();
-        for (int i = 0; i < found; ++i) 
-        {
-            const String ssid = WiFi.SSID(i);
-            if (!ssid.isEmpty() && ssid == m_ssid)
-            {
-                return (WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
-            }
-        }
-        return true;
-    }
 
-    void WiFiConnectionUI::fillSSIDsOptions(String& options)
-    {
-        const auto found = WiFi.scanComplete();
-        for (int i = 0, count = 0; i < found && count < MAX_SSID_COUNT; ++i) 
+        m_stations.clear();
+        for (int i = 0; i < found && m_stations.size() < MAX_STA_COUNT; ++i) 
         {
             const String ssid = WiFi.SSID(i);
             if (ssid.isEmpty()) continue;
 
             auto open = (WiFi.encryptionType(i) == WIFI_AUTH_OPEN);
             auto signal = int(service::wifiConnection.getSignal(WiFi.RSSI(i)));
+            m_stations.push_back({ ssid, open, signal });
+        }
 
-            switch (signal)
+        WiFi.scanDelete();
+    }
+
+    bool WiFiConnectionUI::isPassClosedStation() const
+    {
+        for (auto& station : m_stations)
+        {
+            if (station.ssid == m_ssid) return !station.open;
+        }
+        return true;
+    }
+
+    void WiFiConnectionUI::fillOptionsWithStations(String& options)
+    {
+        for (auto& station : m_stations)
+        {
+            switch (station.signal)
             {
                 case 0:
                 case 1: options += led(Led::G) + " "; break;
                 case 2: options += led(Led::Y) + " "; break;
                 case 3: options += led(Led::R) + " "; break;
             }
-            options += (open ? "🔓 " : "🔐 ") + ssid + ";";
-            count++;
+            options += (station.open ? "🔓 " : "🔐 ") + station.ssid + ";";
         }
     }
 
-    void WiFiConnectionUI::chooseSSIDByIndex(size_t index)
+    void WiFiConnectionUI::chooseStationByIndex(size_t index)
     {
-        std::vector<String> SSIDs;
-        const auto found = WiFi.scanComplete();
-        for (int i = 0; i < found && SSIDs.size() < MAX_SSID_COUNT; ++i) 
+        if (index < m_stations.size())
         {
-            const String ssid = WiFi.SSID(i);
-            if (!ssid.isEmpty()) SSIDs.push_back(ssid);
-        }
-        if (index < SSIDs.size())
-        {
-            m_ssid = SSIDs[index];
+            m_ssid = m_stations[index].ssid;
             m_pass = "";
         }
     }
