@@ -2,7 +2,7 @@
 
 #include "core/settings/Settings.h"
 
-namespace service::wifi_connection
+namespace service::details
 {
     class WiFiConnectionUI : public settings::Provider
     {

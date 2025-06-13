@@ -1,6 +1,9 @@
-#include "Main.h"
+#include "MainTab.h"
 #include "drivers/Drivers.h"
-#include "services/Services.h"
+#include "services/DateTime.h"
+#include "services/WiFiConnection.h"
+#include "services/SettingsWebApp.h"
+#include "services/AudioPlayer.h"
 #include "settings.h"
 
 const char custom_html[] = 
@@ -18,23 +21,23 @@ R"raw(
 </html>
 )raw";
 
-namespace service::settings_webapp
+namespace service::details
 {
-    void Main::settingsBuild(sets::Builder &b)
+    void MainTab::settingsBuild(sets::Builder &b)
     {
         briefInfoBuild(b);
         audioPlayerBuild(b);
         hardwareInfoBuild(b);
     }
 
-    void Main::settingsUpdate(sets::Updater &u)
+    void MainTab::settingsUpdate(sets::Updater &u)
     {
         briefInfoUpdate(u);
         audioPlayerUpdate(u);
         hardwareInfoUpdate(u);
     }
 
-    void Main::briefInfoBuild(sets::Builder &b)
+    void MainTab::briefInfoBuild(sets::Builder &b)
     {
         b.beginGuest();
         {
@@ -62,30 +65,30 @@ namespace service::settings_webapp
         b.endGuest();
     }
 
-    void Main::briefInfoUpdate(sets::Updater &u)
+    void MainTab::briefInfoUpdate(sets::Updater &u)
     {
         u.update("html"_h, getHTML());
         u.update("internet"_h, getInet());
         u.update("uptime"_h, getUptime());
     }
 
-    void Main::audioPlayerBuild(sets::Builder &b)
+    void MainTab::audioPlayerBuild(sets::Builder &b)
     {
-        b.beginGuest();
         #ifndef NO_AUDIO
+        b.beginGuest();
         service::audioPlayer.getUI().settingsBuild(b);
-        #endif
         b.endGuest();
+        #endif
     }
 
-    void Main::audioPlayerUpdate(sets::Updater &u)
+    void MainTab::audioPlayerUpdate(sets::Updater &u)
     {
         #ifndef NO_AUDIO
         service::audioPlayer.getUI().settingsUpdate(u);
         #endif
     }
 
-    void Main::hardwareInfoBuild(sets::Builder &b)
+    void MainTab::hardwareInfoBuild(sets::Builder &b)
     {
         sets::Group g(b, "📄 Hardware");
         b.beginGuest();
@@ -110,7 +113,7 @@ namespace service::settings_webapp
         b.endGuest();
     }
 
-    void Main::hardwareInfoUpdate(sets::Updater &u)
+    void MainTab::hardwareInfoUpdate(sets::Updater &u)
     {
         u.update("ram_usage"_h, getRAMUsageInfo());
         #ifndef NO_PSRAM
@@ -125,9 +128,9 @@ namespace service::settings_webapp
         }
     }
 
-    String Main::getHTML() const
+    String MainTab::getHTML() const
     {
-        String casingColor = service::settingsWebApp.sets().getCasingColor();
+        String casingColor = service::settingsWebApp.getSets().getCasingColor();
         casingColor.toLowerCase();
 
         char buffer[sizeof(custom_html) + 32];
@@ -138,13 +141,13 @@ namespace service::settings_webapp
         return String(buffer);
     }
 
-    String Main::getInet() const
+    String MainTab::getInet() const
     {
         if (service::wifiConnection.isInternetAccessible()) return led(Led::G);
         return led(Led::R);
     }
 
-    String Main::getUptime() const
+    String MainTab::getUptime() const
     {
         auto u = millis() / (60 * 1000);
         auto m = uint8_t(u % 60); u /= 60;
@@ -155,7 +158,7 @@ namespace service::settings_webapp
         return String(buffer);
     }
 
-    String Main::getESPModuleInfo() const
+    String MainTab::getESPModuleInfo() const
     {
         String info = String(ESP.getChipModel()) + " / ";
         info += "N" + String(ESP.getFlashChipSize() / uint32_t(1024 * 1024));
@@ -165,21 +168,21 @@ namespace service::settings_webapp
         return info;
     }
 
-    String Main::getRAMUsageInfo() const
+    String MainTab::getRAMUsageInfo() const
     {
         auto usedBytes = ESP.getHeapSize() - ESP.getFreeHeap();
         auto usedPercents = float(usedBytes) / ESP.getHeapSize() * 100.f;
         return String(usedBytes / 1024) + "KB / " + String(usedPercents, 1) + "%";
     }
 
-    String Main::getPSRAMUsageInfo() const
+    String MainTab::getPSRAMUsageInfo() const
     {
         auto usedBytes = ESP.getPsramSize() - ESP.getFreePsram();
         auto usedPercents = float(usedBytes) / ESP.getPsramSize() * 100.f;
         return String(usedBytes / 1024) + "KB / " + String(usedPercents, 1) + "%";
     }
 
-    String Main::getPowerSourceInfo() const
+    String MainTab::getPowerSourceInfo() const
     {
         #ifndef NO_VINSENSE
         auto voltage = driver::powerSource.getInputVoltage();
@@ -200,7 +203,7 @@ namespace service::settings_webapp
         return "";
     }
 
-    String Main::getWiFiSignalInfo() const
+    String MainTab::getWiFiSignalInfo() const
     {
         auto rssi = service::wifiConnection.getRSSI();
         String info = String(rssi) + "dBm";

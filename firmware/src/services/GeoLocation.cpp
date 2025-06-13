@@ -2,7 +2,7 @@
 #include <ArduinoJson.h>
 
 #include "GeoLocation.h"
-#include "services/date_time/DateTime.h"
+#include "DateTime.h"
 #include "settings.h"
 
 #define FETCH_PERIOD (30 * 60 * 1000) // 30 minutes

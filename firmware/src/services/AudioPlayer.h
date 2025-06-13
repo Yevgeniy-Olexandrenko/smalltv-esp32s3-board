@@ -5,9 +5,9 @@
 #include <AudioTools/AudioLibs/AudioRealFFT.h>
 #include "core/tasks/Task.h"
 #include "core/tasks/Mutex.h"
-#include "core/audio/FFTHandler.h"
-#include "AudioContext.h"
-#include "AudioPlayerUI.h"
+#include "AudioPlayer/AudioContext.h"
+#include "AudioPlayer/AudioPlayerUI.h"
+#include "AudioPlayer/FFTHandler.h"
 
 namespace service
 {
@@ -22,7 +22,7 @@ namespace service
 
     public:
         void begin();
-        bool start(audio_player::AudioContext* context);
+        bool start(details::AudioContext* context);
         void setVolume(float volume);
         void setPlaylistIndex(int index);
         void pause(bool yes);
@@ -32,9 +32,9 @@ namespace service
         bool isStarted();
         bool isPlaying();
 
-        audio_player::AudioPlayerUI& getUI() { return m_ui; }
-        audio_player::AudioContext*  getContext() { return m_context.get(); }
-        void setFFTHandler(audio::FFTHandler* fftHandler);
+        details::AudioPlayerUI& getUI() { return m_ui; }
+        details::AudioContext*  getContext() { return m_context.get(); }
+        void setFFTHandler(details::FFTHandler* fftHandler);
 
     private:
         void task() override;
@@ -43,8 +43,8 @@ namespace service
 
     private:
         // this task access
-        audio_player::AudioPlayerUI m_ui;
-        std::unique_ptr<audio_player::AudioContext> m_context;
+        details::AudioPlayerUI m_ui;
+        std::unique_ptr<details::AudioContext> m_context;
         audio_tools::LinearVolumeControl m_volCtr;
         audio_tools::MultiOutput m_output;
         audio_tools::AudioRealFFT m_fftOut;
@@ -59,7 +59,7 @@ namespace service
         } m_play;
         struct {
             task::Mutex mutex;
-            audio::FFTHandler* handler = nullptr;
+            details::FFTHandler* handler = nullptr;
         } m_fft;
     };
 

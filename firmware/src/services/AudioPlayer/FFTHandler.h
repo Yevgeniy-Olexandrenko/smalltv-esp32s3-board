@@ -6,7 +6,7 @@
 #define MAX_UPDATE_TIME 100
 #define MAX_SMOOTH_STEP 0.1
 
-namespace audio
+namespace service::details
 {
     class FFTHandler
     {

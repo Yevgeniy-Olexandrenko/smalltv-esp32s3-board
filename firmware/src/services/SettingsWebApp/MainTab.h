@@ -2,9 +2,9 @@
 
 #include "core/settings/Settings.h"
 
-namespace service::settings_webapp
+namespace service::details
 {
-    class Main : public settings::Provider
+    class MainTab : public settings::Provider
     {
     public:
         void begin() {}

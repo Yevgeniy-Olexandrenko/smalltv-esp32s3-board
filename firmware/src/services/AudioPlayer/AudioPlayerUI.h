@@ -3,7 +3,7 @@
 
 #include "core/settings/Settings.h"
 
-namespace service::audio_player
+namespace service::details
 {
     class AudioPlayerUI : public settings::Provider
     {

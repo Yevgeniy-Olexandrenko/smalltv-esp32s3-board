@@ -11,7 +11,7 @@ namespace audio_tools
     class AudioDecoder;
 }
 
-namespace service::audio_player
+namespace service::details
 {
     class AudioContext
     {

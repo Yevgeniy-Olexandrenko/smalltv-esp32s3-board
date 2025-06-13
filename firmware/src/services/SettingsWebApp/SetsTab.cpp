@@ -1,9 +1,12 @@
-#include "Sets.h"
+#include "SetsTab.h"
 #include "drivers/Drivers.h"
-#include "services/Services.h"
+#include "services/WiFiConnection.h"
+#include "services/GeoLocation.h"
+#include "services/WeatherForecast.h"
+#include "services/SettingsWebApp.h"
 #include "settings.h"
 
-namespace service::settings_webapp
+namespace service::details
 {
     const char casingColors[] = "White;Black;Yellow;Orange;Pink;Silver;Gold";
     const char themeColors [] = "Aqua;Blue;Gray;Green;Mint;Orange;Pink;Red;Violet";
@@ -20,13 +23,13 @@ namespace service::settings_webapp
         sets::Colors::Violet
     };
 
-    void Sets::begin()
+    void SetsTab::begin()
     {
         settings::data().init(db::color_casing, 0);
         settings::data().init(db::color_theme,  0);
     }
 
-    void Sets::settingsBuild(sets::Builder &b)
+    void SetsTab::settingsBuild(sets::Builder &b)
     {
         colorsSettingsBuild(b);
         service::wifiConnection.getUI().settingsBuild(b);
@@ -36,7 +39,7 @@ namespace service::settings_webapp
         apiKeysSettingsBuild(b);
     }
 
-    void Sets::settingsUpdate(sets::Updater &u)
+    void SetsTab::settingsUpdate(sets::Updater &u)
     {
         service::wifiConnection.getUI().settingsUpdate(u);
         storageSettingsUpdate(u);
@@ -44,13 +47,13 @@ namespace service::settings_webapp
         service::weatherForecast.settingsUpdate(u);
     }
 
-    String Sets::getCasingColor() const
+    String SetsTab::getCasingColor() const
     {
         int index = settings::data()[db::color_casing];
         return Text(casingColors).getSub(index, ';').toString();
     }
 
-    sets::Colors Sets::getThemeColor() const
+    sets::Colors SetsTab::getThemeColor() const
     {
         int index = settings::data()[db::color_theme];
         return themeColorsRGB[index];
@@ -58,7 +61,7 @@ namespace service::settings_webapp
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Sets::colorsSettingsBuild(sets::Builder &b)
+    void SetsTab::colorsSettingsBuild(sets::Builder &b)
     {
         sets::Row r(b, "", sets::DivType::Line);
         b.Select(db::color_casing, "Casing", casingColors);
@@ -70,7 +73,7 @@ namespace service::settings_webapp
         }
     }
 
-    void Sets::storageSettingsBuild(sets::Builder &b)
+    void SetsTab::storageSettingsBuild(sets::Builder &b)
     {
         b.beginGuest();
         if (m_typeRollback < 0)
@@ -109,7 +112,7 @@ namespace service::settings_webapp
         b.endGuest();
     }
 
-    void Sets::storageSettingsUpdate(sets::Updater &u)
+    void SetsTab::storageSettingsUpdate(sets::Updater &u)
     {
         if (m_typeChanged)
         {
@@ -122,7 +125,7 @@ namespace service::settings_webapp
         }
     }
 
-    void Sets::fillStorageSpecs(String &specs) const
+    void SetsTab::fillStorageSpecs(String &specs) const
     {
         #ifndef NO_SDCARD
         if (driver::storage.getType() == driver::Storage::Type::SDCard)
@@ -150,7 +153,7 @@ namespace service::settings_webapp
         #endif
     }
 
-    void Sets::apiKeysSettingsBuild(sets::Builder &b)
+    void SetsTab::apiKeysSettingsBuild(sets::Builder &b)
     {
         sets::Group g(b, "🔑 API Keys");
         b.Input(db::apikey_google, "Google");

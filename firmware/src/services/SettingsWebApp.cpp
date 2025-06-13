@@ -1,7 +1,7 @@
 #include "SettingsWebApp.h"
 #include "drivers/onboard/SelfReboot.h"
-#include "services/date_time/DateTime.h"
-#include "services/wifi_connection/WiFiConnection.h"
+#include "services/DateTime.h"
+#include "services/WiFiConnection.h"
 #include "defines.h"
 
 namespace service

@@ -1,12 +1,12 @@
 #ifndef NO_AUDIO
 
-#include "AudioPlayer.h"
-#include "AudioContext.h"
 #include "AudioPlayerUI.h"
+#include "AudioContext.h"
+#include "services/AudioPlayer.h"
 #include "drivers/storage/Storage.h"
 #include "settings.h"
 
-namespace service::audio_player
+namespace service::details
 {
     AudioPlayerUI::AudioPlayerUI()
         : m_started(false)

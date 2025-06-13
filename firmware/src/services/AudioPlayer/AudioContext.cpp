@@ -7,7 +7,7 @@
 #include "AudioContext.h"
 #include "drivers/storage/Storage.h"
 
-namespace service::audio_player
+namespace service::details
 {
     AudioContext::AudioContext() 
         : m_source(nullptr)

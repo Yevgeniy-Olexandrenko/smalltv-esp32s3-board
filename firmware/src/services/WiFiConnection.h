@@ -1,13 +1,11 @@
 #pragma once
 
 #include "core/tasks/Task.h"
-#include "WiFiConnectionUI.h"
-#include "InternetAccess.h"
+#include "WiFiConnection/WiFiConnectionUI.h"
+#include "WiFiConnection/InternetAccess.h"
 
 namespace service
 {
-    using namespace wifi_connection;
-
     class WiFiConnection
         : public task::Task<4096, task::core::System, task::priority::Background>
     {
@@ -26,7 +24,7 @@ namespace service
         Signal getSignal(int8_t rssi) const;
         String getDeviceID() const;
 
-        WiFiConnectionUI& getUI() { return m_ui; }
+        details::WiFiConnectionUI& getUI() { return m_ui; }
 
     private:
         void task() override;
@@ -34,7 +32,7 @@ namespace service
         void updateConnection();
 
     private:
-        WiFiConnectionUI m_ui;
+        details::WiFiConnectionUI m_ui;
         struct {
             String ssid;
             String pass;
@@ -42,7 +40,7 @@ namespace service
             uint32_t time = 0;
             bool trying = false;
         } m_connect; 
-        InternetAccess m_internet;
+        details::InternetAccess m_internet;
     };
 
     extern WiFiConnection wifiConnection;

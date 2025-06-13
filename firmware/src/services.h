@@ -1,4 +1,15 @@
-#include "Services.h"
+#pragma once
+
+#include "services/DateTime.h"
+#include "services/GeoLocation.h"
+#include "services/WiFiConnection.h"
+#include "services/WeatherForecast.h"
+#include "services/SettingsWebApp.h"
+
+#ifndef NO_AUDIO
+#include "services/AudioPlayer.h"
+#endif
+
 #include "settings.h"
 #include "secrets.h"
 

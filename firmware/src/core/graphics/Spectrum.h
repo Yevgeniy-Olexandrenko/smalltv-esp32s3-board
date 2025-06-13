@@ -2,15 +2,15 @@
 
 #include <TFT_eSPI.h>
 #include "core/tasks/Mutex.h"
-#include "core/audio/FFTHandler.h"
+#include "services/AudioPlayer/FFTHandler.h"
 
 namespace image
 {
-    class Spectrum : public audio::FFTHandler
+    class Spectrum : public service::details::FFTHandler
     {
     public:
-        using Frequency = audio::FFTHandler::Frequency;
-        using Magnitude = audio::FFTHandler::Magnitude;
+        using Frequency = service::details::FFTHandler::Frequency;
+        using Magnitude = service::details::FFTHandler::Magnitude;
 
         Spectrum(uint8_t numBins = 32, Frequency minFreq = 80, Frequency maxFreq = 16000);
 

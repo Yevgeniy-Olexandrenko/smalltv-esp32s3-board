@@ -3,9 +3,9 @@
 #include "core/settings/Settings.h"
 #include "drivers/storage/Storage.h"
 
-namespace service::settings_webapp
+namespace service::details
 {
-    class Sets : public settings::Provider
+    class SetsTab : public settings::Provider
     {
     public:
         void begin();

@@ -3,7 +3,7 @@
 namespace image
 {
     Spectrum::Spectrum(uint8_t numBins, Frequency minFreq, Frequency maxFreq)
-        : audio::FFTHandler(numBins, minFreq, maxFreq)
+        : service::details::FFTHandler(numBins, minFreq, maxFreq)
         , m_fgColor(TFT_WHITE)
         , m_bgColor(TFT_NAVY)
         , m_barH(std::make_unique<uint8_t[]>(numBins))

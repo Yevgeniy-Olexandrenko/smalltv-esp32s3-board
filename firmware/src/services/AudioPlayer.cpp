@@ -46,7 +46,7 @@ namespace service
         }
     }
 
-    bool AudioPlayer::start(audio_player::AudioContext* context)
+    bool AudioPlayer::start(details::AudioContext* context)
     {
         if (!isStarted() && context && !m_context)
         {
@@ -143,7 +143,7 @@ namespace service
         return (Task::isAlive() && m_play.player.isActive());
     }
 
-    void AudioPlayer::setFFTHandler(audio::FFTHandler* fftHandler)
+    void AudioPlayer::setFFTHandler(details::FFTHandler* fftHandler)
     {
         task::LockGuard lock(m_fft.mutex);
         if (fftHandler) fftHandler->init(m_fftOut);

@@ -2,13 +2,12 @@
 
 #include "core/tasks/Task.h"
 #include "core/settings/Settings.h"
-#include "tabs/Apps.h"
-#include "tabs/Main.h"
-#include "tabs/Sets.h"
+#include "SettingsWebApp/AppsTab.h"
+#include "SettingsWebApp/MainTab.h"
+#include "SettingsWebApp/SetsTab.h"
 
 namespace service
 {
-    using namespace service::settings_webapp;
     using RebootCorfirmCB = std::function<void(bool)>;
 
     class SettingsWebApp 
@@ -18,9 +17,9 @@ namespace service
         void begin();
         void requestReboot(RebootCorfirmCB cb);
 
-        const Sets& sets() const { return m_sets; }
-        const Main& main() const { return m_main; }
-        const Apps& apps() const { return m_apps; }
+        details::SetsTab& getSets() { return m_sets; };
+        details::MainTab& getMain() { return m_main; };
+        details::AppsTab& getApps() { return m_apps; };
 
     private:
         void task() override;
@@ -36,9 +35,9 @@ namespace service
         bool m_rebootPending;
         RebootCorfirmCB m_rebootConfirmCB;
 
-        Sets m_sets;
-        Main m_main;
-        Apps m_apps;
+        details::SetsTab m_sets;
+        details::MainTab m_main;
+        details::AppsTab m_apps;
     };
 
     extern SettingsWebApp settingsWebApp;

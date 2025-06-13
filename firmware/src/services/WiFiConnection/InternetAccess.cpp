@@ -13,7 +13,7 @@
 #undef INADDR_NONE
 #endif
 
-namespace service::wifi_connection
+namespace service::details
 {
     // Returns a 16-bit Chip ID derived from the MAC address
     uint16_t getChipID()

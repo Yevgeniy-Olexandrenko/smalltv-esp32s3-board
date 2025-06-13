@@ -1,5 +1,5 @@
 #include "DateTime.h"
-#include "services/geo_location/GeoLocation.h"
+#include "GeoLocation.h"
 
 namespace service
 {

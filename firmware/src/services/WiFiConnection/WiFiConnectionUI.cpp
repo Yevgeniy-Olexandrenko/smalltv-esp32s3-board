@@ -1,12 +1,12 @@
 #include "WiFiConnectionUI.h"
-#include "WiFiConnection.h"
+#include "services/WiFiConnection.h"
 #include "settings.h"
 
 #define MAX_STA_COUNT 10
 #define MIN_CONN_TOUT 10
 #define MAX_CONN_TOUT 60
 
-namespace service::wifi_connection
+namespace service::details
 {
     void WiFiConnectionUI::begin()
     {
@@ -53,7 +53,7 @@ namespace service::wifi_connection
                     b.Pass ("Password", &m_pass);
                 }
                 b.Slider(db::wifi_tout, "Connection timeout",
-                     MIN_CONN_TOUT, MAX_CONN_TOUT, 5, " seconds");
+                    MIN_CONN_TOUT, MAX_CONN_TOUT, 5, " seconds");
                 {
                     sets::Buttons buttons(b);
                     if (m_stations.empty())

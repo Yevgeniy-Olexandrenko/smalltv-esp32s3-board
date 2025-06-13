@@ -10,11 +10,11 @@ namespace service
         settings::data().init(db::wifi_ssid, WIFI_SSID);
         settings::data().init(db::wifi_pass, WIFI_PASS);
         settings::data().init(db::wifi_tout, 20);
- 
+
         m_ui.begin();
         WiFi.setHostname(NETWORK_HOST_NAME);
         WiFi.setAutoReconnect(true);
- 
+
         log_i("connect to wifi on boot");
         connect(settings::data()[db::wifi_ssid], settings::data()[db::wifi_pass]);
         Task::start("wifi_connection");
