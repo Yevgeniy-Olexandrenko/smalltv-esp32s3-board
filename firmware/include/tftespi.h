@@ -1,5 +1,7 @@
 #pragma once
 
+#include "board.h"
+
 #define DISABLE_ALL_LIBRARY_WARNINGS
 #ifndef NO_VIDEO
 

@@ -11,8 +11,12 @@ namespace service
         settings::data().init(db::wifi_pass, WIFI_PASS);
         settings::data().init(db::wifi_tout, 20);
 
+        String hostname;
+        hostname += PROJECT_TITLE;
+        hostname += " (" + getDeviceID() + ")";
+
         m_ui.begin();
-        WiFi.setHostname(NETWORK_HOST_NAME);
+        WiFi.setHostname(hostname.c_str());
         WiFi.setAutoReconnect(true);
 
         log_i("connect to wifi on boot");
@@ -56,12 +60,16 @@ namespace service
 
     void WiFiConnection::beginConnection()
     {
+        String apname;
+        apname += PROJECT_TITLE;
+        apname += " (" + getDeviceID() + ")";
+
         if (m_connect.ssid.isEmpty())
         {
             // new network is not set, so do not 
             // try to connect, just turn on the AP
             WiFi.mode(WIFI_AP);
-            WiFi.softAP(NETWORK_ACCESS_POINT, "");
+            WiFi.softAP(apname.c_str(), "");
             m_connect.trying = false;
 
             log_i("start AP: %s (%s)", 
@@ -75,7 +83,7 @@ namespace service
             // start connection attempt, turn on the 
             // AP and try to  connect to a new network
             WiFi.mode(WIFI_AP_STA);
-            WiFi.softAP(NETWORK_ACCESS_POINT, "");
+            WiFi.softAP(apname.c_str(), "");
             WiFi.begin(m_connect.ssid, m_connect.pass);
             m_connect.time = millis();
             m_connect.trying = true;

@@ -1,7 +1,7 @@
 #ifndef NO_AUDIO
 
 #include "AudioPlayer.h"
-#include "defines.h"
+#include "board.h"
 
 namespace service
 {

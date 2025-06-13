@@ -1,6 +1,7 @@
 #ifndef NO_VIDEO
 
 #include "Display.h"
+#include "board.h"
 
 #define LCD_BL_PWM_CHANNEL   0
 #define LCD_BL_PWM_FREQENCY  5000

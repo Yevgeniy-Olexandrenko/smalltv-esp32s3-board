@@ -1,5 +1,7 @@
 #include "Storage.h"
 #include "SelfReboot.h"
+#include "board.h"
+#include "defines.h"
 
 namespace driver
 {
