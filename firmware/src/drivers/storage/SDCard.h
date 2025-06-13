@@ -4,7 +4,7 @@
 #include <driver/sdmmc_types.h>
 #include "FatFS.h"
 
-namespace driver
+namespace driver::details
 {
     class SDCard final : public FatFS
     {

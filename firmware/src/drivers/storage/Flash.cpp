@@ -4,7 +4,7 @@
 #include <diskio_wl.h>
 #include "Flash.h"
 
-namespace driver
+namespace driver::details
 {
     Flash::Flash()
         : FatFS()

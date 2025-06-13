@@ -2,13 +2,15 @@
 
 #include <USB.h>
 #include <USBMSC.h>
-#include "FatFS.h"
+#include "Storage/FatFS.h"
+#include "Storage/Flash.h"
+#include "Storage/SDCard.h"
 
 namespace driver
 {
     class Storage
     {
-        using FSPtr = std::unique_ptr<FatFS>;
+        using FSPtr = std::unique_ptr<details::FatFS>;
 
     public:
         enum class Type { None, Flash, SDCard, Auto };
@@ -22,7 +24,7 @@ namespace driver
         Type getType() const;
         bool isLarge() const { return (getType() == Type::SDCard); }
         bool isFast()  const { return (getType() == Type::Flash ); }
-        FatFS& getFS() const;
+        details::FatFS& getFS() const;
 
         void startMSC();
         bool isMSCRunning() const { return m_runMSC; }

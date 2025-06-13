@@ -1,37 +1,42 @@
-#include "Drivers.h"
+#pragma once
+
+#include "drivers/PowerSource.h"
+#include "drivers/Storage.h"
+#include "drivers/Display.h"
+#include "drivers/SelfReboot.h"
+#include "drivers/StatusLED.h"
+
 #include "core/settings/Settings.h"
 #include "settings.h"
 
 namespace drivers
 {
-    using namespace driver;
-
     void begin()
     {
         // init power source
         #ifndef NO_VINSENSE
-        powerSource.begin();
+        driver::powerSource.begin();
         #endif
 
         // init storage
         #if !defined(NO_SDCARD) && !defined(NO_FLASH)
-        auto storageType = Storage::Type::Auto;
+        auto storageType = driver::Storage::Type::Auto;
         #elif !defined(NO_SDCARD) && defined(NO_FLASH)
-        auto storageType = Storage::Type::SDCard;
+        auto storageType = driver::Storage::Type::SDCard;
         #elif defined(NO_SDCARD) && !defined(NO_FLASH)
-        auto storageType = Storage::Type::Flash;
+        auto storageType = driver::Storage::Type::Flash;
         #else
-        auto storageType = Storage::Type::None;
+        auto storageType = driver::Storage::Type::None;
         #endif
         settings::data().init(db::storage_type, int(storageType));
-        storageType = Storage::Type(int(settings::data()[db::storage_type]));
-        storage.begin(storageType);
+        storageType = driver::Storage::Type(int(settings::data()[db::storage_type]));
+        driver::storage.begin(storageType);
 
         // init display
         #ifndef NO_VIDEO
         settings::data().init(db::lcd_brightness, 50);
         auto brightness = float(settings::data()[db::lcd_brightness]) * 0.01f;
-        display.begin(brightness);
+        driver::display.begin(brightness);
         #endif
 
         // start USB MSC on reboot 
@@ -40,7 +45,7 @@ namespace drivers
         if (settings::data()[db::reboot_to_msc])
         {
             settings::data()[db::reboot_to_msc] = false;
-            storage.startMSC();
+            driver::storage.startMSC();
         }
         #endif  
     }

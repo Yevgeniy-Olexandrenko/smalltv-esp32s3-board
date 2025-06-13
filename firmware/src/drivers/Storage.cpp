@@ -1,7 +1,5 @@
-#include "Flash.h"
-#include "SDCard.h"
 #include "Storage.h"
-#include "drivers/onboard/SelfReboot.h"
+#include "SelfReboot.h"
 
 namespace driver
 {
@@ -22,7 +20,7 @@ namespace driver
                     m_type = beginSDCard();
                     if (m_type == Type::None)
                         m_type = beginFlash(); 
-                   break;
+                    break;
 
                 case Type::SDCard: 
                     m_type = beginSDCard(); 
@@ -46,10 +44,10 @@ namespace driver
         return Type::None;
     }
 
-    FatFS& Storage::getFS() const
+    details::FatFS& Storage::getFS() const
     {
         if (!m_runMSC && m_fsPtr) return *m_fsPtr;
-        static FatFS s_invFS;
+        static details::FatFS s_invFS;
         return s_invFS;
     }
 
@@ -76,8 +74,8 @@ namespace driver
     Storage::Type Storage::beginFlash()
     {
         #ifndef NO_FLASH
-        Flash* flash = new Flash();
-        if (flash->begin(Flash::DEFAULT_MOUNT_POINT))
+        details::Flash* flash = new details::Flash();
+        if (flash->begin(details::Flash::DEFAULT_MOUNT_POINT))
         {
             m_fsPtr.reset(flash);
             return Type::Flash;
@@ -90,15 +88,18 @@ namespace driver
     Storage::Type Storage::beginSDCard()
     {
         #ifndef NO_SDCARD
-        SDCard* sdcard = new SDCard();
+        details::SDCard* sdcard = new details::SDCard();
         #if defined(SDCARD_SPI)
-        if (sdcard->begin(SDCard::DEFAULT_MOUNT_POINT, 
+        if (sdcard->begin(
+            details::SDCard::DEFAULT_MOUNT_POINT,
             PIN_SD_CLK, PIN_SD_MOSI, PIN_SD_MISO, PIN_SD_CS))
         #elif defined(SDCARD_SDIO1)
-        if (sdcard->begin(SDCard::DEFAULT_MOUNT_POINT,
+        if (sdcard->begin(
+            details::SDCard::DEFAULT_MOUNT_POINT,
             PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0))
         #else // SDCARD_SDIO4
-        if (sdcard->begin(SDCard::DEFAULT_MOUNT_POINT,
+        if (sdcard->begin(
+            details::SDCard::DEFAULT_MOUNT_POINT,
             PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0, PIN_SD_D1, PIN_SD_D2, PIN_SD_D3))
         #endif
         {

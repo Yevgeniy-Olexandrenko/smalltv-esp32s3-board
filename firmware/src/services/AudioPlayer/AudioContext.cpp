@@ -5,7 +5,7 @@
 #include <AudioTools/AudioCodecs/CodecMP3Helix.h>
 #include <AudioTools/AudioCodecs/CodecAACHelix.h>
 #include "AudioContext.h"
-#include "drivers/storage/Storage.h"
+#include "drivers/Storage.h"
 
 namespace service::details
 {

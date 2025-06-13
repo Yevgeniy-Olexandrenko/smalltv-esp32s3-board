@@ -2,7 +2,7 @@
 
 #include <FS.h>
 
-namespace driver
+namespace driver::details
 {
     class FatFS : public fs::FS
     {

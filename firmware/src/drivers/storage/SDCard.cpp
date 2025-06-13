@@ -8,7 +8,7 @@
 #include <diskio_sdmmc.h>
 #include "SDCard.h"
 
-namespace driver
+namespace driver::details
 {
     SDCard::SDCard()
         : FatFS()

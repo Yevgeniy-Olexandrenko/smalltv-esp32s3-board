@@ -1,5 +1,5 @@
 #include "SetsTab.h"
-#include "drivers/Drivers.h"
+#include "drivers/Storage.h"
 #include "services/WiFiConnection.h"
 #include "services/GeoLocation.h"
 #include "services/WeatherForecast.h"
@@ -131,14 +131,14 @@ namespace service::details
         if (driver::storage.getType() == driver::Storage::Type::SDCard)
         {
             const auto size = driver::storage.getFS().partitionSize() / (1000.f * 1000.f);
-            const auto& sdcard = static_cast<driver::SDCard&>(driver::storage.getFS()); 
-            specs = (sdcard.getCardType() == driver::SDCard::Type::SDHC ? "SDHC" : "SDSC");
+            const auto& sdcard = static_cast<driver::details::SDCard&>(driver::storage.getFS()); 
+            specs = (sdcard.getCardType() == driver::details::SDCard::Type::SDHC ? "SDHC" : "SDSC");
             specs += " " + (size > 1000 ? String(size / 1000.f, 0) + "GB" : String(size, 0) + "MB");
             switch(sdcard.getCardInterface())
             {
-                case driver::SDCard::Interface::SPI: specs += " / SPI"; break;
-                case driver::SDCard::Interface::SDIO1 : specs += " / SDIO-1B"; break;
-                case driver::SDCard::Interface::SDIO4 : specs += " / SDIO-4B"; break;
+                case driver::details::SDCard::Interface::SPI:   specs += " / SPI";     break;
+                case driver::details::SDCard::Interface::SDIO1: specs += " / SDIO-1B"; break;
+                case driver::details::SDCard::Interface::SDIO4: specs += " / SDIO-4B"; break;
             }
         }
         else

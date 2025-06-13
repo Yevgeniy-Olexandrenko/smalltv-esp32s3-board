@@ -2,7 +2,7 @@
 #include <ff.h>
 #include "FatFS.h"
 
-namespace driver
+namespace driver::details
 {
     FatFS::FatFS()
         : fs::FS(FSImplPtr(new VFSImpl()))

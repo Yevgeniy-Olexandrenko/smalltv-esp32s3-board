@@ -4,7 +4,7 @@
 #include <wear_levelling.h>
 #include "FatFS.h"
 
-namespace driver
+namespace driver::details
 {
     class Flash final : public FatFS
     {

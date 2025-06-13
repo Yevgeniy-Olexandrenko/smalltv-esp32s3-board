@@ -1,5 +1,6 @@
 #include "MainTab.h"
-#include "drivers/Drivers.h"
+#include "drivers/Display.h"
+#include "drivers/PowerSource.h"
 #include "services/DateTime.h"
 #include "services/WiFiConnection.h"
 #include "services/SettingsWebApp.h"
