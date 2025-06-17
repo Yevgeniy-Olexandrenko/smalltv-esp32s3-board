@@ -14,7 +14,7 @@ namespace service::details
 
             bool empty() const { return items.empty(); }
             void clear() { items.clear(); index = 0; }
-            void sort() { std::sort(items.begin(), items.end()); index = 0; }
+            void sort()  { std::sort(items.begin(), items.end()); index = 0; }
             const String& item() const { return items[index]; }
         };
 

@@ -1,7 +1,8 @@
 #ifndef NO_AUDIO
 
 #include "AudioPlayerUI.h"
-#include "AudioContext.h"
+#include "StorageAudioContext.h"
+#include "RadioAudioContext.h"
 #include "drivers/Storage.h"
 #include "services/AudioPlayer.h"
 #include "settings.h"
@@ -80,7 +81,7 @@ namespace service::details
         {
             if (m_sources.empty())
             {
-                context_utils::fetchStorageExts(m_sources.items);
+                StorageAudioContext::fetchStorageExts(m_sources.items);
                 m_sources.sort();
             }
             if (m_filelists.empty())
@@ -122,7 +123,7 @@ namespace service::details
             if (!m_sources.empty())
             {
                 const auto& source = m_sources.item();
-                context_utils::fetchStorageFilelistsForExt(source, m_filelists.items);
+                StorageAudioContext::fetchStorageFilelistsForExt(source, m_filelists.items);
                 reload = !m_filelists.empty();
                 m_filelists.sort();
             }

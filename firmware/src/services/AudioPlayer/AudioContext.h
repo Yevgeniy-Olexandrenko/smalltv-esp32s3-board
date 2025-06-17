@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <functional>
-#include <FS.h>
+#include <WString.h>
 
 namespace audio_tools
 {
@@ -46,49 +46,5 @@ namespace service::details
         int16_t m_index;
         bool m_loop;
     };
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    class StorageAudioContext : public AudioContext
-    {
-        static StorageAudioContext* s_this;
-        static Stream* s_nextStreamCallback(int offset);
-        static Stream* s_indexStreamCallback(int index);
-
-    public:
-        StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop);
-        ~StorageAudioContext() override;
-
-        void begin() override;
-        void end() override;
-
-    private:
-        Stream* nextStreamCallback(int offset);
-        Stream* indexStreamCallback(int index);
-        Stream* openPlaylistItemStream();
-
-    private:
-        std::unique_ptr<audio_tools::AudioSource > m_source;
-        std::unique_ptr<audio_tools::AudioDecoder> m_decode;
-        std::unique_ptr<audio_tools::AudioDecoder> m_filter;
-
-        String m_path;
-        File m_file;
-    };
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    class RadioAudioContext : public AudioContext
-    {
-        //
-    };
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    namespace context_utils
-    {
-        void fetchStorageExts(std::vector<String>& exts);
-        void fetchStorageFilelistsForExt(const String& ext, std::vector<String>& filelists);
-    }
 }
 #endif
