@@ -53,10 +53,12 @@ void setup()
     }
 
 #ifndef NO_VIDEO
+#ifndef NO_AUDIO
     // tft test text
     driver::display.fillScreen(TFT_NAVY);
     sprite.createSprite(240, 240);
     service::audioPlayer.setFFTHandler(&spectrum);
+#endif    
 #endif    
 
 #ifndef NO_AUDIO
