@@ -6,9 +6,9 @@
 
 namespace service::details
 {
-    class StorageAudioContext : public AudioContext
+    class StorageContext : public AudioContext
     {
-        static StorageAudioContext* s_this;
+        static StorageContext* s_this;
         static Stream* s_nextStreamCallback(int offset);
         static Stream* s_indexStreamCallback(int index);
 
@@ -17,8 +17,8 @@ namespace service::details
         static void fetchStorageFilelistsForExt(const String& ext, std::vector<String>& filelists);
 
     public:
-        StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop);
-        ~StorageAudioContext() override;
+        StorageContext(const String& ext, const String& dir, bool shuffle, bool loop);
+        ~StorageContext() override;
 
         void begin() override;
         void end() override;

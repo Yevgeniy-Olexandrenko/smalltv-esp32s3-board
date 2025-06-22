@@ -28,7 +28,7 @@ namespace service::details
     {
         bool shuffle = settings::data()[db::audio_player_shuffle];
         bool loop = settings::data()[db::audio_player_loop];
-        auto context = new StorageAudioContext(format, filelist, shuffle, loop);
+        auto context = new StorageContext(format, filelist, shuffle, loop);
         audioPlayer.start(context);
     }
 
@@ -81,7 +81,7 @@ namespace service::details
         {
             if (m_sources.empty())
             {
-                StorageAudioContext::fetchStorageExts(m_sources.items);
+                StorageContext::fetchStorageExts(m_sources.items);
                 m_sources.sort();
             }
             if (m_filelists.empty())
@@ -123,7 +123,7 @@ namespace service::details
             if (!m_sources.empty())
             {
                 const auto& source = m_sources.item();
-                StorageAudioContext::fetchStorageFilelistsForExt(source, m_filelists.items);
+                StorageContext::fetchStorageFilelistsForExt(source, m_filelists.items);
                 reload = !m_filelists.empty();
                 m_filelists.sort();
             }

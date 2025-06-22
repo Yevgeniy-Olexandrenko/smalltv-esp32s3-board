@@ -5,7 +5,7 @@
 
 namespace service::details
 {
-    class RadioAudioContext : public AudioContext
+    class RadioContext : public AudioContext
     {
         // TODO
     };
