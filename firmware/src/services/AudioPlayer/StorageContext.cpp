@@ -4,24 +4,24 @@
 #include <AudioTools.h>
 #include <AudioTools/AudioCodecs/CodecMP3Helix.h>
 #include <AudioTools/AudioCodecs/CodecAACHelix.h>
-#include "StorageAudioContext.h"
+#include "StorageContext.h"
 #include "drivers/Storage.h"
 
 namespace service::details
 {
-    StorageAudioContext* StorageAudioContext::s_this = nullptr;
+    StorageContext* StorageContext::s_this = nullptr;
     
-    Stream* StorageAudioContext::s_nextStreamCallback(int offset)
+    Stream* StorageContext::s_nextStreamCallback(int offset)
     {
         return (s_this ? s_this->nextStreamCallback(offset) : nullptr);
     }
 
-    Stream *StorageAudioContext::s_indexStreamCallback(int index)
+    Stream* StorageContext::s_indexStreamCallback(int index)
     {
         return (s_this ? s_this->indexStreamCallback(index) : nullptr);
     }
 
-    void StorageAudioContext::fetchStorageExts(std::vector<String>& exts)
+    void StorageContext::fetchStorageExts(std::vector<String>& exts)
     {
         exts.clear();
 
@@ -42,7 +42,7 @@ namespace service::details
         }
     }
 
-    void StorageAudioContext::fetchStorageFilelistsForExt(const String &ext, std::vector<String> &filelists)
+    void StorageContext::fetchStorageFilelistsForExt(const String &ext, std::vector<String> &filelists)
     {
         if (!ext.isEmpty())
         {
@@ -116,11 +116,9 @@ namespace service::details
         }
     }
 
-    StorageAudioContext::StorageAudioContext(const String& ext, const String& dir, bool shuffle, bool loop)
+    StorageContext::StorageContext(const String& ext, const String& dir, bool shuffle, bool loop)
     {
-        // TODO: check s_this instance!
         s_this = this;
-
         if (!ext.isEmpty() && !dir.isEmpty())
         {
             auto strExt = ext;
@@ -158,12 +156,12 @@ namespace service::details
         }
     }
 
-    StorageAudioContext::~StorageAudioContext()
+    StorageContext::~StorageContext()
     {
         end();
     }
 
-    void StorageAudioContext::begin()
+    void StorageContext::begin()
     {
         if (!AudioContext::m_source && !AudioContext::m_decode)
         {
@@ -181,7 +179,7 @@ namespace service::details
         }
     }
 
-    void StorageAudioContext::end()
+    void StorageContext::end()
     {
         AudioContext::m_source = nullptr;
         AudioContext::m_decode = nullptr;
@@ -190,17 +188,17 @@ namespace service::details
         m_filter.reset();
     }
 
-    Stream* StorageAudioContext::nextStreamCallback(int offset)
+    Stream* StorageContext::nextStreamCallback(int offset)
     {
         return (updatePlayistIndex(offset) ? openPlaylistItemStream() : nullptr);
     }
 
-    Stream *StorageAudioContext::indexStreamCallback(int index)
+    Stream *StorageContext::indexStreamCallback(int index)
     {
         return (setPlayistIndex(index) ? openPlaylistItemStream() : nullptr);
     }
 
-    Stream *StorageAudioContext::openPlaylistItemStream()
+    Stream *StorageContext::openPlaylistItemStream()
     {
         auto path = m_path + "/" + m_playlist[m_index];
         m_file = driver::storage.getFS().open(path);
