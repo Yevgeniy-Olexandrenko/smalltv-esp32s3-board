@@ -5,6 +5,7 @@
         "extra_flags": [
             "-DESP8266",
             "-DARDUINO_ARCH_ESP8266",
+            "-DARDUINO_GEEKMAGIC_SMALLTV_ULTRA",
             "-DNO_VINSENSE",
             "-DNO_SELFRES",
             "-DNO_BUTTON",
@@ -19,7 +20,7 @@
             "-DLCD_BL_INV",
             "-DNO_AUDIO",
             "-DNO_MICROPHONE",
-            "-DPIN_TOUCH0=GPIO_NUM_16",
+            "-DNO_TOUCH0",
             "-DNO_TOUCH1",
             "-DNO_TOUCH2",
             "-DNO_TOUCH3",
@@ -37,7 +38,7 @@
     "frameworks": [
         "arduino"
     ],
-    "name": "SmallTV ESP8266 clone 4MB",
+    "name": "GeekMagic SmallTV-Ultra",
     "upload": {
         "maximum_ram_size": 81920,
         "maximum_size": 4194304,
@@ -45,6 +46,6 @@
         "resetmethod": "nodemcu",
         "speed": 921600
     },
-    "url": "https://www.wemos.cc/en/latest/d1/d1_mini.html",
-    "vendor": "Wemos"
+    "url": "https://github.com/GeekMagicClock/smalltv-ultra",
+    "vendor": "GeekMagic"
 }
