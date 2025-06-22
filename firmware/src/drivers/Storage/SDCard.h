@@ -16,9 +16,9 @@ namespace driver::details
         SDCard();
         ~SDCard() override;
 
-        bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0);
-        bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpio_num_t d2, gpio_num_t d3);
-        bool begin(const char* mountPoint, gpio_num_t clk, gpio_num_t mosi, gpio_num_t miso, gpio_num_t cs);
+        bool begin(const char* mountPoint, int clk, int cmd, int d0);
+        bool begin(const char* mountPoint, int clk, int cmd, int d0, int d1, int d2, int d3);
+        bool begin(const char* mountPoint, int clk, int mosi, int miso, int cs);
         void end();
 
         // sd card properties

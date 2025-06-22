@@ -35,7 +35,7 @@
 #define TFT_SCLK  PIN_LCD_SCL
 
 // optional pins
-#if PIN_LCD_CS != GPIO_NUM_NC
+#if PIN_LCD_CS != -1
 #define TFT_CS    PIN_LCD_CS
 #endif
 

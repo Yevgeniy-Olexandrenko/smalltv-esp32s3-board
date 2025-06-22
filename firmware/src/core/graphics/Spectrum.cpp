@@ -1,3 +1,5 @@
+#ifndef NO_AUDIO
+
 #include "Spectrum.h"
 
 namespace image
@@ -49,3 +51,4 @@ namespace image
         }
     }
 }
+#endif

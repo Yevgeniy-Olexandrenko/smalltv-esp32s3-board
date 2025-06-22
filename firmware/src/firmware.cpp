@@ -15,9 +15,11 @@ static bool s_buttonState = false;
 
 #ifndef NO_VIDEO
 #if 1
+#ifndef NO_AUDIO
 #include "core/graphics/Spectrum.h"
 TFT_eSprite sprite(&driver::display);
 image::Spectrum spectrum(30, 80, 16000);
+#endif
 #else
 #include "core/graphics/QRCode.h"
 TFT_eSprite sprite(&driver::display);
@@ -95,6 +97,7 @@ void loop()
 
 #ifndef NO_VIDEO
 #if 1
+#ifndef NO_AUDIO
     if (millis() - g_lastTS >= 1000)
     {
         g_lastTS = millis();
@@ -108,6 +111,7 @@ void loop()
     sprite.print(g_fps);
     sprite.pushSprite(0, 0);
     g_fpsCount++;
+#endif
 #else
 
     if (NTP.synced() && NTP.newSecond())

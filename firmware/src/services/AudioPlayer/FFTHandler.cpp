@@ -1,3 +1,5 @@
+#ifndef NO_AUDIO
+
 #include "FFTHandler.h"
 
 namespace service::details
@@ -106,3 +108,4 @@ namespace service::details
         return (bin < getBinCount() ? m_bins[bin + 1].mag : 0); 
     }
 }
+#endif

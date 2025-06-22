@@ -1,4 +1,5 @@
 #pragma once
+#ifndef NO_AUDIO
 
 #include <TFT_eSPI.h>
 #include "core/tasks/Mutex.h"
@@ -28,3 +29,4 @@ namespace image
         bool m_isUpdated;
     };
 }
+#endif

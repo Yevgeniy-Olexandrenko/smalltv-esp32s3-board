@@ -1,4 +1,5 @@
 #pragma once
+#ifndef NO_AUDIO
 
 #include <memory>
 #include <AudioTools/AudioLibs/AudioFFT.h>
@@ -36,3 +37,4 @@ namespace service::details
         float m_maxOldMag;
     };
 }
+#endif

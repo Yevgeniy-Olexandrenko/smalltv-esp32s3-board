@@ -1,7 +1,5 @@
 #pragma once
 
-#include <hal/gpio_types.h>
-
 // PSRAM availability
 #if !defined(BOARD_HAS_PSRAM) || BOARD_HAS_PSRAM == 0
 #define NO_PSRAM
@@ -21,7 +19,7 @@
     #undef  VIN_SEN_VOL2
 #else
     #ifndef PIN_VIN_SEN
-    #define PIN_VIN_SEN GPIO_NUM_3
+    #define PIN_VIN_SEN 3
     #endif
     #if !defined(VIN_SEN_ADC1) \
      || !defined(VIN_SEN_VOL1) \
@@ -41,7 +39,7 @@
     #undef  PIN_ESP_RES
 #else
     #ifndef PIN_ESP_RES
-    #define PIN_ESP_RES GPIO_NUM_46
+    #define PIN_ESP_RES 46
     #endif
 #endif
 
@@ -50,7 +48,7 @@
     #undef  PIN_BUTTON
 #else
     #ifndef PIN_BUTTON
-    #define PIN_BUTTON GPIO_NUM_0
+    #define PIN_BUTTON 0
     #endif
 #endif
 
@@ -63,11 +61,11 @@
     // simple LED, shares the same 
     // PIN as the built-in button,
     // connected to PIN via cathode
-    #define PIN_LED_CAT GPIO_NUM_0
+    #define PIN_LED_CAT 0
     #elif !defined(PIN_LED_DIN)
     // RGB LED, uses PIN compatible 
     // with most popular devboards
-    #define PIN_LED_DIN GPIO_NUM_48
+    #define PIN_LED_DIN 48
     #endif
 #endif
 
@@ -86,37 +84,37 @@
 #else
 #ifndef SDCARD_SPI
     #ifndef PIN_SD_CLK
-    #define PIN_SD_CLK GPIO_NUM_41
+    #define PIN_SD_CLK 41
     #endif
     #ifndef PIN_SD_CMD 
-    #define PIN_SD_CMD GPIO_NUM_38
+    #define PIN_SD_CMD 38
     #endif
     #ifndef PIN_SD_D0
-    #define PIN_SD_D0  GPIO_NUM_42
+    #define PIN_SD_D0  42
     #endif
 #ifndef SDCARD_SDIO1
     #ifndef PIN_SD_D1
-    #define PIN_SD_D1  GPIO_NUM_21
+    #define PIN_SD_D1  21
     #endif
     #ifndef PIN_SD_D2
-    #define PIN_SD_D2  GPIO_NUM_40
+    #define PIN_SD_D2  40
     #endif
     #ifndef PIN_SD_D3
-    #define PIN_SD_D3  GPIO_NUM_39
+    #define PIN_SD_D3  39
     #endif
 #endif
 #else
     #ifndef PIN_SD_MISO
-    #define PIN_SD_MISO GPIO_NUM_42
+    #define PIN_SD_MISO 42
     #endif
     #ifndef PIN_SD_MOSI
-    #define PIN_SD_MOSI GPIO_NUM_38
+    #define PIN_SD_MOSI 38
     #endif
     #ifndef PIN_SD_CLK
-    #define PIN_SD_CLK  GPIO_NUM_41
+    #define PIN_SD_CLK  41
     #endif
     #ifndef PIN_SD_CS
-    #define PIN_SD_CS   GPIO_NUM_39
+    #define PIN_SD_CS   39
     #endif
 #endif
 #endif
@@ -132,22 +130,22 @@
     #undef  LCD_BL_INV
 #else
     #ifndef PIN_LCD_BL
-    #define PIN_LCD_BL  GPIO_NUM_14
+    #define PIN_LCD_BL  14
     #endif
     #ifndef PIN_LCD_CS
-    #define PIN_LCD_CS  GPIO_NUM_10
+    #define PIN_LCD_CS  10
     #endif
     #ifndef PIN_LCD_DC
-    #define PIN_LCD_DC  GPIO_NUM_13
+    #define PIN_LCD_DC  13
     #endif
     #ifndef PIN_LCD_RES
-    #define PIN_LCD_RES GPIO_NUM_9
+    #define PIN_LCD_RES 9
     #endif
     #ifndef PIN_LCD_SDA
-    #define PIN_LCD_SDA GPIO_NUM_11
+    #define PIN_LCD_SDA 11
     #endif
     #ifndef PIN_LCD_SCL
-    #define PIN_LCD_SCL GPIO_NUM_12
+    #define PIN_LCD_SCL 12
     #endif
     #ifdef  ARDUINO_SMALLTV_BOARD
     #undef  LCD_BL_INV
@@ -162,13 +160,13 @@
     #undef  SND_PRE_AMP
 #else
     #ifndef PIN_SND_RLCLK
-    #define PIN_SND_RLCLK GPIO_NUM_17
+    #define PIN_SND_RLCLK 17
     #endif
     #ifndef PIN_SND_BCLK
-    #define PIN_SND_BCLK  GPIO_NUM_16
+    #define PIN_SND_BCLK  16
     #endif
     #ifndef PIN_SND_DIN
-    #define PIN_SND_DIN   GPIO_NUM_15
+    #define PIN_SND_DIN   15
     #endif
     #ifndef SND_PRE_AMP
     #define SND_PRE_AMP   0.75
@@ -181,10 +179,10 @@
     #undef  PIN_MIC_DOUT
 #else
     #ifndef PIN_MIC_CLK
-    #define PIN_MIC_CLK  GPIO_NUM_18
+    #define PIN_MIC_CLK  18
     #endif
     #ifndef PIN_MIC_DOUT
-    #define PIN_MIC_DOUT GPIO_NUM_8
+    #define PIN_MIC_DOUT 8
     #endif
 #endif
 
@@ -193,28 +191,28 @@
     #undef  PIN_TOUCH0
 #else
     #ifndef PIN_TOUCH0
-    #define PIN_TOUCH0 TOUCH_PAD_NUM4
+    #define PIN_TOUCH0 4
     #endif
 #endif
 #ifdef NO_TOUCH1
     #undef  PIN_TOUCH1
 #else
     #ifndef PIN_TOUCH1
-    #define PIN_TOUCH1 TOUCH_PAD_NUM5
+    #define PIN_TOUCH1 5
     #endif
 #endif
 #ifdef NO_TOUCH2
     #undef  PIN_TOUCH2
 #else
     #ifndef PIN_TOUCH2
-    #define PIN_TOUCH2 TOUCH_PAD_NUM6
+    #define PIN_TOUCH2 6
     #endif
 #endif
 #ifdef NO_TOUCH3
     #undef  PIN_TOUCH3
 #else
     #ifndef PIN_TOUCH3
-    #define PIN_TOUCH3 TOUCH_PAD_NUM7
+    #define PIN_TOUCH3 7
     #endif
 #endif
 
@@ -226,15 +224,15 @@
     #undef  PIN_I2C_SDA
 #else
     #ifndef PIN_ESP_TX
-    #define PIN_ESP_TX  GPIO_NUM_43
+    #define PIN_ESP_TX  43
     #endif
     #ifndef PIN_ESP_RX
-    #define PIN_ESP_RX  GPIO_NUM_44
+    #define PIN_ESP_RX  44
     #endif
     #ifndef PIN_I2C_SCL
-    #define PIN_I2C_SCL GPIO_NUM_1
+    #define PIN_I2C_SCL 1
     #endif
     #ifndef PIN_I2C_SDA
-    #define PIN_I2C_SDA GPIO_NUM_2
+    #define PIN_I2C_SDA 2
     #endif
 #endif

@@ -20,20 +20,13 @@ namespace driver::details
     SDCard::~SDCard() { end(); }
 
     // SDIO 1 bit mode
-    bool SDCard::begin(const char *mountPoint, gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0)
+    bool SDCard::begin(const char *mountPoint, int clk, int cmd, int d0)
     {
         return begin(mountPoint, clk, cmd, d0, GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC);
     }
 
     // SDIO 4 bit mode
-    bool SDCard::begin(
-        const char *mountPoint,
-        gpio_num_t clk,
-        gpio_num_t cmd,
-        gpio_num_t d0,
-        gpio_num_t d1,
-        gpio_num_t d2,
-        gpio_num_t d3)
+    bool SDCard::begin(const char *mountPoint, int clk, int cmd, int d0, int d1, int d2, int d3)
     {
         if (isMounted()) return true;
         log_i("Initializing SD card");
@@ -46,16 +39,16 @@ namespace driver::details
         sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
         #ifdef SOC_SDMMC_USE_GPIO_MATRIX
         slot_config.width = (m_oneBitMode ? 1 : 4);
-        slot_config.clk = clk;
-        slot_config.cmd = cmd;
-        slot_config.d0 = d0;
-        slot_config.d1 = d1;
-        slot_config.d2 = d2;
-        slot_config.d3 = d3;
-        slot_config.d4 = GPIO_NUM_NC;
-        slot_config.d5 = GPIO_NUM_NC;
-        slot_config.d6 = GPIO_NUM_NC;
-        slot_config.d7 = GPIO_NUM_NC;
+        slot_config.clk = gpio_num_t(clk);
+        slot_config.cmd = gpio_num_t(cmd);
+        slot_config.d0  = gpio_num_t(d0);
+        slot_config.d1  = gpio_num_t(d1);
+        slot_config.d2  = gpio_num_t(d2);
+        slot_config.d3  = gpio_num_t(d3);
+        slot_config.d4  = GPIO_NUM_NC;
+        slot_config.d5  = GPIO_NUM_NC;
+        slot_config.d6  = GPIO_NUM_NC;
+        slot_config.d7  = GPIO_NUM_NC;
         #endif
 
         esp_vfs_fat_mount_config_t mount_config = 
@@ -81,12 +74,7 @@ namespace driver::details
     }
 
     // SPI mode
-    bool SDCard::begin(
-        const char *mountPoint,
-        gpio_num_t clk,
-        gpio_num_t mosi,
-        gpio_num_t miso,
-        gpio_num_t cs)
+    bool SDCard::begin(const char *mountPoint, int clk, int mosi, int miso, int cs)
     {
         if (isMounted()) return true;
         log_i("Initializing SD card");
@@ -115,7 +103,7 @@ namespace driver::details
 
         sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
         slot_config.host_id = spi_host_device_t(m_spiSlot);
-        slot_config.gpio_cs = cs;
+        slot_config.gpio_cs = gpio_num_t(cs);
 
         esp_vfs_fat_mount_config_t mount_config = 
         {
