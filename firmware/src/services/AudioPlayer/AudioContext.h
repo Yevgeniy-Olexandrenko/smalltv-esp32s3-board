@@ -34,8 +34,8 @@ namespace service::details
         const int16_t&  getDirection() const { return m_direction; }
         const int16_t&  getIndex() const { return m_index; }
 
-        bool updatePlayistIndex(int offset);
-        bool setPlayistIndex(int index);
+        bool updatePlaylistIndex(int16_t offset);
+        bool setPlaylistIndex(int16_t index);
 
     protected:
         audio_tools::AudioSource* m_source;

@@ -14,7 +14,7 @@ namespace service::details
     {
     }
 
-    bool AudioContext::updatePlayistIndex(int offset)
+    bool AudioContext::updatePlaylistIndex(int16_t offset)
     {
         if (!m_playlist.empty())
         {
@@ -36,7 +36,7 @@ namespace service::details
         return false;
     }
 
-    bool AudioContext::setPlayistIndex(int index)
+    bool AudioContext::setPlaylistIndex(int16_t index)
     {
         if (index >= 0 && index < m_playlist.size())
         {

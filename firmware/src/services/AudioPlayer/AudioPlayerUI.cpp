@@ -47,7 +47,7 @@ namespace service::details
 
             String playlist;
             fillPlaylistOptions(playlist);
-            int index = audioPlayer.getContext()->getIndex();
+            auto index = (audioPlayer.hasContext() ? audioPlayer.getContext()->getIndex() : 0);
 
             b.beginRow();
             if (b.Select("file"_h, "File", playlist, &index))
@@ -144,7 +144,7 @@ namespace service::details
         }
         else if (m_started)
         {
-            auto index = audioPlayer.getContext()->getIndex();
+            auto index = (audioPlayer.hasContext() ? audioPlayer.getContext()->getIndex() : 0);
             u.update("file"_h, index);
             u.update("title"_h, m_title);
             u.update("artist"_h, m_artist);
@@ -197,6 +197,8 @@ namespace service::details
 
     void AudioPlayerUI::fillPlaylistOptions(String &output)
     {
+        if (!audioPlayer.hasContext()) return;
+        
         const auto& playlist = audioPlayer.getContext()->getPlaylist();
         const auto  size = playlist.size(); 
 

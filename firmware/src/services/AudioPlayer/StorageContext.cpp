@@ -190,12 +190,12 @@ namespace service::details
 
     Stream* StorageContext::nextStreamCallback(int offset)
     {
-        return (updatePlayistIndex(offset) ? openPlaylistItemStream() : nullptr);
+        return (updatePlaylistIndex(offset) ? openPlaylistItemStream() : nullptr);
     }
 
     Stream *StorageContext::indexStreamCallback(int index)
     {
-        return (setPlayistIndex(index) ? openPlaylistItemStream() : nullptr);
+        return (setPlaylistIndex(index) ? openPlaylistItemStream() : nullptr);
     }
 
     Stream *StorageContext::openPlaylistItemStream()

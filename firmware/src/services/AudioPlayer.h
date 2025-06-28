@@ -34,6 +34,7 @@ namespace service
 
         details::AudioPlayerUI& getUI() { return m_ui; }
         details::AudioContext*  getContext() { return m_context.get(); }
+        bool hasContext() const { return bool(m_context); }
         void setFFTHandler(details::FFTHandler* fftHandler);
 
     private:
