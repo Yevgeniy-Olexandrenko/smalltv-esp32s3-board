@@ -3,8 +3,8 @@
 #include "services/DateTime.h"
 #include "services/GeoLocation.h"
 #include "services/WiFiConnection.h"
-#include "services/WeatherForecast.h"
 #include "services/SettingsWebApp.h"
+#include "services/WeatherForecast.h"
 
 #ifndef NO_AUDIO
 #include "services/AudioPlayer.h"
@@ -25,18 +25,12 @@ namespace services
         service::dateTime.begin();
         service::geoLocation.begin();
         service::wifiConnection.begin();
-        service::weatherForecast.begin();
         service::settingsWebApp.begin();
+        service::weatherForecast.begin();
 
         // optional services
         #ifndef NO_AUDIO
         service::audioPlayer.begin();
         #endif
-    }
-
-    void update()
-    {
-        service::geoLocation.update();
-        service::weatherForecast.update();
     }
 }

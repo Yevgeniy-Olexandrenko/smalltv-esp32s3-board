@@ -1,12 +1,14 @@
 #pragma once
 
+#include "core/tasks/Task.h"
 #include "core/settings/Settings.h"
 
 namespace service
 {
-    class GeoLocation : public settings::Provider
+    class GeoLocation
+        : public task::Task<4096 * 4, task::core::System, task::priority::Background>
+        , public settings::Provider
     {
-        using Timestamp = unsigned long;
 
     public:
         enum class Method { Manual, IPAddress, WiFiStations };
@@ -18,28 +20,25 @@ namespace service
         void settingsUpdate(sets::Updater& u) override;
 
         Method getMethod() const;
-        float  getLatitude() const;
-        float  getLongitude() const;
-        int    getTimeZoneOff() const;
+        float getLatitude() const;
+        float getLongitude() const;
+        int getTZOffset() const;
 
     private:
-        void encodeTimeZone(int& tzh, int& tzm) const;
-        void decodeTimeZone(int& tzh, int& tzm) const;
+        void startRequest();
+        void task() override;
+
         String getTimeZone() const;
         void setTimeZone(int num);
 
-        void requestNewData();
-        void confirmDataReceived();
-        bool fetchNewData();
+        void encodeTimeZone(int& tzh, int& tzm) const;
+        void decodeTimeZone(int& tzh, int& tzm) const;
 
-        bool fetchDataUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm);
-        bool fetchDataUsingWiFiStations(float& lat, float& lon, int& tzh, int& tzm);
-
-        bool callGoogleGeolocationApi(float& lat, float& lon);
-        bool callGoogleTimeZoneApi(float lat, float lon, long timestamp, int& tzh, int& tzm);
-
-    private:
-        Timestamp m_fetchTS;
+        bool requestGeoLocation();
+        bool requestUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm);
+        bool requestUsingWiFiStations(float& lat, float& lon, int& tzh, int& tzm);
+        bool requestGoogleGeolocationApi(float& lat, float& lon);
+        bool requestGoogleTimeZoneApi(float lat, float lon, long timestamp, int& tzh, int& tzm);
     };
 
     extern GeoLocation geoLocation;

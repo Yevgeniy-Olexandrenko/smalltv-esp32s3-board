@@ -16,18 +16,7 @@ namespace service
         settings::data().init(db::geo_latitude,  50.4500f);
         settings::data().init(db::geo_longitude, 30.5233f);
         settings::data().init(db::geo_timezone,  200);
-        requestNewData();
-    }
-
-    void GeoLocation::update()
-    {
-        if (millis() - m_fetchTS >= FETCH_PERIOD)
-        {
-            if (service::dateTime.isSynced() && fetchNewData())
-                confirmDataReceived();
-            else
-                requestNewData();
-        }
+        startRequest();
     }
 
     void GeoLocation::settingsBuild(sets::Builder &b)
@@ -38,7 +27,7 @@ namespace service
         auto options = "Manual;IP Address (ipapi.co);WiFi Stations (Google)";
         if (b.Select(db::geo_method, "Method", options))
         {
-            requestNewData();
+            startRequest();
             b.reload();
             return;
         }
@@ -87,23 +76,24 @@ namespace service
         return settings::data()[db::geo_longitude];
     }
 
-    int GeoLocation::getTimeZoneOff() const
+    int GeoLocation::getTZOffset() const
     {
         int tzh, tzm;
         decodeTimeZone(tzh, tzm);
         return (tzh * 60 + tzm) * 60;
     }
 
-    void GeoLocation::encodeTimeZone(int &tzh, int &tzm) const
+    ////////////////////////////////////////////////////////////////////////////
+
+    void GeoLocation::startRequest()
     {
-        int off = (tzh * 100 + tzm);
-        settings::data()[db::geo_timezone ] = off;
+        Task::stop();
+        Task::start("geo_location");
     }
 
-    void GeoLocation::decodeTimeZone(int &tzh, int &tzm) const
+    void GeoLocation::task()
     {
-        int off = settings::data()[db::geo_timezone];
-        tzh = off / 100, tzm = abs(off) % 100;
+        while (!requestGeoLocation()) sleep(RETRY_PERIOD);
     }
 
     String GeoLocation::getTimeZone() const
@@ -126,45 +116,57 @@ namespace service
         encodeTimeZone(tzh, tzm);
     }
 
-    void GeoLocation::requestNewData()
+    void GeoLocation::encodeTimeZone(int &tzh, int &tzm) const
     {
-        m_fetchTS = millis();
-        m_fetchTS -= FETCH_PERIOD;
-        m_fetchTS += RETRY_PERIOD;
-        log_i("request new data!");
+        int off = (tzh * 100 + tzm);
+        settings::data()[db::geo_timezone ] = off;
     }
 
-    void GeoLocation::confirmDataReceived()
+    void GeoLocation::decodeTimeZone(int &tzh, int &tzm) const
     {
-        m_fetchTS = millis();
-        log_i("confirm data received!");
+        int off = settings::data()[db::geo_timezone];
+        tzh = off / 100, tzm = abs(off) % 100;
     }
 
-    bool GeoLocation::fetchNewData()
+    bool GeoLocation::requestGeoLocation()
     {
-        float lat, lon; int tzh, tzm;
-        auto updateOnSuccess = [&](bool success)
-        {
-            if (success)
-            {
-                settings::data()[db::geo_latitude ] = lat;
-                settings::data()[db::geo_longitude] = lon;
-                encodeTimeZone(tzh, tzm);
-            }
-            return success;
-        };
+        float lat, lon; // location
+        int   tzh, tzm; // timezone
 
+        bool ok = false;
         switch (getMethod())
         {
+            case Method::Manual:
+                lat = getLatitude();
+                lon = getLongitude();
+                decodeTimeZone(tzh, tzm);
+                ok = true;
+                break;
+
             case Method::IPAddress: 
-                return updateOnSuccess(fetchDataUsingIPAddress(lat, lon, tzh, tzm));
+                ok = requestUsingIPAddress(lat, lon, tzh, tzm);
+                break;
+
             case Method::WiFiStations:
-                return updateOnSuccess(fetchDataUsingWiFiStations(lat, lon, tzh, tzm));
+                ok = requestUsingWiFiStations(lat, lon, tzh, tzm);
+                break;
         }
-        return true;
+        if (ok)
+        {
+            settings::data()[db::geo_latitude ] = lat;
+            settings::data()[db::geo_longitude] = lon;
+            encodeTimeZone(tzh, tzm);
+            settings::data().update();
+            log_i("request geolocation SUCCESS!");
+        }
+        else
+        {
+            log_i("request geolocation FAILED!");
+        }
+        return ok;
     }
 
-    bool GeoLocation::fetchDataUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm) 
+    bool GeoLocation::requestUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm) 
     {
         HTTPClient http;
         if (http.begin("https://ipapi.co/json/")) 
@@ -188,20 +190,20 @@ namespace service
         return false;
     }
 
-    bool GeoLocation::fetchDataUsingWiFiStations(float &lat, float &lon, int &tzh, int &tzm)
+    bool GeoLocation::requestUsingWiFiStations(float &lat, float &lon, int &tzh, int &tzm)
     {
         bool result = false;
         WiFi.scanNetworks();
-        if (callGoogleGeolocationApi(lat, lon))
+        if (requestGoogleGeolocationApi(lat, lon))
         {
             long timestamp = service::dateTime.getNow();
-            result = callGoogleTimeZoneApi(lat, lon, timestamp, tzh, tzm);
+            result = requestGoogleTimeZoneApi(lat, lon, timestamp, tzh, tzm);
         }
         WiFi.scanDelete();
         return false;
     }
 
-    bool GeoLocation::callGoogleGeolocationApi(float &lat, float &lon)
+    bool GeoLocation::requestGoogleGeolocationApi(float &lat, float &lon)
     {
         auto found = min(int(WiFi.scanComplete()), 5);
         if (found <= 0) return false;
@@ -242,7 +244,7 @@ namespace service
         return false;
     }
 
-    bool GeoLocation::callGoogleTimeZoneApi(float lat, float lon, long timestamp, int &tzh, int &tzm)
+    bool GeoLocation::requestGoogleTimeZoneApi(float lat, float lon, long timestamp, int &tzh, int &tzm)
     {
         auto key = settings::apikey(db::apikey_google);
         auto url = String("https://maps.googleapis.com/maps/api/timezone/json?location=")

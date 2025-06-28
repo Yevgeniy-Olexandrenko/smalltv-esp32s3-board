@@ -78,7 +78,7 @@ void loop()
     // driver::ledAndButton.update();
 
     // update services
-    services::update();
+    // services::update();
 
     // test
     // bool buttonState = driver::ledAndButton.getButtonState();

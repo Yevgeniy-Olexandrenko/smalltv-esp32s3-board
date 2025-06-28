@@ -17,14 +17,14 @@ namespace service
 
     void DateTime::setNow(time_t timestamp)
     {
-        time_t off = service::geoLocation.getTimeZoneOff();
+        time_t off = service::geoLocation.getTZOffset();
         time_t now = timestamp > off ? timestamp - off : 0;
         setUTC(now);
     }
 
     time_t DateTime::getNow() const
     {
-        time_t off = service::geoLocation.getTimeZoneOff();
+        time_t off = service::geoLocation.getTZOffset();
         time_t now = time(nullptr);
         return (now + off);
     }
