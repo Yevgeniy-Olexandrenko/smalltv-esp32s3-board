@@ -174,7 +174,7 @@ namespace service
             if (http.GET() == HTTP_CODE_OK) 
             {
                 JsonDocument doc;
-                DeserializationError error = deserializeJson(doc, http.getStream());
+                DeserializationError error = deserializeJson(doc, http.getString());
                 if (!error)
                 {
                     lat = doc["latitude"].as<float>();
@@ -200,7 +200,7 @@ namespace service
             result = requestGoogleTimeZoneApi(lat, lon, timestamp, tzh, tzm);
         }
         WiFi.scanDelete();
-        return false;
+        return result;
     }
 
     bool GeoLocation::requestGoogleGeolocationApi(float &lat, float &lon)
@@ -222,16 +222,13 @@ namespace service
         auto key = settings::apikey(db::apikey_google);
         auto url = "https://www.googleapis.com/geolocation/v1/geolocate?key=" + key;
 
-        log_i("url:\n%s", url.c_str());
-        log_i("payload:\n%s", payload);
-
         HTTPClient http;
         http.begin(url);
         http.addHeader("Content-Type", "application/json");
         if (http.POST((uint8_t*)payload, payloadLen) == HTTP_CODE_OK) 
         {
             JsonDocument doc;
-            DeserializationError error = deserializeJson(doc, http.getStream());
+            DeserializationError error = deserializeJson(doc, http.getString());
             if (!error)
             {
                 lat = doc["location"]["lat"].as<float>();
@@ -239,8 +236,8 @@ namespace service
                 http.end();
                 return true;
             }
-            http.end();
         }
+        http.end();
         return false;
     }
 
@@ -252,14 +249,12 @@ namespace service
             + "&timestamp=" + String(timestamp)
             + "&key=" + key;
 
-        log_i("url:\n%s", url.c_str());
-
         HTTPClient http;
         http.begin(url);
         if (http.GET() == HTTP_CODE_OK) 
         {
             JsonDocument doc;
-            DeserializationError error = deserializeJson(doc, http.getStream());
+            DeserializationError error = deserializeJson(doc, http.getString());
             if (!error)
             {
                 auto raw = doc["rawOffset"].as<long>();
@@ -270,8 +265,8 @@ namespace service
                 http.end();
                 return true;
             }
-            http.end();
         }
+        http.end();
         return false;
     }
 
