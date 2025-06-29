@@ -206,7 +206,7 @@ namespace service::details
         {
             if (size > 10 && (i % 10) == 0)
             {
-                output += "[" + String(i + 1) + " / " + String(size) + "]";
+                output += "[" + String(i + 1) + " to " + String(size) + "]";
             }
 
             auto item = playlist[i];
