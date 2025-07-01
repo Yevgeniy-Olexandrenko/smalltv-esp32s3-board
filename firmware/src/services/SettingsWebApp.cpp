@@ -4,6 +4,7 @@
 #include "services/DateTime.h"
 #include "services/WiFiConnection.h"
 #include "defines.h"
+#include "secrets.h"
 
 namespace service
 {
@@ -39,7 +40,7 @@ namespace service
         settings::sets().setTitle(title);
         settings::sets().setProjectInfo("home page", WEBAPP_PROJECT_HOME);
         settings::sets().setVersion(PROJECT_VERSION);
-        settings::sets().setPass("0000");
+        settings::sets().setPass(WEBUI_PASS);
 
         m_currentTab = 1;
         m_connectedToPC = false;
