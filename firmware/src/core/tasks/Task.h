@@ -2,6 +2,8 @@
 
 #include <FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/timers.h>
+#include <freertos/portmacro.h>
 
 namespace task
 {
@@ -21,10 +23,23 @@ namespace task
     template<uint32_t stack, BaseType_t core, UBaseType_t priority>
     class Task
     {
+        static inline portMUX_TYPE s_mux = portMUX_INITIALIZER_UNLOCKED;
+
+    public:
+        Task() noexcept = default;
+        virtual ~Task() { stopRepeat(); stop(); }
+
+        Task(const Task&) = delete;
+        Task& operator=(const Task&) = delete;
+
+        Task(Task&&) = delete;
+        Task& operator=(Task&&) = delete;
+    
     protected:
-        bool start(const char* name)
+        template<size_t N>
+        bool start(const char (&name)[N])
         {
-            return !m_handle && xTaskCreatePinnedToCore(
+            return (!m_handle && xTaskCreatePinnedToCore(
                 [](void* data) 
                 {
                     auto instance = static_cast<Task*>(data);
@@ -32,9 +47,9 @@ namespace task
                     instance->stop();
                 },
                 name, stack, this, priority, &m_handle, core
-            ) == pdPASS;
+            ) == pdPASS);
         }
-        
+
         void stop()
         {
             if (m_handle)
@@ -54,13 +69,53 @@ namespace task
             }
         }
 
-        void sleep(int ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
-        bool isAlive() const  { return m_handle != nullptr; }
-        TaskHandle_t getHandle() const   { return m_handle; }
+        template<size_t N>
+        bool startRepeat(const char (&name)[N], uint32_t periodMs)
+        {
+            bool ok = false;
+            portENTER_CRITICAL(&s_mux);
+            if (!m_timer && periodMs > 0)
+            {
+                if (m_timer = xTimerCreate(
+                    name,
+                    pdMS_TO_TICKS(periodMs),
+                    pdTRUE,
+                    this,
+                    [](TimerHandle_t t) 
+                    {
+                        auto instance = static_cast<Task*>(pvTimerGetTimerID(t));
+                        if (instance->isDead()) instance->start(pcTimerGetName(t));
+                    }
+                ))
+                {
+                    if (xTimerStart(m_timer, 0) == pdPASS) ok = true;
+                    else { xTimerDelete(m_timer, 0); m_timer = nullptr; }
+                }
+            }
+            portEXIT_CRITICAL(&s_mux);
+            return ok;
+        }
+
+        void stopRepeat()
+        {
+            portENTER_CRITICAL(&s_mux);
+            if (m_timer) 
+            {
+                xTimerStop(m_timer, 0);
+                xTimerDelete(m_timer, 0);
+                m_timer = nullptr;
+            }
+            portEXIT_CRITICAL(&s_mux);
+        }
+
+        void sleep(uint32_t periodMs) { vTaskDelay(pdMS_TO_TICKS(periodMs)); }
+        bool isAlive() const { return m_handle != nullptr; }
+        bool isDead() const { return m_handle == nullptr; }
 
         virtual void task() = 0;
 
     private:
         TaskHandle_t m_handle = nullptr;
+        TimerHandle_t m_timer = nullptr;
     };
 }
