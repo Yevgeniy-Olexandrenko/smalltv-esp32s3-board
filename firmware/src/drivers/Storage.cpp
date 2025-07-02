@@ -1,7 +1,7 @@
 #include "Storage.h"
 #include "SelfReboot.h"
-#include "board.h"
-#include "defines.h"
+#include "hardware/board.h"
+#include "firmware/defines.h"
 
 namespace driver
 {

@@ -1,7 +1,7 @@
 #include "WiFiConnection.h"
 #include "settings.h"
-#include "defines.h"
-#include "secrets.h"
+#include "firmware/defines.h"
+#include "firmware/secrets.h"
 
 namespace service
 {

@@ -3,8 +3,8 @@
 #include "drivers/SelfReboot.h"
 #include "services/DateTime.h"
 #include "services/WiFiConnection.h"
-#include "defines.h"
-#include "secrets.h"
+#include "firmware/defines.h"
+#include "firmware/secrets.h"
 
 namespace service
 {
