@@ -36,8 +36,7 @@ namespace task
         Task& operator=(Task&&) = delete;
     
     protected:
-        template<size_t N>
-        bool start(const char (&name)[N])
+        bool start(const char* name)
         {
             return (!m_handle && xTaskCreatePinnedToCore(
                 [](void* data) 
@@ -69,8 +68,7 @@ namespace task
             }
         }
 
-        template<size_t N>
-        bool startRepeat(const char (&name)[N], uint32_t periodMs)
+        bool startRepeat(const char* name, uint32_t periodMs)
         {
             bool ok = false;
             portENTER_CRITICAL(&s_mux);

@@ -11,6 +11,8 @@ namespace service
         : public task::Task<8192, task::core::System, task::priority::Background>
         , public settings::Provider
     {
+        constexpr static int RESTART_PERIOD_MS = 1000 * 60 * 60; // 1 hour
+        constexpr static int RETRY_PERIOD_MS   = 1000 * 5;       // 5 seconds
 
     public:
         enum class Method { Manual, IPAddress, WiFiStations };

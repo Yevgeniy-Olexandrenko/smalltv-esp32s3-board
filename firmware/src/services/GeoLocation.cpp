@@ -15,8 +15,11 @@ namespace service
 
     void GeoLocation::startRequest()
     {
+        Task::stopRepeat();
         Task::stop();
+
         Task::start("geo_location");
+        Task::startRepeat("geo_location", RESTART_PERIOD_MS);
     }
 
     GeoLocation::Method GeoLocation::getMethod() const
@@ -85,7 +88,7 @@ namespace service
 
     void GeoLocation::task()
     {
-        while (!requestGeoLocation()) sleep(5000);
+        while (!requestGeoLocation()) sleep(RETRY_PERIOD_MS);
     }
 
     void GeoLocation::encodeTimeZone(int& tzh, int& tzm) const
@@ -183,18 +186,23 @@ namespace service
 
     bool GeoLocation::requestUsingWiFiStations(float& lat, float& lon, int& tzh, int& tzm)
     {
-        bool ok = false;
-        if (settings::apikey(db::apikey_google).length() >= 39)
+        if (settings::apikey(db::apikey_google).length() >= 39 && service::dateTime.isSynced())
         {
-            if (WiFi.scanComplete() < 1) WiFi.scanNetworks();
+            if (WiFi.scanComplete() < 1) 
+            {
+                WiFi.scanNetworks(false, true);
+            }
             if (requestGoogleGeolocationApi(lat, lon))
             {
                 long timestamp = service::dateTime.getNow();
-                ok = requestGoogleTimeZoneApi(lat, lon, timestamp, tzh, tzm);
+                if (requestGoogleTimeZoneApi(lat, lon, timestamp, tzh, tzm))
+                {
+                    WiFi.scanDelete();
+                    return true;
+                }
             }
-            if (ok) WiFi.scanDelete();
         }
-        return ok;
+        return false;
     }
 
     bool GeoLocation::requestGoogleGeolocationApi(float& lat, float& lon)
