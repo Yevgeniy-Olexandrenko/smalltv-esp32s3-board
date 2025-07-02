@@ -35,6 +35,7 @@ namespace service
 
         void setTimeZone(int num);
         String getTimeZone() const;
+        String getCoordinates() const;
 
         bool requestGeoLocation();
         bool requestUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm);
@@ -43,6 +44,7 @@ namespace service
         bool requestGoogleTimeZoneApi(float lat, float lon, long timestamp, int& tzh, int& tzm);
 
     private:
+        bool m_request;
         HTTPClient m_http;
         JsonDocument m_json;
     };

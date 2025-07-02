@@ -10,6 +10,7 @@ namespace service
         settings::data().init(db::geo_latitude,  50.4500f);
         settings::data().init(db::geo_longitude, 30.5233f);
         settings::data().init(db::geo_timezone,  200);
+        m_request = false;
         startRequest();
     }
 
@@ -52,36 +53,40 @@ namespace service
         auto options = "Manual;IP Address (ipapi.co);WiFi Stations (Google)";
         if (b.Select(db::geo_method, "Method", options))
         {
-            startRequest();
+            m_request = true;
             b.reload();
-            return;
-        }
-
-        if (getMethod() == Method::Manual)
-        {
-            b.Number(db::geo_latitude, "Latitude", nullptr, -90.f, +90.f);
-            b.Number(db::geo_longitude, "Longitude", nullptr, -180.f, +180.f);
-
-            int tzh, tzm;
-            decodeTimeZone(tzh, tzm);
-            int num = (tzm == 0 ? tzh : tzh * 60 + tzm);
-            if (b.Number("Time zone", &num)) setTimeZone(num);
         }
         else
         {
-            b.LabelFloat("latitude"_h, "Latitude", getLatitude(), 4);
-            b.LabelFloat("longitude"_h, "Longitude", getLongitude(), 4);
-            b.LabelNum("timezone"_h, "Time zone", getTimeZone());
+            if (getMethod() == Method::Manual)
+            {
+                b.Number(db::geo_latitude, "Latitude", nullptr, -90.f, +90.f);
+                b.Number(db::geo_longitude, "Longitude", nullptr, -180.f, +180.f);
+
+                int tzh, tzm;
+                decodeTimeZone(tzh, tzm);
+                int num = (tzm == 0 ? tzh : tzh * 60 + tzm);
+                if (b.Number("Time zone", &num)) setTimeZone(num);
+            }
+            else
+            {
+                b.Label("coords"_h, "Coordinates", getCoordinates());
+                b.LabelNum("timezone"_h, "Time zone", getTimeZone());
+            }
         }
         b.endGuest();
     }
 
     void GeoLocation::settingsUpdate(sets::Updater& u)
     {
+        if (m_request)
+        {
+            startRequest();
+            m_request = false;
+        }
         if (getMethod() != Method::Manual)
         {
-            u.update("latitude"_h, getLatitude(), 4);
-            u.update("longitude"_h, getLongitude(), 4);
+            u.update("coords"_h, getCoordinates());
             u.update("timezone"_h, getTimeZone());
         }
     }
@@ -103,6 +108,16 @@ namespace service
         tzh = off / 100, tzm = abs(off) % 100;
     }
 
+    void GeoLocation::setTimeZone(int num)
+    {
+        int tzh, tzm;
+        if (num >= -14 && num <= +12)
+            tzh = num, tzm = 0;
+        else
+            tzh = num / 60, tzm = abs(num) % 60;
+        encodeTimeZone(tzh, tzm);
+    }
+
     String GeoLocation::getTimeZone() const
     {
         int tzh, tzm;
@@ -113,14 +128,9 @@ namespace service
         return String(buffer);
     }
 
-    void GeoLocation::setTimeZone(int num)
+    String GeoLocation::getCoordinates() const
     {
-        int tzh, tzm;
-        if (num >= -14 && num <= +12)
-            tzh = num, tzm = 0;
-        else
-            tzh = num / 60, tzm = abs(num) % 60;
-        encodeTimeZone(tzh, tzm);
+        return String(getLatitude(), 4) + ", " + String(getLongitude(), 4);
     }
 
     bool GeoLocation::requestGeoLocation()
