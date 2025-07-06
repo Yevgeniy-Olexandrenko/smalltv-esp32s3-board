@@ -1,9 +1,8 @@
 #pragma once
 
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
 #include "core/tasks/Task.h"
 #include "core/settings/Settings.h"
+#include "GeoLocation/GeoLocationRequests.h"
 
 namespace service
 {
@@ -38,15 +37,10 @@ namespace service
         String getCoordinates() const;
 
         bool requestGeoLocation();
-        bool requestUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm);
-        bool requestUsingWiFiStations(float& lat, float& lon, int& tzh, int& tzm);
-        bool requestGoogleGeolocationApi(float& lat, float& lon);
-        bool requestGoogleTimeZoneApi(float lat, float lon, long timestamp, int& tzh, int& tzm);
 
     private:
         bool m_request;
-        HTTPClient m_http;
-        JsonDocument m_json;
+        details::GeoLocationRequests m_requests;
     };
 
     extern GeoLocation geoLocation;

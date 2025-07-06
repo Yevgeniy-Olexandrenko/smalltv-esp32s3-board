@@ -1,5 +1,5 @@
 #include "GeoLocation.h"
-#include "DateTime.h"
+#include "GeoLocation/GeoLocationRequests.h"
 #include "settings.h"
 
 namespace service
@@ -149,11 +149,11 @@ namespace service
                 break;
 
             case Method::IPAddress: 
-                ok = requestUsingIPAddress(lat, lon, tzh, tzm);
+                ok = m_requests.requestUsingIPAddress(lat, lon, tzh, tzm);
                 break;
 
             case Method::WiFiStations:
-                ok = requestUsingWiFiStations(lat, lon, tzh, tzm);
+                ok = m_requests.requestUsingWiFiStations(lat, lon, tzh, tzm);
                 break;
         }
         if (ok)
@@ -169,120 +169,6 @@ namespace service
             log_i("request geolocation FAILED!");
         }
         return ok;
-    }
-
-    bool GeoLocation::requestUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm) 
-    {
-        if (m_http.begin("https://ipapi.co/json/")) 
-        {
-            if (m_http.GET() == HTTP_CODE_OK) 
-            {
-                m_json.clear();
-                DeserializationError error = deserializeJson(m_json, m_http.getString());
-                if (!error)
-                {
-                    lat = m_json["latitude"].as<float>();
-                    lon = m_json["longitude"].as<float>();
-                    int off = m_json["utc_offset"].as<int>();
-                    tzh = off / 100, tzm = abs(off) % 100;
-                    m_http.end();
-                    return true;
-                }                
-            }
-        }
-        m_http.end();
-        return false;
-    }
-
-    bool GeoLocation::requestUsingWiFiStations(float& lat, float& lon, int& tzh, int& tzm)
-    {
-        if (settings::apikey(db::apikey_google).length() >= 39 && service::dateTime.isSynced())
-        {
-            if (WiFi.scanComplete() < 1) 
-            {
-                WiFi.scanNetworks(false, true);
-            }
-            if (requestGoogleGeolocationApi(lat, lon))
-            {
-                long timestamp = service::dateTime.getNow();
-                if (requestGoogleTimeZoneApi(lat, lon, timestamp, tzh, tzm))
-                {
-                    WiFi.scanDelete();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    bool GeoLocation::requestGoogleGeolocationApi(float& lat, float& lon)
-    {
-        auto found = min(int(WiFi.scanComplete()), 8);
-        if (found <= 0) return false;
-
-        m_json.clear();
-        JsonArray aps = m_json["wifiAccessPoints"].to<JsonArray>();
-        for (int i = 0; i < found; ++i)
-        {
-            JsonObject ap = aps.add<JsonObject>();
-            ap["macAddress"] = WiFi.BSSIDstr(i);
-            ap["signalStrength"] = WiFi.RSSI(i);
-        }
-
-        char payload[512];
-        auto payloadLen = serializeJson(m_json, payload, sizeof(payload));
-
-        log_i("wifi_found:   %d", found);
-        log_i("payload_size: %d", payloadLen);
-        log_i("payload_text: %s", payload);
-
-        auto key = settings::apikey(db::apikey_google);
-        auto url = "https://www.googleapis.com/geolocation/v1/geolocate?key=" + key;
-
-        m_http.begin(url);
-        m_http.addHeader("Content-Type", "application/json");
-        if (m_http.POST((uint8_t*)payload, payloadLen) == HTTP_CODE_OK) 
-        {
-            m_json.clear();
-            DeserializationError error = deserializeJson(m_json, m_http.getString());
-            if (!error)
-            {
-                lat = m_json["location"]["lat"].as<float>();
-                lon = m_json["location"]["lng"].as<float>();
-                m_http.end();
-                return true;
-            }
-        }
-        m_http.end();
-        return false;
-    }
-
-    bool GeoLocation::requestGoogleTimeZoneApi(float lat, float lon, long timestamp, int& tzh, int& tzm)
-    {
-        auto key = settings::apikey(db::apikey_google);
-        auto url = String("https://maps.googleapis.com/maps/api/timezone/json?location=")
-            + String(lat, 6) + "," + String(lon, 6)
-            + "&timestamp=" + String(timestamp)
-            + "&key=" + key;
-
-        m_http.begin(url);
-        if (m_http.GET() == HTTP_CODE_OK) 
-        {
-            m_json.clear();
-            DeserializationError error = deserializeJson(m_json, m_http.getString());
-            if (!error)
-            {
-                auto raw = m_json["rawOffset"].as<long>();
-                auto dst = m_json["dstOffset"].as<long>();
-                auto off = raw + dst;
-                tzh = off / 3600;
-                tzm = (abs(off) % 3600) / 60;
-                m_http.end();
-                return true;
-            }
-        }
-        m_http.end();
-        return false;
     }
 
     GeoLocation geoLocation;

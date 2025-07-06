@@ -48,6 +48,13 @@ namespace service
         return mac.substring(12, 14) + mac.substring(15);
     }
 
+    String WiFiConnection::getUserAgent() const
+    { 
+        return 
+            PROJECT_TITLE "-" + getDeviceID() + "/"
+            PROJECT_VERSION " (contact: " PROJECT_AUTHOR ")";
+    }
+
     void WiFiConnection::task()
     {
         while (true)
