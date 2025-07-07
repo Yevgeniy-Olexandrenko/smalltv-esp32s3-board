@@ -8,7 +8,7 @@ namespace service::details
 {
     bool GeoLocationRequests::requestUsingIPAddress(float& lat, float& lon, int& tzh, int& tzm) 
     {
-        constexpr static const char URL[] = "https://ipapi.co/json/";
+        const char URL[] = "https://ipapi.co/json/";
         if (m_http.begin(URL)) 
         {
             m_http.addHeader("User-Agent", service::wifiConnection.getUserAgent());
@@ -113,7 +113,7 @@ namespace service::details
 
     bool GeoLocationRequests::requestGoogleGeolocationApi(float& lat, float& lon)
     {
-        constexpr static const char URL[] = 
+        const char URL[] = 
             "https://www.googleapis.com/geolocation/v1/geolocate"
             "?key=%s";
 
@@ -163,7 +163,7 @@ namespace service::details
 
     bool GeoLocationRequests::requestGoogleTimeZoneApi(float lat, float lon, long timestamp, int& tzh, int& tzm)
     {
-        constexpr static const char URL[] = 
+        const char URL[] = 
             "https://maps.googleapis.com/maps/api/timezone/json"
             "?location=%.6f,%.6f&timestamp=%ld&key=%s";
 

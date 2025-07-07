@@ -10,19 +10,22 @@ namespace service
         : public task::Task<8192, task::core::System, task::priority::Background>
         , public settings::Provider
     {
-        constexpr static int RESTART_PERIOD_MS = 1000 * 60 * 60; // 1 hour
-        constexpr static int RETRY_PERIOD_MS   = 1000 * 5;       // 5 seconds
-
-    public:
         enum class Method { Manual, IPAddress, WiFiStations };
 
+        constexpr static auto DEFAULT_METHOD     = int(Method::IPAddress);
+        constexpr static auto DEFAULT_LATITUDE   = 50.4500f;    // Kyiv city
+        constexpr static auto DEFAULT_LONGITUDE  = 30.5233f;    // coordinates
+        constexpr static auto DEFAULT_TZ_OFFSET  = 200;         // +02:00 hours 
+        constexpr static auto RESTART_PERIOD_SEC = 3600;        // 1 hour
+        constexpr static auto RETRY_PERIOD_SEC   = 5;           // 5 seconds
+
+    public:
         void begin();
         void startRequest();
 
-        Method getMethod() const;
-        float  getLatitude() const { return m_lat; }
-        float  getLongitude() const { return m_lon; }
-        int    getTZOffset() const;
+        float getLatitude() const { return m_lat; }
+        float getLongitude() const { return m_lon; }
+        int   getTZOffset() const;
 
         bool hasLocality() const { return !m_locality.isEmpty(); }
         const String& getLocality() const { return m_locality; }
@@ -41,11 +44,12 @@ namespace service
         static void encodeTimeZone(int& tzh, int& tzm);
         static void generateCountryFlag(const String& countryCode, String& countryFlag);
 
-        void setTimeZone(int num);
-        String getTimeZone() const;
-        String getCoords() const;
-        bool isNewCoords() const;
+        void setTimeZoneUI(int num);
+        const String getTimeZoneUI() const;
+        const String getCoordsUI() const;
 
+        Method getMethod() const;
+        bool hasNewCoords() const;
         bool requestGeoLocation();
 
     private:

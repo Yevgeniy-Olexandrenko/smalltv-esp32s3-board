@@ -7,10 +7,10 @@ namespace service
 {
     void GeoLocation::begin()
     {
-        settings::data().init(db::geo_method, int(Method::IPAddress));
-        settings::data().init(db::geo_latitude,  50.4500f);
-        settings::data().init(db::geo_longitude, 30.5233f);
-        settings::data().init(db::geo_timezone,  200);
+        settings::data().init(db::geo_method, DEFAULT_METHOD);
+        settings::data().init(db::geo_latitude, DEFAULT_LATITUDE);
+        settings::data().init(db::geo_longitude, DEFAULT_LONGITUDE);
+        settings::data().init(db::geo_timezone, DEFAULT_TZ_OFFSET);
         decodeCoords(m_lat, m_lon);
 
         m_request = false;
@@ -23,12 +23,7 @@ namespace service
         Task::stop();
 
         Task::start("geo_location");
-        Task::startRepeat("geo_location", RESTART_PERIOD_MS);
-    }
-
-    GeoLocation::Method GeoLocation::getMethod() const
-    {
-        return Method(int(settings::data()[db::geo_method]));
+        Task::startRepeat("geo_location", 1000 * RESTART_PERIOD_SEC);
     }
 
     int GeoLocation::getTZOffset() const
@@ -43,36 +38,42 @@ namespace service
         b.beginGuest();
         sets::Group g(b, "📍 Geolocation");
 
+        if ((m_request || isAlive()) && getMethod() != Method::Manual)
+        {
+            b.Label("Locating...");
+            return;
+        }
+
         auto options = "Manual;IP Address (ipapi.co);WiFi Stations (Google)";
         if (b.Select(db::geo_method, "Method", options))
         {
             m_request = true;
             b.reload();
+            return;
+        }
+        
+        if (getMethod() == Method::Manual)
+        {
+            if (b.Number("Latitude", &m_lat, -90.f, +90.f))
+            {
+                m_request = true;
+            }
+            if (b.Number("Longitude", &m_lon, -180.f, +180.f))
+            {
+                m_request = true;
+            }
+
+            int tzh, tzm;
+            decodeTimeZone(tzh, tzm);
+            int num = (tzm == 0 ? tzh : tzh * 60 + tzm);
+            if (b.Number("Time zone", &num)) setTimeZoneUI(num);
         }
         else
         {
-            if (getMethod() == Method::Manual)
-            {
-                if (b.Number("Latitude", &m_lat, -90.f, +90.f))
-                {
-                    m_request = true;
-                }
-                if (b.Number("Longitude", &m_lon, -180.f, +180.f))
-                {
-                    m_request = true;
-                }
-
-                int tzh, tzm;
-                decodeTimeZone(tzh, tzm);
-                int num = (tzm == 0 ? tzh : tzh * 60 + tzm);
-                if (b.Number("Time zone", &num)) setTimeZone(num);
-            }
-            else
-            {
-                b.Label("coords"_h, "Coordinates", getCoords());
-                b.LabelNum("timezone"_h, "Time zone", getTimeZone());
-            }
+            b.Label("coords"_h, "Coordinates", getCoordsUI());
+            b.LabelNum("timezone"_h, "Time zone", getTimeZoneUI());
         }
+        
         b.endGuest();
     }
 
@@ -85,14 +86,15 @@ namespace service
         }
         if (getMethod() != Method::Manual)
         {
-            u.update("coords"_h, getCoords());
-            u.update("timezone"_h, getTimeZone());
+            u.update("coords"_h, getCoordsUI());
+            u.update("timezone"_h, getTimeZoneUI());
         }
     }
 
     void GeoLocation::task()
     {
-        while (!requestGeoLocation()) sleep(RETRY_PERIOD_MS);
+        while (!requestGeoLocation()) 
+            sleep(1000 * RETRY_PERIOD_SEC);
         settings::sets().reload();
     }
 
@@ -127,7 +129,7 @@ namespace service
             countryCode[0] < 'A' || countryCode[0] > 'Z' || 
             countryCode[1] < 'A' || countryCode[1] > 'Z') return;
 
-        auto encodeUtf8 = [](uint32_t codePoint, char* output) 
+        auto encodeUTF8 = [](uint32_t codePoint, char* output) 
         {
             if (codePoint <= 0x7F) 
             {
@@ -162,14 +164,14 @@ namespace service
         uint32_t codePoint2 = 0x1F1E6 + (countryCode[1] - 'A');
 
         char utf8flag[9]; int len = 0;
-        len += encodeUtf8(codePoint1, utf8flag + len);
-        len += encodeUtf8(codePoint2, utf8flag + len);
+        len += encodeUTF8(codePoint1, utf8flag + len);
+        len += encodeUTF8(codePoint2, utf8flag + len);
         utf8flag[len] = '\0';
 
         countryFlag = utf8flag;
     }
 
-    void GeoLocation::setTimeZone(int num)
+    void GeoLocation::setTimeZoneUI(int num)
     {
         int tzh, tzm;
         if (num >= -14 && num <= +12)
@@ -179,7 +181,7 @@ namespace service
         encodeTimeZone(tzh, tzm);
     }
 
-    String GeoLocation::getTimeZone() const
+    const String GeoLocation::getTimeZoneUI() const
     {
         int tzh, tzm;
         decodeTimeZone(tzh, tzm);
@@ -189,12 +191,19 @@ namespace service
         return String(buffer);
     }
 
-    String GeoLocation::getCoords() const
+    const String GeoLocation::getCoordsUI() const
     {
-        return String(getLatitude(), 4) + ", " + String(getLongitude(), 4);
+        auto coords = (String(getLatitude(), 4) + ", " + String(getLongitude(), 4));
+        if (hasLocality()) coords = getCountryFlag() + " " + coords;
+        return coords;
     }
 
-    bool GeoLocation::isNewCoords() const
+    GeoLocation::Method GeoLocation::getMethod() const
+    {
+        return Method(int(settings::data()[db::geo_method]));
+    }
+
+    bool GeoLocation::hasNewCoords() const
     {
         float lat, lon;
         decodeCoords(lat, lon);
@@ -224,9 +233,9 @@ namespace service
         }
         if (ok)
         {
-            if (!hasLocality() || isNewCoords())
+            if (!hasLocality() || hasNewCoords())
             {
-                log_i("request locality: %f,%f", m_lat, m_lon);
+                log_i("request locality: %f, %f", m_lat, m_lon);
                 if (m_requests.requestReverseGeocoding(m_lat, m_lon, m_locality, m_countryCode))
                 {
                     generateCountryFlag(m_countryCode, m_countryFlag);
