@@ -38,12 +38,6 @@ namespace service
         b.beginGuest();
         sets::Group g(b, "📍 Geolocation");
 
-        if ((m_request || isAlive()) && getMethod() != Method::Manual)
-        {
-            b.Label("Locating...");
-            return;
-        }
-
         auto options = "Manual;IP Address (ipapi.co);WiFi Stations (Google)";
         if (b.Select(db::geo_method, "Method", options))
         {
@@ -51,7 +45,6 @@ namespace service
             b.reload();
             return;
         }
-        
         if (getMethod() == Method::Manual)
         {
             if (b.Number("Latitude", &m_lat, -90.f, +90.f))
@@ -73,7 +66,6 @@ namespace service
             b.Label("coords"_h, "Coordinates", getCoordsUI());
             b.LabelNum("timezone"_h, "Time zone", getTimeZoneUI());
         }
-        
         b.endGuest();
     }
 
