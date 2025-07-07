@@ -20,7 +20,9 @@ namespace service::details
         void hardwareInfoUpdate(sets::Updater& u);
 
         String getHTML() const;
-        String getInet() const;
+        String getLocality() const;
+        String getWeather() const;
+        String getInternet() const;
         String getUptime() const;
         String getESPModuleInfo() const;
         String getRAMUsageInfo() const;

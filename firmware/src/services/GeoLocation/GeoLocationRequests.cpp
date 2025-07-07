@@ -74,34 +74,40 @@ namespace service::details
                 DeserializationError error = deserializeJson(m_json, m_http.getString());
                 if (!error)
                 {
-                    auto isAscii = [](const String& str)
-                    {
-                        for (auto s = str.c_str(); *s; ++s)
-                            if ((unsigned char)(*s) & 0x80) return false;
-                        return true;
-                    };
-
                     JsonObject address = m_json["address"];
-                    for (const char* key : { "city", "town", "village", "hamlet", "municipality" })
+                    if (address)
                     {
-                        if (address[key].is<String>())
-                        { 
-                            locality = address[key].as<String>(); 
-                            break; 
+                        for (const char* key : { "city", "town", "village", "hamlet", "municipality" })
+                        {
+                            if (address[key])
+                            { 
+                                locality = address[key].as<String>(); 
+                                break; 
+                            }
                         }
+
+                        auto isASCII = [](const String& str)
+                        {
+                            for (auto s = str.c_str(); *s; ++s)
+                                if ((unsigned char)(*s) & 0x80) return false;
+                            return true;
+                        };
+
+                        if (locality.isEmpty() || !isASCII(locality))
+                        {
+                            locality = address["country"].as<String>();
+                        }
+                        countryCode = address["country_code"].as<String>();
+                        countryCode.toUpperCase();
                     }
-                    if (locality.isEmpty() || !isAscii(locality))
-                    {
-                        locality = address["country"].as<String>();
-                    }
-                    countryCode = address["country_code"].as<String>();
-                    countryCode.toUpperCase();
                 }                
             }
         }
-        m_http.end();
+
+        log_i("country:  %s", countryCode.c_str());
         log_i("locality: %s", locality.c_str());
-        log_i("countryCode: %s", countryCode.c_str());
+
+        m_http.end();
         return (!locality.isEmpty() && countryCode.length() == 2);
     }
 

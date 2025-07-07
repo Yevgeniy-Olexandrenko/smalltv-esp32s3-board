@@ -44,15 +44,11 @@ namespace service::details
         b.beginGuest();
         {
             b.HTML("html"_h, "", getHTML());
-            String locality = 
-                service::geoLocation.getCountryFlag() + " " +
-                service::geoLocation.getLocality();
-            String weather = "Clouds +26 °C 🌤️";
-            b.Label("weather"_h, locality, weather);
+            b.Label("weather"_h, getLocality(), getWeather());
         }
         {
             sets::Row r(b, "", sets::DivType::Line);
-            b.Label("internet"_h, "🌐 Internet", getInet());
+            b.Label("internet"_h, "🌐 Internet", getInternet());
             b.Label("uptime"_h, "⏳ Uptime", getUptime());
         }
         {
@@ -74,11 +70,9 @@ namespace service::details
     void MainTab::briefInfoUpdate(sets::Updater &u)
     {
         u.update("html"_h, getHTML());
-        u.update("internet"_h, getInet());
+        u.update("weather"_h, getWeather());
+        u.update("internet"_h, getInternet());
         u.update("uptime"_h, getUptime());
-
-        String weather = "Clouds +26 °C 🌤️";
-        u.update("weather"_h, weather);
     }
 
     void MainTab::audioPlayerBuild(sets::Builder &b)
@@ -150,7 +144,24 @@ namespace service::details
         return String(buffer);
     }
 
-    String MainTab::getInet() const
+    String MainTab::getLocality() const
+    {
+        if (service::geoLocation.hasLocality())
+            return 
+                service::geoLocation.getCountryFlag() + 
+                " " + service::geoLocation.getLocality();
+        else
+            return 
+                "📍 " + String(service::geoLocation.getLatitude(), 4) + 
+                ", " + String(service::geoLocation.getLongitude(), 4);
+    }
+
+    String MainTab::getWeather() const
+    {
+        return "Clouds +26 °C 🌤️";
+    }
+
+    String MainTab::getInternet() const
     {
         if (service::wifiConnection.isInternetAccessible()) return led(Led::G);
         return led(Led::R);

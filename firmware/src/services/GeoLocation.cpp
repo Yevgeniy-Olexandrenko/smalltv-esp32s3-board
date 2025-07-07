@@ -1,4 +1,5 @@
 #include "GeoLocation.h"
+#include "services/WiFiConnection.h"
 #include "GeoLocation/GeoLocationRequests.h"
 #include "settings.h"
 
@@ -10,6 +11,8 @@ namespace service
         settings::data().init(db::geo_latitude,  50.4500f);
         settings::data().init(db::geo_longitude, 30.5233f);
         settings::data().init(db::geo_timezone,  200);
+        decodeCoords(m_lat, m_lon);
+
         m_request = false;
         startRequest();
     }
@@ -26,16 +29,6 @@ namespace service
     GeoLocation::Method GeoLocation::getMethod() const
     {
         return Method(int(settings::data()[db::geo_method]));
-    }
-
-    float GeoLocation::getLatitude() const
-    {
-        return settings::data()[db::geo_latitude];
-    }
-
-    float GeoLocation::getLongitude() const
-    {
-        return settings::data()[db::geo_longitude];
     }
 
     int GeoLocation::getTZOffset() const
@@ -60,15 +53,13 @@ namespace service
         {
             if (getMethod() == Method::Manual)
             {
-                if (b.Number(db::geo_latitude, "Latitude", nullptr, -90.f, +90.f))
+                if (b.Number("Latitude", &m_lat, -90.f, +90.f))
                 {
-                    log_i("new latitude!");
-                    return;
+                    m_request = true;
                 }
-                if (b.Number(db::geo_longitude, "Longitude", nullptr, -180.f, +180.f))
+                if (b.Number("Longitude", &m_lon, -180.f, +180.f))
                 {
-                    log_i("new longitude!");
-                    return;
+                    m_request = true;
                 }
 
                 int tzh, tzm;
@@ -78,7 +69,7 @@ namespace service
             }
             else
             {
-                b.Label("coords"_h, "Coordinates", getCoordinates());
+                b.Label("coords"_h, "Coordinates", getCoords());
                 b.LabelNum("timezone"_h, "Time zone", getTimeZone());
             }
         }
@@ -94,7 +85,7 @@ namespace service
         }
         if (getMethod() != Method::Manual)
         {
-            u.update("coords"_h, getCoordinates());
+            u.update("coords"_h, getCoords());
             u.update("timezone"_h, getTimeZone());
         }
     }
@@ -105,92 +96,36 @@ namespace service
         settings::sets().reload();
     }
 
-    void GeoLocation::encodeTimeZone(int& tzh, int& tzm) const
+    void GeoLocation::decodeCoords(float& lat, float& lon)
     {
-        int off = (tzh * 100 + tzm);
-        settings::data()[db::geo_timezone ] = off;
+        lat = settings::data()[db::geo_latitude ];
+        lon = settings::data()[db::geo_longitude];
     }
 
-    void GeoLocation::decodeTimeZone(int& tzh, int& tzm) const
+    void GeoLocation::encodeCoords(float& lat, float& lon)
+    {
+        settings::data()[db::geo_latitude ] = lat;
+        settings::data()[db::geo_longitude] = lon;
+    }
+
+    void GeoLocation::decodeTimeZone(int& tzh, int& tzm)
     {
         int off = settings::data()[db::geo_timezone];
         tzh = off / 100, tzm = abs(off) % 100;
     }
-
-    void GeoLocation::setTimeZone(int num)
+    
+    void GeoLocation::encodeTimeZone(int& tzh, int& tzm)
     {
-        int tzh, tzm;
-        if (num >= -14 && num <= +12)
-            tzh = num, tzm = 0;
-        else
-            tzh = num / 60, tzm = abs(num) % 60;
-        encodeTimeZone(tzh, tzm);
+        int off = (tzh * 100 + tzm);
+        settings::data()[db::geo_timezone] = off;
     }
 
-    String GeoLocation::getTimeZone() const
+    void GeoLocation::generateCountryFlag(const String& countryCode, String& countryFlag)
     {
-        int tzh, tzm;
-        decodeTimeZone(tzh, tzm);
-        char buffer[6];
-        if (tzm == 0) sprintf(buffer, "%+d", tzh);
-        else sprintf(buffer, "%+d:%02d", tzh, tzm);
-        return String(buffer);
-    }
-
-    String GeoLocation::getCoordinates() const
-    {
-        return String(getLatitude(), 4) + ", " + String(getLongitude(), 4);
-    }
-
-    bool GeoLocation::requestGeoLocation()
-    {
-        log_i("request geolocation");
-
-        int tzh, tzm;
-        float lat = getLatitude();
-        float lon = getLongitude();
-
-        bool ok = false;
-        switch (getMethod())
-        {
-            case Method::Manual:
-                decodeTimeZone(tzh, tzm);
-                ok = true;
-                break;
-
-            case Method::IPAddress: 
-                ok = m_requests.requestUsingIPAddress(lat, lon, tzh, tzm);
-                break;
-
-            case Method::WiFiStations:
-                ok = m_requests.requestUsingWiFiStations(lat, lon, tzh, tzm);
-                break;
-        }
-
-        if (ok)
-        {
-            if (m_locality.isEmpty() || lat != getLatitude() || lon != getLongitude())
-            {
-                log_i("request locality: %f,%f", lat, lon);
-                m_requests.requestReverseGeocoding(lat, lon, m_locality, m_countryCode);
-                generateCountryFlag();
-            }
-
-            settings::data()[db::geo_latitude ] = lat;
-            settings::data()[db::geo_longitude] = lon;
-            encodeTimeZone(tzh, tzm);
-        }
-
-        log_i("request geolocation: %s", (ok ? "SUCCESS" : "FAILED"));
-        return ok;
-    }
-
-    void GeoLocation::generateCountryFlag()
-    {
-        m_countryFlag = m_countryCode;
-        if (m_countryCode.length() != 2 || 
-            m_countryCode[0] < 'A' || m_countryCode[0] > 'Z' || 
-            m_countryCode[1] < 'A' || m_countryCode[1] > 'Z') return;
+        countryFlag = countryCode;
+        if (countryCode.length() != 2 || 
+            countryCode[0] < 'A' || countryCode[0] > 'Z' || 
+            countryCode[1] < 'A' || countryCode[1] > 'Z') return;
 
         auto encodeUtf8 = [](uint32_t codePoint, char* output) 
         {
@@ -223,15 +158,85 @@ namespace service
             return 0;
         };
 
-        uint32_t codePoint1 = 0x1F1E6 + (m_countryCode[0] - 'A');
-        uint32_t codePoint2 = 0x1F1E6 + (m_countryCode[1] - 'A');
+        uint32_t codePoint1 = 0x1F1E6 + (countryCode[0] - 'A');
+        uint32_t codePoint2 = 0x1F1E6 + (countryCode[1] - 'A');
 
         char utf8flag[9]; int len = 0;
         len += encodeUtf8(codePoint1, utf8flag + len);
         len += encodeUtf8(codePoint2, utf8flag + len);
         utf8flag[len] = '\0';
 
-        m_countryFlag = utf8flag;
+        countryFlag = utf8flag;
+    }
+
+    void GeoLocation::setTimeZone(int num)
+    {
+        int tzh, tzm;
+        if (num >= -14 && num <= +12)
+            tzh = num, tzm = 0;
+        else
+            tzh = num / 60, tzm = abs(num) % 60;
+        encodeTimeZone(tzh, tzm);
+    }
+
+    String GeoLocation::getTimeZone() const
+    {
+        int tzh, tzm;
+        decodeTimeZone(tzh, tzm);
+        char buffer[6];
+        if (tzm == 0) sprintf(buffer, "%+d", tzh);
+        else sprintf(buffer, "%+d:%02d", tzh, tzm);
+        return String(buffer);
+    }
+
+    String GeoLocation::getCoords() const
+    {
+        return String(getLatitude(), 4) + ", " + String(getLongitude(), 4);
+    }
+
+    bool GeoLocation::isNewCoords() const
+    {
+        float lat, lon;
+        decodeCoords(lat, lon);
+        return (m_lat != lat || m_lon != lon);
+    }
+
+    bool GeoLocation::requestGeoLocation()
+    {
+        log_i("request geolocation");
+
+        int tzh, tzm;
+        bool ok = false;
+        switch (getMethod())
+        {
+            case Method::Manual:
+                decodeTimeZone(tzh, tzm);
+                ok = service::wifiConnection.isInternetAccessible();
+                break;
+
+            case Method::IPAddress: 
+                ok = m_requests.requestUsingIPAddress(m_lat, m_lon, tzh, tzm);
+                break;
+
+            case Method::WiFiStations:
+                ok = m_requests.requestUsingWiFiStations(m_lat, m_lon, tzh, tzm);
+                break;
+        }
+        if (ok)
+        {
+            if (!hasLocality() || isNewCoords())
+            {
+                log_i("request locality: %f,%f", m_lat, m_lon);
+                if (m_requests.requestReverseGeocoding(m_lat, m_lon, m_locality, m_countryCode))
+                {
+                    generateCountryFlag(m_countryCode, m_countryFlag);
+                }
+            }
+            encodeCoords(m_lat, m_lon);
+            encodeTimeZone(tzh, tzm);
+        }
+        log_i("request geolocation: %s", (ok ? "SUCCESS" : "FAILED"));
+        return ok;
     }
 
     GeoLocation geoLocation;
