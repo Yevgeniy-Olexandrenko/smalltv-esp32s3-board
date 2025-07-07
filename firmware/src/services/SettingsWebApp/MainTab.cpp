@@ -2,6 +2,7 @@
 #include "drivers/Display.h"
 #include "drivers/PowerSource.h"
 #include "services/DateTime.h"
+#include "services/GeoLocation.h"
 #include "services/WiFiConnection.h"
 #include "services/SettingsWebApp.h"
 #include "services/AudioPlayer.h"
@@ -43,7 +44,11 @@ namespace service::details
         b.beginGuest();
         {
             b.HTML("html"_h, "", getHTML());
-            b.Label("📍 Kharkov", "Clouds +26 °C 🌤");
+            String locality = 
+                service::geoLocation.getCountryFlag() + " " +
+                service::geoLocation.getLocality();
+            String weather = "Clouds +26 °C 🌤️";
+            b.Label("weather"_h, locality, weather);
         }
         {
             sets::Row r(b, "", sets::DivType::Line);
@@ -71,6 +76,9 @@ namespace service::details
         u.update("html"_h, getHTML());
         u.update("internet"_h, getInet());
         u.update("uptime"_h, getUptime());
+
+        String weather = "Clouds +26 °C 🌤️";
+        u.update("weather"_h, weather);
     }
 
     void MainTab::audioPlayerBuild(sets::Builder &b)

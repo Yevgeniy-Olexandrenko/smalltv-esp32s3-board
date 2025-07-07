@@ -52,11 +52,57 @@ namespace service::details
         return false;
     }
 
-    bool GeoLocationRequests::requestReverseGeocoding(float lat, float lon, String &locality, String &countryCode)
+    bool GeoLocationRequests::requestReverseGeocoding(float lat, float lon, String& locality, String& countryCode)
     {
-        // TODO
+        const char URL[] =
+            "https://nominatim.openstreetmap.org/reverse"
+            "?lat=%.6f&lon=%.6f&format=json&addressdetails=1&zoom=13";
 
-        return false;
+        locality.clear();
+        countryCode.clear();
+
+        char url[128];
+        snprintf(url, sizeof(url), URL, lat, lon);
+
+        if (m_http.begin(url)) 
+        {
+            m_http.addHeader("User-Agent", service::wifiConnection.getUserAgent());
+            m_http.addHeader("Accept-Language", "en");
+            if (m_http.GET() == HTTP_CODE_OK) 
+            {
+                m_json.clear();
+                DeserializationError error = deserializeJson(m_json, m_http.getString());
+                if (!error)
+                {
+                    auto isAscii = [](const String& str)
+                    {
+                        for (auto s = str.c_str(); *s; ++s)
+                            if ((unsigned char)(*s) & 0x80) return false;
+                        return true;
+                    };
+
+                    JsonObject address = m_json["address"];
+                    for (const char* key : { "city", "town", "village", "hamlet", "municipality" })
+                    {
+                        if (address[key].is<String>())
+                        { 
+                            locality = address[key].as<String>(); 
+                            break; 
+                        }
+                    }
+                    if (locality.isEmpty() || !isAscii(locality))
+                    {
+                        locality = address["country"].as<String>();
+                    }
+                    countryCode = address["country_code"].as<String>();
+                    countryCode.toUpperCase();
+                }                
+            }
+        }
+        m_http.end();
+        log_i("locality: %s", locality.c_str());
+        log_i("countryCode: %s", countryCode.c_str());
+        return (!locality.isEmpty() && countryCode.length() == 2);
     }
 
     bool GeoLocationRequests::requestGoogleGeolocationApi(float& lat, float& lon)

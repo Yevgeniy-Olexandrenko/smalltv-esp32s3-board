@@ -20,9 +20,13 @@ namespace service
         void startRequest();
 
         Method getMethod() const;
-        float getLatitude() const;
-        float getLongitude() const;
-        int getTZOffset() const;
+        float  getLatitude() const;
+        float  getLongitude() const;
+        int    getTZOffset() const;
+
+        const String& getLocality() const { return m_locality; }
+        const String& getCountryCode() const { return m_countryCode; }
+        const String& getCountryFlag() const { return m_countryFlag; }
 
         void settingsBuild(sets::Builder& b) override;
         void settingsUpdate(sets::Updater& u) override;
@@ -37,9 +41,13 @@ namespace service
         String getCoordinates() const;
 
         bool requestGeoLocation();
+        void generateCountryFlag();
 
     private:
         bool m_request;
+        String m_locality;
+        String m_countryCode;
+        String m_countryFlag;
         details::GeoLocationRequests m_requests;
     };
 
