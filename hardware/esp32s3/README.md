@@ -21,25 +21,25 @@ Top|Bottom
 
 ***NOTE:** If the device is used without any expansion boards, pins VIN and +5V must be shorted with a jumper.*
 
-ESP32-S3 module connections
+<h3>ESP32-S3 module connections</h3>
 
-Pin|Signal|Bus|Signal|Component|Pin|Signal|Bus|Signal|Component
+#|Pin|Bus|Signal|Component|#|Pin|Bus|Signal|Component
 -|-|-|-|-|-|-|-|-|-
 1|GND|Power|GND|Ground|21|GPIO13|-|DC|Display
 2|3V3|Power|+3.3V|Power|22|GPIO14|-|BL|Display backlight circuit
 3|EN|-|-|Reset circuit|23|GPIO21|MMC|D1|SD Card
-4|GPIO4|-|IO4|Touch button 0|24|GPIO47|-|DET|SD Card detect
+4|GPIO4|-|IO4|Touch button 0|24|GPIO47|-|DET|SD Card detect circuit
 5|GPIO5|-|IO5|Toush button 1|25|GPIO48|-|-|N.C.
 6|GPIO6|-|IO6|Toush button 2|26|GPIO45|-|-|N.C.
-7|GPIO7|-|IO7|Touch button 3|27|GPIO0|-|-|Boot button circuit
-8|GPIO15|I2S|DIN|Amplifier|28|GPIO35|-|-|N.C.
-9|GPIO16|I2S|BCLK|Amplifier|29|GPIO36|-|-|N.C.
-10|GPIO17|I2S|RLCLK|Amplifier|30|GPIO37|-|-|N.C.
-11|GPIO18|PDM|CLK|Microphone|31|GPIO38|MMC|CMD|SD Card
-12|GPIO8|PDM|DATA|Microphone|32|GPIO39|MMC|D3|SD Card
+7|GPIO7|-|IO7|Touch button 3|27|GPIO0|-|-|Boot button / LED circuit
+8|GPIO15|I2S|DIN|Speaker amplifier|28|GPIO35|-|-|N.C.
+9|GPIO16|I2S|BCLK|Speaker amplifier|29|GPIO36|-|-|N.C.
+10|GPIO17|I2S|RLCLK|Speaker amplifier|30|GPIO37|-|-|N.C.
+11|GPIO18|PDM|CLK|Microphone|31|GPIO38|MMC / SPI|CMD / MOSI|SD Card
+12|GPIO8|PDM|DATA|Microphone|32|GPIO39|MMC / SPI|D3 / CS|SD Card
 13|GPIO19|USB|D-|USB connector|33|GPIO40|MMC|D2|SD Card
-14|GPIO20|USB|D+|USB connector|34|GPIO41|MMC|CLK|SD Card
-15|GPIO3|Power|-|Input Voltage Sense|35|GPIO42|MMC|D0|SD Card
+14|GPIO20|USB|D+|USB connector|34|GPIO41|MMC / SPI|CLK / SCK|SD Card
+15|GPIO3|Power|-|Input voltage measurement circuit|35|GPIO42|MMC / SPI|D0 / MISO|SD Card
 16|GPIO46|-|-|N.C.|36|GPIO43|UART|RXD|Expansion port
 17|GPIO9|-|RES|Display|37|GPIO44|UART|TXD|Expansion port
 18|GPIO10|SPI|CS|Display|38|GPIO2|I2C|SDA|Expansion port
