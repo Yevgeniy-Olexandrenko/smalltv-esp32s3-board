@@ -1,18 +1,18 @@
-#pragma once
+// #pragma once
 
-#include "core/settings/Settings.h"
+// #include "core/settings/Settings.h"
 
-namespace service
-{
-    class WeatherForecast : public settings::Provider
-    {
-    public:
-        void begin();
-        void update();
+// namespace service
+// {
+//     class WeatherForecast : public settings::Provider
+//     {
+//     public:
+//         void begin();
+//         void update();
 
-        void settingsBuild(sets::Builder& b) override;
-        void settingsUpdate(sets::Updater& u) override;
-    };
+//         void settingsBuild(sets::Builder& b) override;
+//         void settingsUpdate(sets::Updater& u) override;
+//     };
 
-    extern WeatherForecast weatherForecast;
-}
+//     extern WeatherForecast weatherForecast;
+// }

@@ -16,12 +16,7 @@
 #define TFT_HEIGHT    240
 
 // mcu specific
-#ifdef ARDUINO_ARCH_ESP8266
 #define SPI_FREQUENCY 27000000
-#else
-#define USE_FSPI_PORT
-#define SPI_FREQUENCY 80000000
-#endif
 
 // defaults
 #undef TFT_BL

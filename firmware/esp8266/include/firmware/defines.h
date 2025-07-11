@@ -7,7 +7,3 @@
 
 #define WEBAPP_TITLE            (PROJECT_ICON " " PROJECT_TITLE)
 #define WEBAPP_PROJECT_HOME     "https://github.com/Yevgeniy-Olexandrenko/smalltv-esp32s3-board"
-
-#define STORAGE_MSC_VENDORID    "ESP32"
-#define STORAGE_MSC_PRODUCTID   PROJECT_TITLE
-#define STORAGE_MSC_PRODUCTREV  PROJECT_VERSION

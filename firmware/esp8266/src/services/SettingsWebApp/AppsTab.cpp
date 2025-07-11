@@ -1,14 +1,14 @@
-#include "AppsTab.h"
+// #include "AppsTab.h"
 
-namespace service::details
-{
-    void AppsTab::settingsBuild(sets::Builder &b)
-    {
-        // TODO
-    }
+// namespace service::details
+// {
+//     void AppsTab::settingsBuild(sets::Builder &b)
+//     {
+//         // TODO
+//     }
 
-    void AppsTab::settingsUpdate(sets::Updater &u)
-    {
-        //  TODO
-    }
-}
+//     void AppsTab::settingsUpdate(sets::Updater &u)
+//     {
+//         //  TODO
+//     }
+// }
