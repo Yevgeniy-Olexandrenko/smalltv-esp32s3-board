@@ -27,7 +27,7 @@ Top|Bottom
 :-:|:-:|:-:|:-:|-
 1|GND|Ground|GND|Ground circuit
 2|3V3|Power|+3.3V|Power circuit
-3|EN|Reset|RES|Reset circuit
+3|EN|Reset|RES|Reset circuit / Prog EN
 4|GPIO4|ADC|IO4|Touch button 0
 5|GPIO5|ADC|IO5|Toush button 1
 6|GPIO6|ADC|IO6|Toush button 2
@@ -51,7 +51,7 @@ Top|Bottom
 24|GPIO47|GPIO|DET|SD Card detect circuit
 25|GPIO48|-|-|-
 26|GPIO45|-|-|-
-27|GPIO0|GPIO|BOOT/LED|Boot button / LED circuit
+27|GPIO0|GPIO|BOOT / LED|Boot button / LED circuit / Prog IO0
 28|GPIO35|-|-|-
 29|GPIO36|-|-|-
 30|GPIO37|-|-|-
@@ -60,8 +60,8 @@ Top|Bottom
 33|GPIO40|MMC|D2|SD Card
 34|GPIO41|MMC / SPI|CLK / SCK|SD Card
 35|GPIO42|MMC / SPI|D0 / MISO|SD Card
-36|GPIO43|UART|RXD|Expansion port
-37|GPIO44|UART|TXD|Expansion port
+36|GPIO43|UART|RXD|Expansion port / Prog RXD
+37|GPIO44|UART|TXD|Expansion port / Prog TXD
 38|GPIO2|I2C|SDA|Expansion port
 39|GPIO1|I2C|SCL|Expansion port
 40|GND|Ground|GND|Ground circuit
