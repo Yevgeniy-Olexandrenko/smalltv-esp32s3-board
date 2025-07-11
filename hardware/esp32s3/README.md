@@ -65,3 +65,16 @@ Top|Bottom
 38|GPIO2|I2C|SDA|Expansion port
 39|GPIO1|I2C|SCL|Expansion port
 40|GND|Ground|GND|Ground circuit
+
+<h2>PCB v1.1</h2>
+
+<h3>ESP32-S3 module connections</h3>
+
+All signal connections are the same as v1.0 except those listed in the table below:
+
+#|Pin|HW|Signal|Component
+:-:|:-:|:-:|:-:|-
+16|GPIO46|GPIO|RES|Self reset circuit
+24|GPIO47|-|-|-
+25|GPIO48|GPIO|DIN|RGB LED
+27|GPIO0|GPIO|BOOT|Boot button / Prog IO0
