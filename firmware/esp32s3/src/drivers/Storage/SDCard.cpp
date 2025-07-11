@@ -74,7 +74,7 @@ namespace driver::details
     }
 
     // SPI mode
-    bool SDCard::begin(const char *mountPoint, int clk, int mosi, int miso, int cs)
+    bool SDCard::begin(const char *mountPoint, int sck, int mosi, int miso, int cs)
     {
         if (isMounted()) return true;
         log_i("Initializing SD card");
@@ -86,7 +86,7 @@ namespace driver::details
         {
             .mosi_io_num = mosi,
             .miso_io_num = miso,
-            .sclk_io_num = clk,
+            .sclk_io_num = sck,
             .quadwp_io_num = GPIO_NUM_NC,
             .quadhd_io_num = GPIO_NUM_NC,
             .max_transfer_sz = 0,

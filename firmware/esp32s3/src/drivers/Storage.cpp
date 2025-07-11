@@ -94,7 +94,7 @@ namespace driver
         #if defined(SDCARD_SPI)
         if (sdcard->begin(
             details::SDCard::DEFAULT_MOUNT_POINT,
-            PIN_SD_CLK, PIN_SD_MOSI, PIN_SD_MISO, PIN_SD_CS))
+            PIN_SD_SCK, PIN_SD_MOSI, PIN_SD_MISO, PIN_SD_CS))
         #elif defined(SDCARD_SDIO1)
         if (sdcard->begin(
             details::SDCard::DEFAULT_MOUNT_POINT,

@@ -79,7 +79,7 @@
     #undef  PIN_SD_D3
     #undef  PIN_SD_MISO
     #undef  PIN_SD_MOSI
-    #undef  PIN_SD_CLK
+    #undef  PIN_SD_SCK
     #undef  PIN_SD_CS
 #else
 #ifndef SDCARD_SPI
@@ -110,8 +110,8 @@
     #ifndef PIN_SD_MOSI
     #define PIN_SD_MOSI 38
     #endif
-    #ifndef PIN_SD_CLK
-    #define PIN_SD_CLK  41
+    #ifndef PIN_SD_SCK
+    #define PIN_SD_SCK  41
     #endif
     #ifndef PIN_SD_CS
     #define PIN_SD_CS   39

@@ -13,7 +13,7 @@ R"raw(
 <html>
 <body>
 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-<img src="https://github.com/Yevgeniy-Olexandrenko/smalltv-esp32s3-board/blob/main/datasheet/images/smalltv_%s.png?raw=true" style="height:100px; width:auto;">
+<img src="https://github.com/Yevgeniy-Olexandrenko/smalltv-esp32s3-board/blob/main/support/shells/smalltv_%s.png?raw=true" style="height:100px; width:auto;">
 <div style="text-align:right; padding-right: 10px;">
 <div style="font-size:50px;">%s</div>
 <div style="font-size:20px;">%s</div>

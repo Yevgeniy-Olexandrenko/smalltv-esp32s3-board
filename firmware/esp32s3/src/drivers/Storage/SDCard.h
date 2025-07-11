@@ -18,7 +18,7 @@ namespace driver::details
 
         bool begin(const char* mountPoint, int clk, int cmd, int d0);
         bool begin(const char* mountPoint, int clk, int cmd, int d0, int d1, int d2, int d3);
-        bool begin(const char* mountPoint, int clk, int mosi, int miso, int cs);
+        bool begin(const char* mountPoint, int sck, int mosi, int miso, int cs);
         void end();
 
         // sd card properties

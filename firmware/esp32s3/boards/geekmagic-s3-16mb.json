@@ -4,7 +4,7 @@
             "ldscript": "esp32s3_out.ld",
             "memory_type": "qio_opi"
         },
-        "partitions": "boards/flash-16MB.csv",
+        "partitions": "boards/flash-16mb.csv",
         "filesystem": "fatfs",
         "core": "esp32",
         "extra_flags": [
