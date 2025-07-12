@@ -20,6 +20,16 @@ namespace service
         String dateToString() const;
         String timeToString(time_t timestamp) const;
         String dateToString(time_t timestamp) const;
+
+        void onConnectedToWiFi();
+
+    private:
+        static bool fetchGatewayTime(time_t& timestamp);
+        static int64_t daysFromCivil(int y, unsigned m, unsigned d);
+        static int monthFromAbbrev(const char *mon);
+
+    private:
+        bool m_isSynced;
     };
 
     extern DateTime dateTime;
