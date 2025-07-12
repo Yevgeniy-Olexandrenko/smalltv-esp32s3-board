@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "firmware.h"
+#include "services/Services.h"
 
 void setup()
 {
@@ -13,5 +14,5 @@ void setup()
 
 void loop()
 {
-    // do nothing
+    services::update();
 }

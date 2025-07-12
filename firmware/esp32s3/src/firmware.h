@@ -7,14 +7,6 @@
 #include "drivers/SelfReboot.h"
 #include "drivers/StatusLED.h"
 
-// services
-#include "services/DateTime.h"
-#include "services/GeoLocation.h"
-#include "services/WiFiConnection.h"
-#include "services/SettingsWebApp.h"
-#include "services/WeatherForecast.h"
-#include "services/AudioPlayer.h"
-
 // commons
 #include "core/settings/Settings.h"
 #include "firmware/secrets.h"
@@ -59,28 +51,6 @@ namespace drivers
             driver::storage.startMSC();
         }
         #endif  
-    }
-}
-
-namespace services
-{
-    void begin()
-    {
-        // init API keys
-        settings::apikey(db::apikey_google, APIKEY_GOOGLE);
-        settings::apikey(db::apikey_openweather, APIKEY_OPENWEATHER);
-
-        // required services
-        service::dateTime.begin();
-        service::geoLocation.begin();
-        service::wifiConnection.begin();
-        service::settingsWebApp.begin();
-        service::weatherForecast.begin();
-
-        // optional services
-        #ifndef NO_AUDIO
-        service::audioPlayer.begin();
-        #endif
     }
 }
 

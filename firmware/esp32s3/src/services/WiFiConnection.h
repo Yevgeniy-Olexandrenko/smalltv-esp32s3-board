@@ -32,8 +32,7 @@ namespace service
         void beginConnection();
         void updateConnection();
 
-        void onConnectedToAP(WiFiEventInfo_t info);
-        void onDisconnectedFromAP(WiFiEventInfo_t info);
+        void handleEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 
     private:
         details::WiFiConnectionUI m_ui;

@@ -1,8 +1,8 @@
 #include "WiFiConnection.h"
-#include "DateTime.h"
-#include "settings.h"
+#include "services/Services.h"
 #include "firmware/defines.h"
 #include "firmware/secrets.h"
+#include "settings.h"
 
 namespace service
 {
@@ -19,24 +19,7 @@ namespace service
         m_ui.begin();
         WiFi.setHostname(hostname.c_str());
         WiFi.setAutoReconnect(true);
-        WiFi.onEvent(
-            [this](WiFiEvent_t event, WiFiEventInfo_t info)
-            {
-                switch (event)
-                {
-                case SYSTEM_EVENT_STA_GOT_IP:
-                    log_i("wifi event: SYSTEM_EVENT_STA_GOT_IP");
-                    onConnectedToAP(info);
-                    break;
-                case SYSTEM_EVENT_STA_DISCONNECTED:
-                    log_i("wifi event: SYSTEM_EVENT_STA_DISCONNECTED");
-                    onDisconnectedFromAP(info);
-                    break;
-                default:
-                    log_i("wifi event: %d", event);
-                    break;
-                }
-            });
+        WiFi.onEvent([this](WiFiEvent_t e, WiFiEventInfo_t i) { handleEvent(e, i); });
 
         log_i("connect to wifi on boot");
         connect(settings::data()[db::wifi_ssid], settings::data()[db::wifi_pass]);
@@ -167,13 +150,16 @@ namespace service
         }
     }
 
-    void WiFiConnection::onConnectedToAP(WiFiEventInfo_t info)
+    void WiFiConnection::handleEvent(WiFiEvent_t event, WiFiEventInfo_t info)
     {
-        service::dateTime.onConnectedToWiFi();
-    }
-
-    void WiFiConnection::onDisconnectedFromAP(WiFiEventInfo_t info)
-    {
+        if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP)
+        {
+            services::onConnectedToWiFi();
+        }
+        else if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
+        {
+            services::onDisconnectedFromWiFi();
+        }
     }
 
     WiFiConnection wifiConnection;
