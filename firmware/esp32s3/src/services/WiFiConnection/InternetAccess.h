@@ -1,28 +1,20 @@
 #pragma once
 
+#include "core/Timer.h"
+
 namespace service::details
 {
     class InternetAccess
     {
-        constexpr static int PING_INTERVAL_MS = 20000;
-        constexpr static int PING_TIMEOUT_MS  = 2000;
+        constexpr static auto CHECK_PERIOD_SEC  = 20;
+        constexpr static auto CHECK_TIMEOUT_SEC = 2;
 
     public:
-        InternetAccess();
-
         bool available() const;
         void update();
 
     private:
-        void startPing();
-        void checkPingResponse();
-        void handlePingError();
-        void stopPing();
-
-    private:
-        unsigned long m_pingStartTime;
-        bool m_pingSuccessful;
-        bool m_pending;
-        int m_sock;
+        bool m_available = false;
+        core::Timer m_timer;
     };
 }

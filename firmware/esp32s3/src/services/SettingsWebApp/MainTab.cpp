@@ -163,7 +163,7 @@ namespace service::details
 
     String MainTab::getInternet() const
     {
-        if (service::wifiConnection.isInternetAccessible()) return led(Led::G);
+        if (service::wifiConnection.isInternetAvailable()) return led(Led::G);
         return led(Led::R);
     }
 

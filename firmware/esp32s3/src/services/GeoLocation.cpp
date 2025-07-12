@@ -212,7 +212,7 @@ namespace service
         {
             case Method::Manual:
                 decodeTimeZone(tzh, tzm);
-                ok = service::wifiConnection.isInternetAccessible();
+                ok = service::wifiConnection.isInternetAvailable();
                 break;
 
             case Method::IPAddress: 

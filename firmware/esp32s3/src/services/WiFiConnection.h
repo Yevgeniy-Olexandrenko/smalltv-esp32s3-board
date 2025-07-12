@@ -18,7 +18,7 @@ namespace service
         bool isConnecting() const { return m_connect.trying; }
         bool isConnectedToAP() const { return WiFi.isConnected(); }
         bool isInAccessPointMode() const { return !isConnectedToAP() && WiFi.getMode() == WIFI_MODE_AP; }
-        bool isInternetAccessible() const { return m_internet.available(); }
+        bool isInternetAvailable() const { return m_internet.available(); }
     
         int8_t getRSSI() const { return WiFi.RSSI(); }
         Signal getSignal(int8_t rssi) const;
@@ -31,7 +31,6 @@ namespace service
         void task() override;
         void beginConnection();
         void updateConnection();
-
         void handleEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 
     private:
