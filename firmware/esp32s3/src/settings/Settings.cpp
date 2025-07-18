@@ -1,56 +1,58 @@
 #include "Settings.h"
 
-bool Settings::m_init = false;
-bool Settings::m_apiKeys = false;
-GyverDBFile Settings::m_dbApiKeys;
-GyverDBFile Settings::m_dbSettings;
-SettingsGyver Settings::m_webServer;
+bool Settings::m_initDBs = false;
+bool Settings::m_initSets = false;
 
-void Settings::init()
+GyverDBFile Settings::m_dbKeys;
+GyverDBFile Settings::m_dbData;
+SettingsGyver Settings::m_sets;
+
+void Settings::initData()
 {
-    if (!m_init)
+    if (!m_initDBs)
     {
         LittleFS.begin(true);
-        m_dbApiKeys.setFS(&LittleFS, "/apikeys.db");
-        m_dbSettings.setFS(&LittleFS, "/settings.db");
+        m_dbKeys.setFS(&LittleFS, "/settings_keys.db");
+        m_dbData.setFS(&LittleFS, "/settings_data.db");
+        m_dbKeys.begin();
+        m_dbData.begin();
+        m_initDBs = true;
+    }
+}
 
-        m_dbApiKeys.begin();
-        m_dbSettings.begin();
-        m_webServer.begin();
-
-        endApiKeys();
-        m_init = true;
+void Settings::initSets()
+{
+    if (!m_initSets)
+    {
+        m_sets.begin();
+        m_sets.attachDB(&m_dbData);
+        m_initSets = true;
     }
 }
 
 GyverDBFile& Settings::data()
 {
-    return (m_apiKeys ? m_dbApiKeys : m_dbSettings);
+    initData();
+    return m_dbData;
+}
+
+GyverDBFile& Settings::keys()
+{
+    initData();
+    return m_dbKeys;
 }
 
 SettingsGyver& Settings::sets()
 {
-    return m_webServer;
+    initSets();
+    return m_sets;
 }
 
-void Settings::beginApiKeys()
+void Settings::tick()
 {
-    m_webServer.attachDB(&m_dbApiKeys);
-    m_apiKeys = true;
-}
-
-void Settings::endApiKeys()
-{
-    m_webServer.attachDB(&m_dbSettings);
-    m_apiKeys = false;
-}
-
-const String Settings::apikey(size_t hash)
-{
-    beginApiKeys();
-    String key = data()[hash];
-    endApiKeys();
-    return key;
+    keys().tick();
+    data().tick();
+    sets().tick();
 }
 
 const String Settings::Provider::led(Led led) const

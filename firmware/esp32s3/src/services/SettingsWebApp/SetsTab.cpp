@@ -154,11 +154,11 @@ namespace service::details
 
     void SetsTab::apiKeysSettingsBuild(sets::Builder &b)
     {
-        Settings::beginApiKeys();
+        Settings::sets().attachDB(&Settings::keys());
         sets::Group g(b, "🔑 API Keys");
         b.Input(apikey::google, "Google");
         b.Input(apikey::openweather, "OpenWeather");
-        Settings::endApiKeys();
+        Settings::sets().attachDB(&Settings::data());
     }
 
     ////////////////////////////////////////////////////////////////////////////

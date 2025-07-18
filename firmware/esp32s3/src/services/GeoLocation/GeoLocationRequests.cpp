@@ -32,7 +32,7 @@ namespace service::details
 
     bool GeoLocationRequests::requestUsingWiFiStations(float& lat, float& lon, int& tzh, int& tzm)
     {
-        if (Settings::apikey(apikey::google).length() >= 39 && service::dateTime.isSynced())
+        if (Settings::keys()[apikey::google].length() >= 39 && service::dateTime.isSynced())
         {
             if (WiFi.scanComplete() < 1) 
             {
@@ -136,7 +136,7 @@ namespace service::details
         log_i("payload_text: %s", payload);
 
         char url[128];
-        snprintf(url, sizeof(url), URL, Settings::apikey(apikey::google).c_str());
+        snprintf(url, sizeof(url), URL, Settings::keys()[apikey::google].c_str());
 
         if (m_http.begin(url))
         {
@@ -167,7 +167,7 @@ namespace service::details
             "?location=%.6f,%.6f&timestamp=%ld&key=%s";
 
         char url[192];
-        snprintf(url, sizeof(url), URL, lat, lon, timestamp, Settings::apikey(apikey::google).c_str());
+        snprintf(url, sizeof(url), URL, lat, lon, timestamp, Settings::keys()[apikey::google].c_str());
 
         if (m_http.begin(url))
         {

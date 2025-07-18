@@ -46,7 +46,7 @@ namespace service
 
         while(true)
         {
-            Settings::sets().tick();
+            Settings::tick();
             if (m_rebootPending)
             {
                 m_currentTab = 1;

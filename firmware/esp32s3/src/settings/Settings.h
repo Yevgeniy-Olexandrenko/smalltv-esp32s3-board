@@ -6,16 +6,15 @@
 
 class Settings
 {
-    static void init();
+    static void initData();
+    static void initSets();
 
 public:
+    static GyverDBFile& keys();
     static GyverDBFile& data();
+
     static SettingsGyver& sets();
-
-    static void beginApiKeys();
-    static void endApiKeys();
-
-    static const String apikey(size_t hash);
+    static void tick();
 
 public:
     class Provider
@@ -30,9 +29,9 @@ public:
     };
 
 private:
-    static bool m_init;
-    static bool m_apiKeys;
-    static GyverDBFile m_dbApiKeys;
-    static GyverDBFile m_dbSettings;
-    static SettingsGyver m_webServer;
+    static bool m_initDBs;
+    static bool m_initSets;
+    static GyverDBFile m_dbKeys;
+    static GyverDBFile m_dbData;
+    static SettingsGyver m_sets;
 };

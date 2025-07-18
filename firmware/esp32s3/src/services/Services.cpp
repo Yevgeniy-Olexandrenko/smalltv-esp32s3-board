@@ -8,10 +8,8 @@ namespace services
     void begin()
     {
         // init API keys
-        Settings::beginApiKeys();
-        Settings::data().init(apikey::google, APIKEY_GOOGLE);
-        Settings::data().init(apikey::openweather, APIKEY_OPENWEATHER);
-        Settings::endApiKeys();
+        Settings::keys().init(apikey::google, APIKEY_GOOGLE);
+        Settings::keys().init(apikey::openweather, APIKEY_OPENWEATHER);
 
         // required services
         service::dateTime.begin();
