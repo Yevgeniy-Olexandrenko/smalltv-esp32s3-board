@@ -5,7 +5,6 @@
 #include "RadioContext.h"
 #include "drivers/Storage.h"
 #include "services/AudioPlayer.h"
-#include "settings.h"
 
 namespace service::details
 {
@@ -18,16 +17,16 @@ namespace service::details
 
     void AudioPlayerUI::begin()
     {
-        settings::data().init(db::audio_volume, 50);
-        settings::data().init(db::audio_player_shuffle, false);
-        settings::data().init(db::audio_player_loop, false);
+        Settings::data().init(audio::volume, 50);
+        Settings::data().init(player::pl_shuffle, false);
+        Settings::data().init(player::pl_loop, false);
         onVolumeSettingsChanged();
     }
 
     void AudioPlayerUI::playStorage(const String &format, const String &filelist)
     {
-        bool shuffle = settings::data()[db::audio_player_shuffle];
-        bool loop = settings::data()[db::audio_player_loop];
+        bool shuffle = Settings::data()[player::pl_shuffle];
+        bool loop = Settings::data()[player::pl_loop];
         auto context = new StorageContext(format, filelist, shuffle, loop);
         audioPlayer.start(context);
     }
@@ -104,8 +103,8 @@ namespace service::details
             }
             {
                 sets::Row r(b, "", sets::DivType::Default);
-                b.Switch(db::audio_player_shuffle, "Shuffle");
-                b.Switch(db::audio_player_loop, "Loop");
+                b.Switch(player::pl_shuffle, "Shuffle");
+                b.Switch(player::pl_loop, "Loop");
             }
             if (!m_filelists.empty() && b.Button("Play"))
             {
@@ -140,7 +139,7 @@ namespace service::details
         }
         if (reload)
         {
-            settings::sets().reload();
+            Settings::sets().reload();
         }
         else if (m_started)
         {
@@ -153,7 +152,7 @@ namespace service::details
 
     void AudioPlayerUI::settingsBuildVolume(sets::Builder &b)
     {
-        if (b.Slider(db::audio_volume, "🔈 Volume", 0, 100))
+        if (b.Slider(audio::volume, "🔈 Volume", 0, 100))
         {
             onVolumeSettingsChanged();
         }
@@ -161,7 +160,7 @@ namespace service::details
 
     void AudioPlayerUI::onVolumeSettingsChanged()
     {
-        auto volume = (float(settings::data()[db::audio_volume]) * 0.01f);
+        auto volume = (float(Settings::data()[audio::volume]) * 0.01f);
         audioPlayer.setVolume(volume);
     }
 

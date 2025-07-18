@@ -1,14 +1,14 @@
 #pragma once
 
 #include "core/Core.h"
-#include "core/settings/Settings.h"
+#include "settings/Settings.h"
 #include "GeoLocation/GeoLocationRequests.h"
 
 namespace service
 {
     class GeoLocation
         : public core::Task<8192, core::TaskCpu::System, core::TaskPrio::Background>
-        , public settings::Provider
+        , public Settings::Provider
     {
         enum class Method { Manual, IPAddress, WiFiStations };
 

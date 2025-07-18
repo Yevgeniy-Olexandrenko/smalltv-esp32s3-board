@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core/settings/Settings.h"
+#include "settings/Settings.h"
 
 namespace service::details
 {
-    class WiFiConnectionUI : public settings::Provider
+    class WiFiConnectionUI : public Settings::Provider
     {
         enum class Action { None, DoScan, DoConnect, GoToManual };
         struct Station { String ssid; bool open; int signal; };

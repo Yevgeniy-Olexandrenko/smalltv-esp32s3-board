@@ -29,8 +29,8 @@ namespace service::details
 
             case Action::GoToManual:
                 m_action = Action::None;
-                m_ssid = settings::data()[db::wifi_ssid];
-                m_pass = settings::data()[db::wifi_pass];
+                m_ssid = Settings::data()[wifi::ssid];
+                m_pass = Settings::data()[wifi::pass];
                 m_stations.clear();
                 // fall down
                 
@@ -52,7 +52,7 @@ namespace service::details
                 {
                     b.Pass ("Password", &m_pass);
                 }
-                b.Slider(db::wifi_tout, "Connection timeout",
+                b.Slider(wifi::tout, "Connection timeout",
                     MIN_CONN_TOUT, MAX_CONN_TOUT, 5, " seconds");
                 {
                     sets::Buttons buttons(b);
@@ -91,13 +91,13 @@ namespace service::details
                 scanForStations();
                 chooseStationByIndex(0);
                 m_action = Action::None;
-                settings::sets().reload();
+                Settings::sets().reload();
                 break;
 
             case Action::DoConnect:
                 wifiConnection.connect(m_ssid, m_pass);
                 m_action = Action::GoToManual;
-                settings::sets().reload();
+                Settings::sets().reload();
                 break;
         }
     }

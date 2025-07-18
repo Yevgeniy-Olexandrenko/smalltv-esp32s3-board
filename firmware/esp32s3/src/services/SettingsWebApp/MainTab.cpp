@@ -6,7 +6,6 @@
 #include "services/WiFiConnection.h"
 #include "services/SettingsWebApp.h"
 #include "services/AudioPlayer.h"
-#include "settings.h"
 
 const char custom_html[] = 
 R"raw(
@@ -54,7 +53,7 @@ namespace service::details
         {
             sets::Row r(b, "", sets::DivType::Line);
             #ifndef NO_VIDEO
-            if (b.Slider(db::lcd_brightness, "🔆 Brightness", 0, 100))
+            if (b.Slider(display::brightness, "🔆 Brightness", 0, 100))
             {
                 auto brightness = (float(b.build.value) * 0.01f);
                 driver::display.setBrightness(brightness);

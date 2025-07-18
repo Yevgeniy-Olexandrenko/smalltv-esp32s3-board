@@ -1,11 +1,11 @@
 #pragma once
 #ifndef NO_AUDIO
 
-#include "core/settings/Settings.h"
+#include "settings/Settings.h"
 
 namespace service::details
 {
-    class AudioPlayerUI : public settings::Provider
+    class AudioPlayerUI : public Settings::Provider
     {
         struct UIList
         {

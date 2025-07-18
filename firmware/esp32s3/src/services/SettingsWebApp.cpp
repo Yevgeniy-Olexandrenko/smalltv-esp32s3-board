@@ -26,18 +26,18 @@ namespace service
         m_main.begin();
         m_apps.begin();
 
-        settings::sets().onBuild([this](sets::Builder& b) { this->settingsBuild(b); });
-        settings::sets().onUpdate([this](sets::Updater& u) { this->settingsUpdate(u); });
-        settings::sets().onFocusChange([this]() { this->onFocusChange(settings::sets().focused()); });
-        settings::sets().rtc.onSync([](uint32_t unix) { service::dateTime.setUTC(unix); });
+        Settings::sets().onBuild([this](sets::Builder& b) { this->settingsBuild(b); });
+        Settings::sets().onUpdate([this](sets::Updater& u) { this->settingsUpdate(u); });
+        Settings::sets().onFocusChange([this]() { this->onFocusChange(Settings::sets().focused()); });
+        Settings::sets().rtc.onSync([](uint32_t unix) { service::dateTime.setUTC(unix); });
 
-        settings::sets().config.updateTout = 1000;
-        settings::sets().config.theme = m_sets.getThemeColor();
+        Settings::sets().config.updateTout = 1000;
+        Settings::sets().config.theme = m_sets.getThemeColor();
 
-        settings::sets().setTitle(WEBAPP_TITLE + service::wifiConnection.getDeviceID());
-        settings::sets().setProjectInfo("home page", WEBAPP_PROJECT_HOME);
-        settings::sets().setVersion(PROJECT_VERSION);
-        settings::sets().setPass(WEBUI_PASS);
+        Settings::sets().setTitle(WEBAPP_TITLE + service::wifiConnection.getDeviceID());
+        Settings::sets().setProjectInfo("home page", WEBAPP_PROJECT_HOME);
+        Settings::sets().setVersion(PROJECT_VERSION);
+        Settings::sets().setPass(WEBUI_PASS);
 
         m_currentTab = 1;
         m_connectedToPC = false;
@@ -46,7 +46,7 @@ namespace service
 
         while(true)
         {
-            settings::sets().tick();
+            Settings::sets().tick();
             if (m_rebootPending)
             {
                 m_currentTab = 1;
@@ -94,8 +94,8 @@ namespace service
             if (b.build.value.toBool())
             {
                 m_rebootPending = true;
-                settings::data().update();
-                settings::sets().reload();
+                Settings::data().update();
+                Settings::sets().reload();
             }
         }
         b.endGuest();
@@ -106,7 +106,7 @@ namespace service
         if (m_connectedToPC != driver::storage.isMSCRunning())
         {
             m_connectedToPC ^= true;
-            settings::sets().reload();
+            Settings::sets().reload();
             return;
         }
 

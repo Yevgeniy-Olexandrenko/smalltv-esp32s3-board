@@ -1,5 +1,5 @@
 #include "Services.h"
-#include "core/settings/Settings.h"
+#include "settings/Settings.h"
 #include "firmware/secrets.h"
 #include "settings.h"
 
@@ -8,8 +8,10 @@ namespace services
     void begin()
     {
         // init API keys
-        settings::apikey(db::apikey_google, APIKEY_GOOGLE);
-        settings::apikey(db::apikey_openweather, APIKEY_OPENWEATHER);
+        Settings::beginApiKeys();
+        Settings::data().init(apikey::google, APIKEY_GOOGLE);
+        Settings::data().init(apikey::openweather, APIKEY_OPENWEATHER);
+        Settings::endApiKeys();
 
         // required services
         service::dateTime.begin();

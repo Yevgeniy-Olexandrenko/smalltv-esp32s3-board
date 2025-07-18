@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/Core.h"
-#include "core/settings/Settings.h"
 #include "SettingsWebApp/AppsTab.h"
 #include "SettingsWebApp/MainTab.h"
 #include "SettingsWebApp/SetsTab.h"

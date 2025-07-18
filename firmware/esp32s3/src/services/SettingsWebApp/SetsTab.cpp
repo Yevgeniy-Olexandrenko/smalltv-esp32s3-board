@@ -4,7 +4,6 @@
 #include "services/GeoLocation.h"
 #include "services/WeatherForecast.h"
 #include "services/SettingsWebApp.h"
-#include "settings.h"
 
 namespace service::details
 {
@@ -25,8 +24,8 @@ namespace service::details
 
     void SetsTab::begin()
     {
-        settings::data().init(db::color_casing, 0);
-        settings::data().init(db::color_theme,  0);
+        Settings::data().init(theme::casing, 0);
+        Settings::data().init(theme::color,  0);
     }
 
     void SetsTab::settingsBuild(sets::Builder &b)
@@ -49,13 +48,13 @@ namespace service::details
 
     String SetsTab::getCasingColor() const
     {
-        int index = settings::data()[db::color_casing];
+        int index = Settings::data()[theme::casing];
         return Text(casingColors).getSub(index, ';').toString();
     }
 
     sets::Colors SetsTab::getThemeColor() const
     {
-        int index = settings::data()[db::color_theme];
+        int index = Settings::data()[theme::color];
         return themeColorsRGB[index];
     }
 
@@ -64,11 +63,11 @@ namespace service::details
     void SetsTab::colorsSettingsBuild(sets::Builder &b)
     {
         sets::Row r(b, "", sets::DivType::Line);
-        b.Select(db::color_casing, "Casing", casingColors);
-        if (b.Select(db::color_theme, "Theme", themeColors))
+        b.Select(theme::casing, "Casing", casingColors);
+        if (b.Select(theme::color, "Theme", themeColors))
         {
             auto color = getThemeColor();
-            settings::sets().config.theme = color;
+            Settings::sets().config.theme = color;
             b.reload();
         }
     }
@@ -77,7 +76,7 @@ namespace service::details
     {
         b.beginGuest();
         if (m_typeRollback < 0)
-            m_typeRollback = settings::data()[db::storage_type];
+            m_typeRollback = Settings::data()[storage::type];
 
         {
             String choice = "None;Embedded Flash";
@@ -86,9 +85,9 @@ namespace service::details
             #endif
 
             sets::Group g(b, "💾 Storage");
-            if (b.Select(db::storage_type, "Type", choice))
+            if (b.Select(storage::type, "Type", choice))
             {
-                m_typeChanged = (settings::data()[db::storage_type] != m_typeRollback);
+                m_typeChanged = (Settings::data()[storage::type] != m_typeRollback);
             }
 
             if (driver::storage.getType() != driver::Storage::Type::None)
@@ -103,7 +102,7 @@ namespace service::details
                     service::settingsWebApp.requestReboot([&](bool reboot)
                     {
                         if (reboot)
-                            settings::data()[db::reboot_to_msc] = true;
+                            Settings::data()[reboot::to_msc] = true;
                     });
                 }
                 #endif
@@ -120,7 +119,7 @@ namespace service::details
             service::settingsWebApp.requestReboot([&](bool reboot)
             {
                 if (!reboot)
-                    settings::data()[db::storage_type] = m_typeRollback;
+                    Settings::data()[storage::type] = m_typeRollback;
             });
         }
     }
@@ -155,9 +154,11 @@ namespace service::details
 
     void SetsTab::apiKeysSettingsBuild(sets::Builder &b)
     {
+        Settings::beginApiKeys();
         sets::Group g(b, "🔑 API Keys");
-        b.Input(db::apikey_google, "Google");
-        b.Input(db::apikey_openweather, "OpenWeather");
+        b.Input(apikey::google, "Google");
+        b.Input(apikey::openweather, "OpenWeather");
+        Settings::endApiKeys();
     }
 
     ////////////////////////////////////////////////////////////////////////////

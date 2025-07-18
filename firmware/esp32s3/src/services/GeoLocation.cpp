@@ -1,16 +1,15 @@
 #include "GeoLocation.h"
 #include "services/WiFiConnection.h"
 #include "GeoLocation/GeoLocationRequests.h"
-#include "settings.h"
 
 namespace service
 {
     void GeoLocation::begin()
     {
-        settings::data().init(db::geo_method, DEFAULT_METHOD);
-        settings::data().init(db::geo_latitude, DEFAULT_LATITUDE);
-        settings::data().init(db::geo_longitude, DEFAULT_LONGITUDE);
-        settings::data().init(db::geo_timezone, DEFAULT_TZ_OFFSET);
+        Settings::data().init(geo::method, DEFAULT_METHOD);
+        Settings::data().init(geo::latitude, DEFAULT_LATITUDE);
+        Settings::data().init(geo::longitude, DEFAULT_LONGITUDE);
+        Settings::data().init(geo::timezone, DEFAULT_TZ_OFFSET);
         decodeCoords(m_lat, m_lon);
 
         m_request = false;
@@ -36,7 +35,7 @@ namespace service
         sets::Group g(b, "📍 Geolocation");
 
         auto options = "Manual;IP Address (ipapi.co);WiFi Stations (Google)";
-        if (b.Select(db::geo_method, "Method", options))
+        if (b.Select(geo::method, "Method", options))
         {
             m_request = true;
             b.reload();
@@ -84,31 +83,31 @@ namespace service
     {
         while (!requestGeoLocation()) 
             sleep(1000 * RETRY_PERIOD_SEC);
-        settings::sets().reload();
+        Settings::sets().reload();
     }
 
     void GeoLocation::decodeCoords(float& lat, float& lon)
     {
-        lat = settings::data()[db::geo_latitude ];
-        lon = settings::data()[db::geo_longitude];
+        lat = Settings::data()[geo::latitude ];
+        lon = Settings::data()[geo::longitude];
     }
 
     void GeoLocation::encodeCoords(float& lat, float& lon)
     {
-        settings::data()[db::geo_latitude ] = lat;
-        settings::data()[db::geo_longitude] = lon;
+        Settings::data()[geo::latitude ] = lat;
+        Settings::data()[geo::longitude] = lon;
     }
 
     void GeoLocation::decodeTimeZone(int& tzh, int& tzm)
     {
-        int off = settings::data()[db::geo_timezone];
+        int off = Settings::data()[geo::timezone];
         tzh = off / 100, tzm = abs(off) % 100;
     }
     
     void GeoLocation::encodeTimeZone(int& tzh, int& tzm)
     {
         int off = (tzh * 100 + tzm);
-        settings::data()[db::geo_timezone] = off;
+        Settings::data()[geo::timezone] = off;
     }
 
     void GeoLocation::generateCountryFlag(const String& countryCode, String& countryFlag)
@@ -189,7 +188,7 @@ namespace service
 
     GeoLocation::Method GeoLocation::getMethod() const
     {
-        return Method(int(settings::data()[db::geo_method]));
+        return Method(int(Settings::data()[geo::method]));
     }
 
     bool GeoLocation::hasNewCoords() const

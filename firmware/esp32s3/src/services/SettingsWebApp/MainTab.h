@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core/settings/Settings.h"
+#include "settings/Settings.h"
 
 namespace service::details
 {
-    class MainTab : public settings::Provider
+    class MainTab : public Settings::Provider
     {
     public:
         void begin() {}
