@@ -1,5 +1,5 @@
+#include <HTTPClient.h>
 #include "WiFiConnection.h"
-#include "services/Services.h"
 #include "firmware/defines.h"
 #include "firmware/secrets.h"
 #include "settings.h"
@@ -10,29 +10,25 @@ namespace service
     {
         settings::data().init(db::wifi_ssid, WIFI_SSID);
         settings::data().init(db::wifi_pass, WIFI_PASS);
-        settings::data().init(db::wifi_tout, 20);
-
-        String hostname;
-        hostname += PROJECT_TITLE;
-        hostname += " (" + getDeviceID() + ")";
+        settings::data().init(db::wifi_tout, DEFAULT_CONNECT_TOUT_SEC);
 
         m_ui.begin();
-        WiFi.setHostname(hostname.c_str());
+        WiFi.setHostname((WIFI_HOST_NAME + getDeviceID()).c_str());
         WiFi.setAutoReconnect(true);
-        WiFi.onEvent([this](WiFiEvent_t e, WiFiEventInfo_t i) { handleEvent(e, i); });
+        Task::start("wifi_connection");
 
         log_i("connect to wifi on boot");
-        connect(settings::data()[db::wifi_ssid], settings::data()[db::wifi_pass]);
-        Task::start("wifi_connection");
+        String ssid = settings::data()[db::wifi_ssid];
+        String pass = settings::data()[db::wifi_pass];
+        connect(ssid, pass);
     }
 
-    void WiFiConnection::connect(const String &ssid, const String &pass)
+    void WiFiConnection::connect(const String& ssid, const String& pass)
     {
-        uint8_t tout = settings::data()[db::wifi_tout];
-        m_connect.tout = tout * 1000ul;
         m_connect.ssid = ssid;
         m_connect.pass = pass;
         m_connect.ssid.trim();
+        m_connect.pass.trim();
         beginConnection();
     }
 
@@ -53,7 +49,7 @@ namespace service
     String WiFiConnection::getUserAgent() const
     { 
         return 
-            PROJECT_TITLE "-" + getDeviceID() + "/"
+            WIFI_HOST_NAME + getDeviceID() + "/"
             PROJECT_VERSION " (contact: " PROJECT_AUTHOR ")";
     }
 
@@ -62,24 +58,20 @@ namespace service
         while (true)
         {
             updateConnection();
-            m_internet.update();
-            sleep(300);
+            updateInternet();
+            sleep(1000);
         }
     }
 
     void WiFiConnection::beginConnection()
     {
-        String apname;
-        apname += PROJECT_TITLE;
-        apname += " (" + getDeviceID() + ")";
-
         if (m_connect.ssid.isEmpty())
         {
             // new network is not set, so do not 
             // try to connect, just turn on the AP
             WiFi.mode(WIFI_AP);
-            WiFi.softAP(apname.c_str(), "");
-            m_connect.trying = false;
+            WiFi.softAP(WiFi.getHostname(), AP_PASS);
+            m_connect.timer.stop();
 
             log_i("start AP: %s (%s)", 
                 WiFi.softAPSSID().c_str(), 
@@ -92,10 +84,9 @@ namespace service
             // start connection attempt, turn on the 
             // AP and try to  connect to a new network
             WiFi.mode(WIFI_AP_STA);
-            WiFi.softAP(apname.c_str(), "");
+            WiFi.softAP(WiFi.getHostname(), AP_PASS);
             WiFi.begin(m_connect.ssid, m_connect.pass);
-            m_connect.time = millis();
-            m_connect.trying = true;
+            m_connect.timer.start(settings::data()[db::wifi_tout]);
 
             log_i("start AP+STA: %s (%s)", 
                 WiFi.softAPSSID().c_str(), 
@@ -105,7 +96,7 @@ namespace service
 
     void WiFiConnection::updateConnection()
     {
-        if (m_connect.trying) 
+        if (m_connect.timer.active()) 
         {
             if (WiFi.isConnected()) 
             {
@@ -114,7 +105,7 @@ namespace service
                 settings::data()[db::wifi_ssid] = m_connect.ssid;
                 settings::data()[db::wifi_pass] = m_connect.pass;
                 settings::data().update();
-                m_connect.trying = false;
+                m_connect.timer.stop();
 
                 log_i("connected to: %s (%s)",
                     WiFi.SSID().c_str(),
@@ -129,7 +120,7 @@ namespace service
                     log_i("stop AP");
                 }
             } 
-            else if (millis() - m_connect.time >= m_connect.tout) 
+            else if (m_connect.timer.expired()) 
             {
                 // trying to rollback to a previously
                 // connected network
@@ -150,15 +141,28 @@ namespace service
         }
     }
 
-    void WiFiConnection::handleEvent(WiFiEvent_t event, WiFiEventInfo_t info)
+    void WiFiConnection::updateInternet()
     {
-        if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP)
+        if (isConnectedToAP())
         {
-            services::onConnectedToWiFi();
+            if (m_internet.timer.expired())
+            {
+                // restart timer to wait for the next check
+                m_internet.timer.start();
+
+                // try to check if internet is available
+                HTTPClient http;
+                http.setConnectTimeout(1000 * INET_CHECK_TIMEOUT_SEC);
+                http.begin("http://clients3.google.com/generate_204");
+                m_internet.available = (http.GET() == 204);
+                http.end();
+            }
         }
-        else if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
+        else
         {
-            services::onDisconnectedFromWiFi();
+            // invalidate for instant check
+            m_internet.timer.stop();
+            m_internet.available = false;
         }
     }
 

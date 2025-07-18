@@ -11,7 +11,4 @@ namespace services
 {
     void begin();
     void update();
-
-    void onConnectedToWiFi();
-    void onDisconnectedFromWiFi();
 }

@@ -34,10 +34,7 @@ namespace service
         settings::sets().config.updateTout = 1000;
         settings::sets().config.theme = m_sets.getThemeColor();
 
-        String title;
-        title += WEBAPP_TITLE;
-        title += " (" + service::wifiConnection.getDeviceID() + ")";
-        settings::sets().setTitle(title);
+        settings::sets().setTitle(WEBAPP_TITLE + service::wifiConnection.getDeviceID());
         settings::sets().setProjectInfo("home page", WEBAPP_PROJECT_HOME);
         settings::sets().setVersion(PROJECT_VERSION);
         settings::sets().setPass(WEBUI_PASS);

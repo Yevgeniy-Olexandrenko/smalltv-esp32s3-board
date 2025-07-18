@@ -28,18 +28,4 @@ namespace services
     {
         // TODO
     }
-
-    void onConnectedToWiFi()
-    {
-        log_i("on connected to wifi");
-
-        // TODO
-    }
-
-    void onDisconnectedFromWiFi()
-    {
-        log_i("on disconnected from wifi");
-        
-        // TODO
-    }
 }

@@ -57,7 +57,7 @@ namespace driver
 
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsCached()
     {
-        if (m_timer.elapsed())
+        if (m_timer.expired())
         {
             m_milliVolts += getInputMilliVoltsRaw();
             m_milliVolts /= 2;

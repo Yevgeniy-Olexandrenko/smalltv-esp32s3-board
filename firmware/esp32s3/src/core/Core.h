@@ -156,19 +156,44 @@ namespace core
         Mutex& m_mutex;
     };
 
-    template<time_t durationMs>
     class Timer
     {
-        time_t m_elapsedTS = 0;
+    protected:
+        Timer() = default;
+        time_t m_expiry = 0;
 
     public:
-        void start() { m_elapsedTS = millis() + durationMs; }
-        void stop()  { m_elapsedTS = millis(); }
-
-        bool elapsed() const { return millis() >= m_elapsedTS; }
-        time_t remaining() const { return elapsed() ? 0 : m_elapsedTS - millis(); }    
+        void stop() { m_expiry = millis(); }
+        bool active() const { return millis() < m_expiry; }
+        bool expired() const { return millis() >= m_expiry; }
+        time_t remaining() const { return active() ? m_expiry - millis() : 0; }
     };
 
-    template<time_t durationSec>
-    class TimerSec : public Timer<1000 * durationSec> {};
+    template <time_t durationMs = 0>
+    class TimerMs : public Timer
+    {
+    public:
+        void start() { m_expiry = millis() + durationMs; }
+    };
+
+    template <>
+    class TimerMs<0> : public Timer
+    {
+    public:
+        void start(time_t durationMs) { m_expiry = millis() + durationMs; }
+    };
+
+    template <time_t durationSec = 0>
+    class TimerSec : public Timer
+    {
+    public:
+        void start() { m_expiry = millis() + durationSec * 1000; }
+    };
+
+    template <>
+    class TimerSec<0> : public Timer
+    {
+    public:
+        void start(time_t durationSec) { m_expiry = millis() + durationSec * 1000; }
+    };
 }
