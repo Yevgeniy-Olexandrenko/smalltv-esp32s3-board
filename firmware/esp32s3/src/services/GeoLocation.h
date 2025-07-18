@@ -16,7 +16,6 @@ namespace service
         constexpr static auto DEFAULT_LATITUDE   = 50.4500f;    // Kyiv city
         constexpr static auto DEFAULT_LONGITUDE  = 30.5233f;    // coordinates
         constexpr static auto DEFAULT_TZ_OFFSET  = 200;         // +02:00 hours 
-        constexpr static auto RESTART_PERIOD_SEC = 3600;        // 1 hour
         constexpr static auto RETRY_PERIOD_SEC   = 5;           // 5 seconds
 
     public:

@@ -19,11 +19,8 @@ namespace service
 
     void GeoLocation::startRequest()
     {
-        Task::stopRepeat();
         Task::stop();
-
         Task::start("geo_location");
-        Task::startRepeat("geo_location", 1000 * RESTART_PERIOD_SEC);
     }
 
     int GeoLocation::getTZOffset() const
