@@ -4,14 +4,12 @@
 #include "PowerSource.h"
 #include "hardware/board.h"
 
-#define UPDATE_PERIOD 5000
-
 namespace driver
 {
     void PowerSource::begin()
     {
-        m_timestamp = millis();
         m_milliVolts = getInputMilliVoltsRaw();
+        m_timer.start();
     }
 
     PowerSource::Type PowerSource::getType()
@@ -59,17 +57,13 @@ namespace driver
 
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsCached()
     {
-    #ifndef NO_VINSENSE
-        if (millis() - m_timestamp >= UPDATE_PERIOD)
+        if (m_timer.elapsed())
         {
-            m_timestamp = millis();
             m_milliVolts += getInputMilliVoltsRaw();
             m_milliVolts /= 2;
+            m_timer.start();
         }
         return m_milliVolts;
-    #else
-        return 0;
-    #endif
     }
 
     PowerSource::MilliVolt PowerSource::getInputMilliVoltsRaw()

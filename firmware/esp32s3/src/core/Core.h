@@ -156,15 +156,19 @@ namespace core
         Mutex& m_mutex;
     };
 
-    class Timer final
+    template<time_t durationMs>
+    class Timer
     {
         time_t m_elapsedTS = 0;
 
     public:
-        void start(time_t duration) { m_elapsedTS = millis() + duration; }
-        void stop() { start(0); }
+        void start() { m_elapsedTS = millis() + durationMs; }
+        void stop()  { m_elapsedTS = millis(); }
 
         bool elapsed() const { return millis() >= m_elapsedTS; }
         time_t remaining() const { return elapsed() ? 0 : m_elapsedTS - millis(); }    
     };
+
+    template<time_t durationSec>
+    class TimerSec : public Timer<1000 * durationSec> {};
 }

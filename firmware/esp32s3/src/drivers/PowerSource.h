@@ -1,10 +1,14 @@
 #pragma once
 #ifndef NO_VINSENSE
 
+#include "core/Core.h"
+
 namespace driver
 {
     class PowerSource
     {
+        constexpr static auto UPDATE_PERIOD_SEC = 5;
+
         enum
         {
             BatMinMilliVolts = 3450, // 3.45V
@@ -13,7 +17,6 @@ namespace driver
             UsbMaxMilliVolts = 5250  // 5.25V 
         };
 
-        using Timestamp = unsigned long;
         using MilliVolt = uint16_t;
 
     public:
@@ -31,7 +34,7 @@ namespace driver
         MilliVolt getInputMilliVoltsRaw();
 
     private:
-        Timestamp m_timestamp;
+        core::TimerSec<UPDATE_PERIOD_SEC> m_timer;
         MilliVolt m_milliVolts;
     };
     

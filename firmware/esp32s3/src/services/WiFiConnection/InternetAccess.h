@@ -15,6 +15,6 @@ namespace service::details
 
     private:
         bool m_available = false;
-        core::Timer m_timer;
+        core::TimerSec<CHECK_PERIOD_SEC> m_timer;
     };
 }

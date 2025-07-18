@@ -16,7 +16,7 @@ namespace service::details
             if (m_timer.elapsed())
             {
                 // restart timer to wait for the next check
-                m_timer.start(1000 * CHECK_PERIOD_SEC);
+                m_timer.start();
 
                 // try to check if internet is available
                 HTTPClient http;
