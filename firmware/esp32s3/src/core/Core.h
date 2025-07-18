@@ -1,26 +1,28 @@
 #pragma once
 
+#include <Arduino.h>
 #include <FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/timers.h>
+#include <freertos/semphr.h>
 #include <freertos/portmacro.h>
 
-namespace task
+namespace core
 {
-    namespace priority
+    namespace TaskCpu
+    {
+        constexpr BaseType_t System      = 0;
+        constexpr BaseType_t Application = 1;
+    };
+
+    namespace TaskPrio
     {
         constexpr UBaseType_t Background = 1;
         constexpr UBaseType_t Normal     = 2;
         constexpr UBaseType_t Realtime   = 3;
     };
 
-    namespace core
-    {
-        constexpr BaseType_t System      = 0;
-        constexpr BaseType_t Application = 1;
-    };
-
-    template<uint32_t stack, BaseType_t core, UBaseType_t priority>
+    template<uint32_t stack, BaseType_t cpu, UBaseType_t prio>
     class Task
     {
         static inline portMUX_TYPE s_mux = portMUX_INITIALIZER_UNLOCKED;
@@ -45,7 +47,7 @@ namespace task
                     instance->task();
                     instance->stop();
                 },
-                name, stack, this, priority, &m_handle, core
+                name, stack, this, prio, &m_handle, cpu
             ) == pdPASS);
         }
 
@@ -115,5 +117,54 @@ namespace task
     private:
         TaskHandle_t m_handle = nullptr;
         TimerHandle_t m_timer = nullptr;
+    };
+
+    class Mutex final
+    {
+    public:
+        // create and destroy
+        Mutex() : m_semaphore(xSemaphoreCreateMutex()) {}
+        ~Mutex() { vSemaphoreDelete(m_semaphore); }
+
+        // get and release lock
+        void lock() { xSemaphoreTake(m_semaphore, portMAX_DELAY); }
+        void unlock() { xSemaphoreGive(m_semaphore); }
+
+        // disable copying
+        Mutex(const Mutex &) = delete;
+        Mutex &operator=(const Mutex &) = delete;
+
+        // returns the underlying semaphore handle
+        SemaphoreHandle_t getHandle() const { return m_semaphore; }
+
+    private:
+        SemaphoreHandle_t m_semaphore;
+    };
+
+    class LockGuard final
+    {
+    public:
+        // acquire and release the mutex
+        explicit LockGuard(Mutex& mutex) : m_mutex(mutex) { m_mutex.lock(); }
+        ~LockGuard() { m_mutex.unlock(); }
+
+        // disable copying
+        LockGuard(const LockGuard &) = delete;
+        LockGuard &operator=(const LockGuard &) = delete;
+
+    private:
+        Mutex& m_mutex;
+    };
+
+    class Timer final
+    {
+        time_t m_elapsedTS = 0;
+
+    public:
+        void start(time_t duration) { m_elapsedTS = millis() + duration; }
+        void stop() { start(0); }
+
+        bool elapsed() const { return millis() >= m_elapsedTS; }
+        time_t remaining() const { return elapsed() ? 0 : m_elapsedTS - millis(); }    
     };
 }

@@ -2,7 +2,7 @@
 #ifndef NO_AUDIO
 
 #include <TFT_eSPI.h>
-#include "core/tasks/Mutex.h"
+#include "core/Core.h"
 #include "services/AudioPlayer/FFTHandler.h"
 
 namespace image
@@ -25,7 +25,7 @@ namespace image
         uint32_t m_fgColor;
         std::unique_ptr<uint8_t[]> m_barH;
 
-        task::Mutex m_mutex;
+        core::Mutex m_mutex;
         bool m_isUpdated;
     };
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/tasks/Task.h"
+#include "core/Core.h"
 #include "core/settings/Settings.h"
 #include "SettingsWebApp/AppsTab.h"
 #include "SettingsWebApp/MainTab.h"
@@ -11,7 +11,7 @@ namespace service
     using RebootCorfirmCB = std::function<void(bool)>;
 
     class SettingsWebApp 
-        : public task::Task<8192, task::core::Application, task::priority::Background>
+        : public core::Task<8192, core::TaskCpu::Application, core::TaskPrio::Background>
     {
     public:
         void begin();

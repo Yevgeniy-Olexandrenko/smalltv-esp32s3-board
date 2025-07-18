@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/Timer.h"
+#include "core/Core.h"
 
 namespace service::details
 {

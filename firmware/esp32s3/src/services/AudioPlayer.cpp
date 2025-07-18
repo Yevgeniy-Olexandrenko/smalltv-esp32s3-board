@@ -133,19 +133,19 @@ namespace service
 
     bool AudioPlayer::isStarted()
     {
-        task::LockGuard lock(m_play.mutex);
+        core::LockGuard lock(m_play.mutex);
         return Task::isAlive();
     }
 
     bool AudioPlayer::isPlaying()
     {
-        task::LockGuard lock(m_play.mutex);
+        core::LockGuard lock(m_play.mutex);
         return (Task::isAlive() && m_play.player.isActive());
     }
 
     void AudioPlayer::setFFTHandler(details::FFTHandler* fftHandler)
     {
-        task::LockGuard lock(m_fft.mutex);
+        core::LockGuard lock(m_fft.mutex);
         if (fftHandler) fftHandler->init(m_fftOut);
         m_fft.handler = fftHandler;
     }
@@ -159,7 +159,7 @@ namespace service
             m_ui.setArtist("<unknown>");
         });
         {
-            task::LockGuard lock(m_play.mutex);
+            core::LockGuard lock(m_play.mutex);
             m_play.player.setAudioSource(m_context->getSource());
             m_play.player.setDecoder(m_context->getDecoder());
             m_play.player.setOutput(m_output);
@@ -174,7 +174,7 @@ namespace service
             {
                 if (command == Command::Stop) break;
 
-                task::LockGuard lock(m_play.mutex);   
+                core::LockGuard lock(m_play.mutex);   
                 switch (command)
                 {
                     case Command::Volume: m_play.player.setVolume(m_play.param); break;
@@ -190,7 +190,7 @@ namespace service
             sleep(1);
         }
         {
-            task::LockGuard lock(m_play.mutex);
+            core::LockGuard lock(m_play.mutex);
             m_play.player.end();
             m_context.reset();
         }
@@ -198,7 +198,7 @@ namespace service
 
     void AudioPlayer::fftCallback(audio_tools::AudioFFTBase& fft)
     {
-        task::LockGuard lock(m_fft.mutex);
+        core::LockGuard lock(m_fft.mutex);
         if (m_fft.handler) m_fft.handler->update(fft);
     }
 

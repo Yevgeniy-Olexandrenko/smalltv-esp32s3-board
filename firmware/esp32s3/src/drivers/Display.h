@@ -2,13 +2,13 @@
 #ifndef NO_VIDEO
 
 #include <TFT_eSPI.h>
-#include "core/tasks/Task.h"
+#include "core/Core.h"
 
 namespace driver
 {
     class Display 
         : public TFT_eSPI
-        , public task::Task<1024, task::core::System, task::priority::Background>
+        , public core::Task<1024, core::TaskCpu::System, core::TaskPrio::Background>
     {
     public:
         void begin(float brightness);

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "core/tasks/Task.h"
+#include "core/Core.h"
 #include "WiFiConnection/WiFiConnectionUI.h"
 #include "WiFiConnection/InternetAccess.h"
 
 namespace service
 {
     class WiFiConnection
-        : public task::Task<4096, task::core::System, task::priority::Background>
+        : public core::Task<4096, core::TaskCpu::System, core::TaskPrio::Background>
     {
     public:
         enum class Signal { Excellent, Good, Fair, Bad };

@@ -20,14 +20,14 @@ namespace image
 
     void Spectrum::update(audio_tools::AudioFFTBase& fft)
     {
-        task::LockGuard lock(m_mutex);
+        core::LockGuard lock(m_mutex);
         FFTHandler::update(fft);
         m_isUpdated = true;
     }
 
     void Spectrum::renderOn(TFT_eSprite& sprite, uint8_t gap, float smooth)
     {
-        task::LockGuard lock(m_mutex);
+        core::LockGuard lock(m_mutex);
         if (m_isUpdated)
         {
             m_isUpdated = false;

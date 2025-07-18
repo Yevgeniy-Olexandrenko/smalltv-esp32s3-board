@@ -3,8 +3,7 @@
 
 #include <AudioTools.h>
 #include <AudioTools/AudioLibs/AudioRealFFT.h>
-#include "core/tasks/Task.h"
-#include "core/tasks/Mutex.h"
+#include "core/Core.h"
 #include "AudioPlayer/AudioContext.h"
 #include "AudioPlayer/AudioPlayerUI.h"
 #include "AudioPlayer/FFTHandler.h"
@@ -12,7 +11,7 @@
 namespace service
 {
     class AudioPlayer
-        : public task::Task<8192, task::core::Application, task::priority::Realtime>
+        : public core::Task<8192, core::TaskCpu::Application, core::TaskPrio::Realtime>
     {
         static AudioPlayer* s_this;
         static void s_fftCallback(audio_tools::AudioFFTBase& fft);
@@ -53,13 +52,13 @@ namespace service
 
         // multi task access
         struct {
-            task::Mutex mutex;
+            core::Mutex mutex;
             audio_tools::AudioPlayer player;
             QueueHandle_t commands = nullptr;
             float param = 0;
         } m_play;
         struct {
-            task::Mutex mutex;
+            core::Mutex mutex;
             details::FFTHandler* handler = nullptr;
         } m_fft;
     };
