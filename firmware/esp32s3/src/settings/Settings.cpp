@@ -1,4 +1,5 @@
 #include "Settings.h"
+#include "drivers/Storage.h"
 #include "firmware/defines.h"
 
 bool Settings::m_initDBs = false;
@@ -12,9 +13,9 @@ void Settings::initData()
 {
     if (!m_initDBs)
     {
-        LittleFS.begin(true);
-        m_dbKeys.setFS(&LittleFS, "/settings_keys.db");
-        m_dbData.setFS(&LittleFS, "/settings_data.db");
+        auto flashFS = &driver::storage.getFlashFS();
+        m_dbKeys.setFS(flashFS, "/settings_keys.db");
+        m_dbData.setFS(flashFS, "/settings_data.db");
         m_dbKeys.begin();
         m_dbData.begin();
         m_initDBs = true;
@@ -26,6 +27,7 @@ void Settings::initSets()
     if (!m_initSets)
     {
         m_sets.begin(true, getHostName().c_str());
+        m_sets.fs.setFS(driver::storage.getFlashFS());
         m_sets.attachDB(&m_dbData);
         m_initSets = true;
     }
