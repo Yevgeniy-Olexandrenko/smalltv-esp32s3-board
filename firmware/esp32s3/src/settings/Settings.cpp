@@ -50,9 +50,8 @@ SettingsGyver& Settings::sets()
 
 void Settings::tick()
 {
-    keys().tick();
-    data().tick();
     sets().tick();
+    keys().tick();
 }
 
 const String Settings::Provider::led(Led led) const
