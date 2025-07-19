@@ -58,8 +58,6 @@ namespace service::details
         return themeColorsRGB[index];
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
     void SetsTab::colorsSettingsBuild(sets::Builder &b)
     {
         sets::Row r(b, "", sets::DivType::Line);
@@ -154,13 +152,18 @@ namespace service::details
 
     void SetsTab::apiKeysSettingsBuild(sets::Builder &b)
     {
-        Settings::sets().attachDB(&Settings::keys());
+        auto apikeyWidget = [&](size_t id, const String& label)
+        {
+            String value = Settings::keys()[id];
+            if (b.Input(label, &value))
+            {
+                Settings::keys()[id] = value;
+                Settings::keys().update();
+            }
+        };
+
         sets::Group g(b, "🔑 API Keys");
-        b.Input(apikey::google, "Google");
-        b.Input(apikey::openweather, "OpenWeather");
-        Settings::sets().attachDB(&Settings::data());
+        apikeyWidget(apikey::google, "Google");
+        apikeyWidget(apikey::openweather, "OpenWeather");
     }
-
-    ////////////////////////////////////////////////////////////////////////////
-
 }
