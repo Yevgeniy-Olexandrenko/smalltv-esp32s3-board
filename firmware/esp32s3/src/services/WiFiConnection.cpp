@@ -69,26 +69,23 @@ namespace service
         {
             // new network is not set, so do not 
             // try to connect, just turn on the AP
-            WiFi.mode(WIFI_AP);
+            m_connect.trying = false;
             WiFi.softAP(WiFi.getHostname(), AP_PASS);
-            m_connect.timer.stop();
-
             log_i("start AP: %s (%s)", 
                 WiFi.softAPSSID().c_str(), 
                 WiFi.softAPIP().toString().c_str());
         }
         else
         {
+            // start connection attempt
             log_i("try connect to: %s", m_connect.ssid.c_str());
-
-            // start connection attempt, turn on the 
-            // AP and try to  connect to a new network
-            WiFi.mode(WIFI_AP_STA);
-            WiFi.softAP(WiFi.getHostname(), AP_PASS);
-            WiFi.begin(m_connect.ssid, m_connect.pass);
             m_connect.timer.start(Settings::data()[wifi::tout]);
+            m_connect.trying = true;
 
-            log_i("start AP+STA: %s (%s)", 
+            // trying to connect to STA with AP enabled
+            WiFi.begin(m_connect.ssid, m_connect.pass);
+            WiFi.softAP(WiFi.getHostname(), AP_PASS);
+            log_i("start AP + STA: %s (%s)", 
                 WiFi.softAPSSID().c_str(), 
                 WiFi.softAPIP().toString().c_str());
         }
@@ -96,34 +93,38 @@ namespace service
 
     void WiFiConnection::updateConnection()
     {
-        if (m_connect.timer.active()) 
+        if (m_connect.trying)
         {
-            if (WiFi.isConnected()) 
+            if (m_connect.timer.active())
             {
-                // save the current connected network
-                // for future possible rollback
-                Settings::data()[wifi::ssid] = m_connect.ssid;
-                Settings::data()[wifi::pass] = m_connect.pass;
-                Settings::data().update();
-                m_connect.timer.stop();
-
-                log_i("connected to: %s (%s)",
-                    WiFi.SSID().c_str(),
-                    WiFi.localIP().toString().c_str());
-
-                // turn off the AP mode
-                if (WiFi.getMode() == WIFI_AP_STA) 
+                // trying to connect
+                if (isConnectedToAP())
                 {
-                    WiFi.softAPdisconnect(true);
-                    WiFi.mode(WIFI_STA);
+                    // connection is established
+                    m_connect.trying = false;
+                    log_i("connected to: %s (%s)",
+                        WiFi.SSID().c_str(),
+                        WiFi.localIP().toString().c_str());
 
-                    log_i("stop AP");
+                    // save the current connected network
+                    // for future possible rollback
+                    Settings::data()[wifi::ssid] = m_connect.ssid;
+                    Settings::data()[wifi::pass] = m_connect.pass;
+                    Settings::data().update();
+
+                    // turn off the AP mode
+                    if (WiFi.getMode() & WIFI_AP) 
+                    {
+                        WiFi.softAPdisconnect(true);
+                        WiFi.mode(WIFI_STA);
+                        log_i("stop AP");
+                    }
                 }
-            } 
-            else if (m_connect.timer.expired()) 
+            }
+            else
             {
-                // trying to rollback to a previously
-                // connected network
+                // connection timeout expired, trying to 
+                // rollback to a previously connected STA
                 String ssid = Settings::data()[wifi::ssid];
                 String pass = Settings::data()[wifi::pass];
 

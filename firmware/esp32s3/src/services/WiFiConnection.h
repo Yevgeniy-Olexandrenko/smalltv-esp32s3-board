@@ -18,9 +18,9 @@ namespace service
         void begin();
         void connect(const String& ssid, const String& pass);
 
-        bool isConnecting() const { return m_connect.timer.active(); }
+        bool isConnecting() const { return m_connect.trying; }
         bool isConnectedToAP() const { return WiFi.isConnected(); }
-        bool isInAccessPointMode() const { return !isConnectedToAP() && WiFi.getMode() == WIFI_MODE_AP; }
+        bool isInAccessPointMode() const { return bool(WiFi.getMode() & WIFI_AP); }
         bool isInternetAvailable() const { return m_internet.available; }
     
         int8_t getRSSI() const { return WiFi.RSSI(); }
@@ -39,6 +39,7 @@ namespace service
     private:
         details::WiFiConnectionUI m_ui;
         struct {
+            bool trying;
             String ssid, pass;
             core::TimerSec<> timer;
         } m_connect; 
