@@ -1,6 +1,5 @@
 #include "GeoLocationRequests.h"
 #include "services/DateTime.h"
-#include "services/WiFiConnection.h"
 #include "settings/Settings.h"
 
 namespace service::details
@@ -10,7 +9,7 @@ namespace service::details
         const char URL[] = "https://ipapi.co/json/";
         if (m_http.begin(URL)) 
         {
-            m_http.addHeader("User-Agent", service::wifiConnection.getUserAgent());
+            m_http.addHeader("User-Agent", Settings::getUserAgent());
             if (m_http.GET() == HTTP_CODE_OK) 
             {
                 m_json.clear();
@@ -65,7 +64,7 @@ namespace service::details
 
         if (m_http.begin(url)) 
         {
-            m_http.addHeader("User-Agent", service::wifiConnection.getUserAgent());
+            m_http.addHeader("User-Agent", Settings::getUserAgent());
             m_http.addHeader("Accept-Language", "en");
             if (m_http.GET() == HTTP_CODE_OK) 
             {
@@ -140,7 +139,7 @@ namespace service::details
 
         if (m_http.begin(url))
         {
-            m_http.addHeader("User-Agent", service::wifiConnection.getUserAgent());
+            m_http.addHeader("User-Agent", Settings::getUserAgent());
             m_http.addHeader("Content-Type", "application/json");
 
             if (m_http.POST((uint8_t*)payload, payloadLen) == HTTP_CODE_OK) 
@@ -171,7 +170,7 @@ namespace service::details
 
         if (m_http.begin(url))
         {
-            m_http.addHeader("User-Agent", service::wifiConnection.getUserAgent());
+            m_http.addHeader("User-Agent", Settings::getUserAgent());
             if (m_http.GET() == HTTP_CODE_OK) 
             {
                 m_json.clear();

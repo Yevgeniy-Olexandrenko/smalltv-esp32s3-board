@@ -16,6 +16,10 @@ public:
     static SettingsGyver& sets();
     static void tick();
 
+    static const String getHostName();
+    static const String getDeviceID();
+    static const String getUserAgent();
+
 public:
     class Provider
     {

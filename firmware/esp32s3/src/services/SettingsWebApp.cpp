@@ -2,25 +2,12 @@
 #include "drivers/Storage.h"
 #include "drivers/SelfReboot.h"
 #include "services/DateTime.h"
-#include "services/WiFiConnection.h"
 #include "firmware/defines.h"
 #include "firmware/secrets.h"
 
 namespace service
 {
     void SettingsWebApp::begin()
-    {
-        log_i("begin");
-        Task::start("settings_webapp");
-    }
-
-    void SettingsWebApp::requestReboot(RebootCorfirmCB cb)
-    {
-        m_rebootConfirmCB = cb;
-        m_rebootRequest = true;
-    }
-
-    void SettingsWebApp::task()
     {
         m_sets.begin();
         m_main.begin();
@@ -34,7 +21,7 @@ namespace service
         Settings::sets().config.updateTout = 1000;
         Settings::sets().config.theme = m_sets.getThemeColor();
 
-        Settings::sets().setTitle(WEBAPP_TITLE + service::wifiConnection.getDeviceID());
+        Settings::sets().setTitle(WEBAPP_TITLE + Settings::getDeviceID());
         Settings::sets().setProjectInfo("home page", WEBAPP_PROJECT_HOME);
         Settings::sets().setVersion(PROJECT_VERSION);
         Settings::sets().setPass(WEBUI_PASS);
@@ -44,7 +31,18 @@ namespace service
         m_rebootRequest = false;
         m_rebootPending = false;
 
-        while(true)
+        Task::start("settings_webapp");
+    }
+
+    void SettingsWebApp::requestReboot(RebootCorfirmCB cb)
+    {
+        m_rebootConfirmCB = cb;
+        m_rebootRequest = true;
+    }
+
+    void SettingsWebApp::task()
+    {
+        while (true)
         {
             Settings::tick();
             if (m_rebootPending)
@@ -53,7 +51,7 @@ namespace service
                 m_rebootPending = false;
                 driver::selfReboot.reboot();
             }
-            sleep(10);
+            sleep(Settings::sets().config.sliderTout / 2);
         }
     }
 

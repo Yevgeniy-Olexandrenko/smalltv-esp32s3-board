@@ -1,7 +1,6 @@
 #include <HTTPClient.h>
 #include "WiFiConnection.h"
 #include "settings/Settings.h"
-#include "firmware/defines.h"
 #include "firmware/secrets.h"
 
 namespace service
@@ -13,7 +12,7 @@ namespace service
         Settings::data().init(wifi::tout, DEFAULT_CONNECT_TOUT_SEC);
 
         m_ui.begin();
-        WiFi.setHostname((WIFI_HOST_NAME + getDeviceID()).c_str());
+        WiFi.setHostname(Settings::getHostName().c_str());
         WiFi.setAutoReconnect(true);
         Task::start("wifi_connection");
 
@@ -38,19 +37,6 @@ namespace service
         if (rssi >= -70) return Signal::Good;
         if (rssi >= -80) return Signal::Fair;
         return Signal::Bad;
-    }
-
-    String WiFiConnection::getDeviceID() const
-    {
-        String mac = WiFi.macAddress();
-        return mac.substring(12, 14) + mac.substring(15);
-    }
-
-    String WiFiConnection::getUserAgent() const
-    { 
-        return 
-            WIFI_HOST_NAME + getDeviceID() + "/"
-            PROJECT_VERSION " (contact: " PROJECT_AUTHOR ")";
     }
 
     void WiFiConnection::task()
@@ -155,6 +141,7 @@ namespace service
                 HTTPClient http;
                 http.setConnectTimeout(1000 * INET_CHECK_TIMEOUT_SEC);
                 http.begin("http://clients3.google.com/generate_204");
+                http.addHeader("User-Agent", Settings::getUserAgent());
                 m_internet.available = (http.GET() == 204);
                 http.end();
             }

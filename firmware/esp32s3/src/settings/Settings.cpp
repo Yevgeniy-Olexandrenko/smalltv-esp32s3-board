@@ -1,4 +1,5 @@
 #include "Settings.h"
+#include "firmware/defines.h"
 
 bool Settings::m_initDBs = false;
 bool Settings::m_initSets = false;
@@ -24,7 +25,7 @@ void Settings::initSets()
 {
     if (!m_initSets)
     {
-        m_sets.begin();
+        m_sets.begin(true, getHostName().c_str());
         m_sets.attachDB(&m_dbData);
         m_initSets = true;
     }
@@ -52,6 +53,22 @@ void Settings::tick()
 {
     sets().tick();
     keys().tick();
+}
+
+const String Settings::getHostName()
+{
+    return (WIFI_HOST_NAME + getDeviceID());
+}
+
+const String Settings::getDeviceID()
+{
+    String mac = WiFi.macAddress();
+    return mac.substring(12, 14) + mac.substring(15);
+}
+
+const String Settings::getUserAgent()
+{
+    return (getHostName() + ("/" PROJECT_VERSION " (contact: " PROJECT_AUTHOR ")"));
 }
 
 const String Settings::Provider::led(Led led) const

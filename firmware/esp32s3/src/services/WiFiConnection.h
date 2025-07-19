@@ -25,9 +25,7 @@ namespace service
     
         int8_t getRSSI() const { return WiFi.RSSI(); }
         Signal getSignal(int8_t rssi) const;
-        String getDeviceID() const;
-        String getUserAgent() const;
-
+        
         details::WiFiConnectionUI& getUI() { return m_ui; }
 
     private:
