@@ -2,7 +2,6 @@
 
 #include <USB.h>
 #include <USBMSC.h>
-#include "Storage/FatFS.h"
 #include "Storage/Flash.h"
 #include "Storage/SDCard.h"
 
@@ -22,25 +21,21 @@ namespace driver
         void end();
 
         Type getType() const;
-        bool isLarge() const { return (getType() == Type::SDCard); }
-        bool isFast()  const { return (getType() == Type::Flash ); }
         details::FatFS& getFS() const;
+        details::FatFS& getFlashFS() const;
+        details::FatFS& getSDCardFS() const;
 
         void startMSC();
         bool isMSCRunning() const { return m_runMSC; }
         bool isUSBMounted() const { return bool(USB); }
 
     private:
-        Type beginFlash();
-        Type beginSDCard();
+        details::FatFS* fatFS();
 
-        static bool mscOnStartStopCb(uint8_t power_condition, bool start, bool load_eject);
-        static int32_t mscOnReadCb(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
-        static int32_t mscOnWriteCb(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize);
-    
     private:
         Type m_type;
-        FSPtr m_fsPtr;
+        mutable FSPtr m_flashFS;
+        mutable FSPtr m_sdcardFS;
         USBMSC m_usbMSC;
         bool m_runMSC;
     };

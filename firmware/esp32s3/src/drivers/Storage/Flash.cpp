@@ -1,5 +1,3 @@
-#ifndef NO_FLASH
-
 #include <esp_vfs_fat.h>
 #include <diskio_wl.h>
 #include "Flash.h"
@@ -87,4 +85,3 @@ namespace driver::details
         return (res == ESP_OK);
     }
 }
-#endif

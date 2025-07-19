@@ -140,14 +140,11 @@ namespace service::details
         }
         else
         #endif
-        #ifndef NO_FLASH
         if (driver::storage.getType() == driver::Storage::Type::Flash)
         {
             const auto size = driver::storage.getFS().partitionSize() / (1024.f * 1024.f);
             specs = "FLASH " + String(size, 0) + "MB / SPI";
-            
         }
-        #endif
     }
 
     void SetsTab::apiKeysSettingsBuild(sets::Builder &b)

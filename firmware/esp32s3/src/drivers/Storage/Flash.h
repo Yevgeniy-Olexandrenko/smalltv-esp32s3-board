@@ -1,5 +1,4 @@
 #pragma once
-#ifndef NO_FLASH
 
 #include <wear_levelling.h>
 #include "FatFS.h"
@@ -9,8 +8,8 @@ namespace driver::details
     class Flash final : public FatFS
     {
     public:
-        constexpr static const char* DEFAULT_MOUNT_POINT = "/flash";
-        constexpr static const char* DEFAULT_PARTITION_LABEL = "ffat";
+        constexpr static auto DEFAULT_MOUNT_POINT = "/flash";
+        constexpr static auto DEFAULT_PARTITION_LABEL = "ffat";
 
         Flash();
         ~Flash() override;
@@ -31,4 +30,3 @@ namespace driver::details
         wl_handle_t m_wlHandle;
     };
 }
-#endif

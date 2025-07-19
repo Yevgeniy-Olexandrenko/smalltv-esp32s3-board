@@ -9,7 +9,7 @@ namespace driver::details
     class SDCard final : public FatFS
     {
     public:
-        constexpr static const char* DEFAULT_MOUNT_POINT = "/sdcard";
+        constexpr static auto DEFAULT_MOUNT_POINT = "/sdcard";
         enum class Interface { NONE, SPI, SDIO1, SDIO4 };
         enum class Type { NONE, SD, SDHC };
 
