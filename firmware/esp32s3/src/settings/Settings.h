@@ -1,7 +1,7 @@
 #pragma once
 
 #include <GyverDBFile.h>
-#include <SettingsGyver.h>
+#include <SettingsESP.h>
 #include "DBKeys.h"
 
 class Settings
@@ -12,8 +12,8 @@ class Settings
 public:
     static GyverDBFile& keys();
     static GyverDBFile& data();
+    static SettingsESP& sets();
 
-    static SettingsGyver& sets();
     static void tick();
 
     static const String getHostName();
@@ -33,9 +33,9 @@ public:
     };
 
 private:
-    static bool m_initDBs;
+    static bool m_initData;
     static bool m_initSets;
-    static GyverDBFile m_dbKeys;
-    static GyverDBFile m_dbData;
-    static SettingsGyver m_sets;
+    static GyverDBFile m_keys;
+    static GyverDBFile m_data;
+    static SettingsESP m_sets;
 };

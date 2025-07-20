@@ -2,23 +2,23 @@
 #include "drivers/Storage.h"
 #include "firmware/defines.h"
 
-bool Settings::m_initDBs = false;
+bool Settings::m_initData = false;
 bool Settings::m_initSets = false;
 
-GyverDBFile Settings::m_dbKeys;
-GyverDBFile Settings::m_dbData;
-SettingsGyver Settings::m_sets;
+GyverDBFile Settings::m_keys;
+GyverDBFile Settings::m_data;
+SettingsESP Settings::m_sets;
 
 void Settings::initData()
 {
-    if (!m_initDBs)
+    if (!m_initData)
     {
         auto flashFS = &driver::storage.getFlashFS();
-        m_dbKeys.setFS(flashFS, "/settings_keys.db");
-        m_dbData.setFS(flashFS, "/settings_data.db");
-        m_dbKeys.begin();
-        m_dbData.begin();
-        m_initDBs = true;
+        m_keys.setFS(flashFS, "/settings_keys.db");
+        m_data.setFS(flashFS, "/settings_data.db");
+        m_keys.begin();
+        m_data.begin();
+        m_initData = true;
     }
 }
 
@@ -28,7 +28,7 @@ void Settings::initSets()
     {
         m_sets.begin(true, getHostName().c_str());
         m_sets.fs.setFS(driver::storage.getFlashFS());
-        m_sets.attachDB(&m_dbData);
+        m_sets.attachDB(&m_data);
         m_initSets = true;
     }
 }
@@ -36,16 +36,16 @@ void Settings::initSets()
 GyverDBFile& Settings::data()
 {
     initData();
-    return m_dbData;
+    return m_data;
 }
 
 GyverDBFile& Settings::keys()
 {
     initData();
-    return m_dbKeys;
+    return m_keys;
 }
 
-SettingsGyver& Settings::sets()
+SettingsESP& Settings::sets()
 {
     initSets();
     return m_sets;
