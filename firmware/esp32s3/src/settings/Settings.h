@@ -3,6 +3,7 @@
 #include <GyverDBFile.h>
 #include <SettingsESP.h>
 #include "DBKeys.h"
+#include "core/webdav/WebDAV.h"
 
 class Settings
 {
@@ -38,4 +39,5 @@ private:
     static GyverDBFile m_keys;
     static GyverDBFile m_data;
     static SettingsESP m_sets;
+    static core::WebDAV m_dav;
 };

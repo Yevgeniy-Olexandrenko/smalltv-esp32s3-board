@@ -9,6 +9,8 @@ GyverDBFile Settings::m_keys;
 GyverDBFile Settings::m_data;
 SettingsESP Settings::m_sets;
 
+core::WebDAV Settings::m_dav;
+
 void Settings::initData()
 {
     if (!m_initData)
@@ -30,6 +32,8 @@ void Settings::initSets()
         m_sets.fs.setFS(driver::storage.getFlashFS());
         m_sets.attachDB(&m_data);
         m_initSets = true;
+
+        m_dav.begin(m_sets.server, driver::storage.getSDCardFS(), "/sdcard");
     }
 }
 
