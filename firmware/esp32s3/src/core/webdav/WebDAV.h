@@ -10,7 +10,7 @@ namespace core
         enum class Resource { None, File, Dir };
         enum class Depth { None, Child, All };
 
-        struct MountedFS { fs::FS* fs; String mp, alias; };
+        struct FS { fs::FS* underlying; String mountPoint, alias; };
 
         class Props
         {
@@ -34,14 +34,14 @@ namespace core
         bool handle(WebServer& server, HTTPMethod method, String uri) override;
 
     private:
-        void handleOPTIONS();
-        void handleGET();
-        void handlePUT();
-        void handleDELETE();
-        void handleCOPY();
-        void handleMKCOL();
-        void handleMOVE();
-        void handlePROPFIND();
+        bool handleOPTIONS();
+        bool handleGET();
+        bool handlePUT();
+        bool handleDELETE();
+        bool handleCOPY();
+        bool handleMKCOL();
+        bool handleMOVE();
+        bool handlePROPFIND();
 
         /////////////////////////////////
 
@@ -59,15 +59,13 @@ namespace core
 
         /////////////////////////////////
 
-        String getFSPath();
-        Resource getResource(const String& fsPath);
+        FS* getMountedFS(const String &uri);
+        Resource getResource(FS* fs, const String& path);
         Depth getDepth();
         
 
     private:
-        time_t m_start;
         WebServer* m_server = nullptr;
-        std::vector<MountedFS> m_mounted;
-        int m_mpIndex;
+        std::vector<FS> m_mounted;
     };
 }
