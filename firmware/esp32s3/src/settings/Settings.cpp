@@ -34,14 +34,23 @@ void Settings::initSets()
         m_initSets = true;
 
         m_dav.begin(m_sets.server);
+        auto quotaCb = [](fs::FS& fs, uint64_t& available, uint64_t& used)
+        {
+            auto& fatFS = static_cast<driver::details::FatFS&>(fs);
+            available = fatFS.totalBytes() - fatFS.usedBytes();
+            used = fatFS.usedBytes();
+            log_i(
+                "quota callback: %s %llu / %llu",
+                fatFS.mountPoint(), used, used + available);
+        };
         m_dav.addFS(
             driver::storage.getFlashFS(),
             driver::storage.getFlashFS().mountPoint(),
-            "Embedded Flash");
+            "Embedded Flash", quotaCb);
         m_dav.addFS(
             driver::storage.getSDCardFS(), 
             driver::storage.getSDCardFS().mountPoint(),
-            "External SD Card");
+            "External SD Card", quotaCb);
     }
 }
 

@@ -10,24 +10,28 @@ namespace core
         enum class Resource { None, File, Dir };
         enum class Depth { None, Child, All };
 
-        struct FS { fs::FS* underlying; String mountPoint, alias; };
+        using QuotaSz = unsigned long long;
+        using QuotaCb = std::function<void(fs::FS& fs, QuotaSz& available, QuotaSz& used)>;
+        struct FS { fs::FS* underlying = nullptr; String mountPoint, alias; QuotaCb quotaCb = nullptr; };
 
-        class Props
+        class ResourceProps
         {
         public:
-            Props(const String& uri, time_t modified, const String& name);
-            Props(const String& uri, time_t modified, size_t size);
+            ResourceProps(const String& uri, time_t modified, const String& name);
+            ResourceProps(const String& uri, time_t modified, size_t size);
+
+            void setQuota(unsigned long available, unsigned long used);
             String toString() const;
 
         private:
             String m_href, m_resourceType, m_lastModified;
             String m_displayName, m_contentLength, m_contentType, m_etag;
+            String m_availableBytes, m_usedBytes; // RFC 4331
         };
 
     public:
-        //void begin(WebServer& server, fs::FS& fs, const String& mountPoint);
         void begin(WebServer& server);
-        void addFS(fs::FS& fs, const String& mountPoint, const String& alias = "");
+        void addFS(fs::FS& fs, const String& mountPoint, const String& alias = "", QuotaCb quotaCb = nullptr);
 
     protected:
         bool canHandle(HTTPMethod method, String uri) override;

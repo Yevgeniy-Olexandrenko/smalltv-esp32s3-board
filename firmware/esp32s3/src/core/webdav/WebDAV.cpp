@@ -16,9 +16,9 @@ namespace core
         m_mounted.clear();
     }
 
-    void WebDAV::addFS(fs::FS& fs, const String& mountPoint, const String& alias)
+    void WebDAV::addFS(fs::FS& fs, const String& mountPoint, const String& alias, QuotaCb quotaCb)
     {
-        m_mounted.push_back({ &fs, mountPoint, alias });
+        m_mounted.push_back({ &fs, mountPoint, alias, quotaCb });
     }
 
     bool WebDAV::canHandle(HTTPMethod method, String uri)
@@ -160,7 +160,7 @@ namespace core
 
     bool WebDAV::handlePROPFIND()
     {
-        std::vector<Props> resources;
+        std::vector<ResourceProps> resources;
         String uri = decodeURI(m_server->uri());
         if (uri == "/")
         {
@@ -178,6 +178,12 @@ namespace core
                             getFileURI(fs.mountPoint, childFile),
                             childFile.getLastWrite(),
                             fs.alias);
+                        if (fs.quotaCb)
+                        {
+                            QuotaSz available = 0, used = 0;
+                            fs.quotaCb(*fs.underlying, available, used);
+                            resources.back().setQuota(available, used);
+                        }
                         childFile.close();
                     }
                 }
@@ -420,7 +426,7 @@ namespace core
 
     ///////////////////////////////////////////////////////
 
-    WebDAV::Props::Props(const String &uri, time_t modified, const String &name)
+    WebDAV::ResourceProps::ResourceProps(const String &uri, time_t modified, const String &name)
         : m_href(encodeURI(uri))
         , m_lastModified(getDateString(modified))
         , m_displayName(name)
@@ -430,7 +436,7 @@ namespace core
             m_resourceType = "<D:collection/>";
     }
 
-    WebDAV::Props::Props(const String &uri, time_t modified, size_t size)
+    WebDAV::ResourceProps::ResourceProps(const String &uri, time_t modified, size_t size)
         : m_href(encodeURI(uri))
         , m_lastModified(getDateString(modified))
         , m_etag(getETag(uri, modified))
@@ -444,19 +450,27 @@ namespace core
         }
     }
 
-    String WebDAV::Props::toString() const
+    void WebDAV::ResourceProps::setQuota(unsigned long available, unsigned long used)
+    {
+        m_availableBytes = String(available);
+        m_usedBytes = String(used);
+    }
+
+    String WebDAV::ResourceProps::toString() const
     {
         return
         buildProp("response",
             buildProp("href", m_href) +
             buildProp("propstat",
                 buildProp("prop",
-                    buildProp("resourcetype", m_resourceType) +
+                    buildProp   ("resourcetype", m_resourceType) +
                     buildOptProp("displayname", m_displayName) +
                     buildOptProp("getcontentlength", m_contentLength) +
                     buildOptProp("getcontenttype", m_contentType) +
                     buildOptProp("getetag", m_etag) +
-                    buildProp("getlastmodified", m_lastModified)
+                    buildProp   ("getlastmodified", m_lastModified) +
+                    buildOptProp("quota-available-bytes", m_availableBytes) +
+                    buildOptProp("quota-used-bytes", m_usedBytes)
                 ) +
                 buildProp("status", "HTTP/1.1 200 OK")
             )
