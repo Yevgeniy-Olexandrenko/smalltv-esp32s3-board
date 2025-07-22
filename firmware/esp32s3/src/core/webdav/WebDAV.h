@@ -10,6 +10,8 @@ namespace core
         enum class Resource { None, File, Dir };
         enum class Depth { None, Child, All };
 
+        struct MountedFS { fs::FS* fs; String mp, alias; };
+
         class Props
         {
         public:
@@ -23,7 +25,9 @@ namespace core
         };
 
     public:
-        void begin(WebServer& server, fs::FS& fs, const String& mountPoint);
+        //void begin(WebServer& server, fs::FS& fs, const String& mountPoint);
+        void begin(WebServer& server);
+        void addFS(fs::FS& fs, const String& mountPoint, const String& alias = "");
 
     protected:
         bool canHandle(HTTPMethod method, String uri) override;
@@ -58,16 +62,12 @@ namespace core
         String getFSPath();
         Resource getResource(const String& fsPath);
         Depth getDepth();
-
-        void sendPropResponse(fs::File &curFile);
-        void sendPropContent(const String& prop, const String& content);
-
         
 
     private:
         time_t m_start;
-        WebServer* m_ws = nullptr;
-        fs::FS* m_fs = nullptr;
-        String m_mp;
+        WebServer* m_server = nullptr;
+        std::vector<MountedFS> m_mounted;
+        int m_mpIndex;
     };
 }

@@ -33,7 +33,15 @@ void Settings::initSets()
         m_sets.attachDB(&m_data);
         m_initSets = true;
 
-        m_dav.begin(m_sets.server, driver::storage.getSDCardFS(), "/sdcard");
+        m_dav.begin(m_sets.server);
+        m_dav.addFS(
+            driver::storage.getFlashFS(),
+            driver::storage.getFlashFS().mountPoint(),
+            "Embedded Flash");
+        m_dav.addFS(
+            driver::storage.getSDCardFS(), 
+            driver::storage.getSDCardFS().mountPoint(),
+            "External SD Card");
     }
 }
 

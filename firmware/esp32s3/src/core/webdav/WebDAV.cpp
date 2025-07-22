@@ -7,45 +7,54 @@
 
 namespace core
 {
-    void WebDAV::begin(WebServer& server, fs::FS& fs, const String& mountPoint)
+    void WebDAV::begin(WebServer &server)
     {
-        m_start = time(nullptr);
-
-        m_fs = &fs;
-        m_ws = &server;
-        m_mp = mountPoint;
-        m_ws->addHandler(this);
-
         const char* hdrs[] = { "Depth", "Destination", "Overwrite" };
-        m_ws->collectHeaders(hdrs, 3);
+        m_server = &server;
+        m_server->addHandler(this);
+        m_server->collectHeaders(hdrs, 3);
+
+        m_mounted.clear();
+        m_start = time(nullptr);
+    }
+
+    void WebDAV::addFS(fs::FS& fs, const String &mountPoint, const String &alias)
+    {
+        m_mounted.push_back({ &fs, mountPoint, alias });
     }
 
     bool WebDAV::canHandle(HTTPMethod method, String uri)
     {
-        log_i("canHandle:\nmethod: %d\nuri: %s", int(method), uri.c_str());
-        if (uri.startsWith(m_mp))
+        switch(method)
         {
-            switch(method)
-            {
-                case HTTP_OPTIONS:
-                case HTTP_GET:
-                case HTTP_PUT:
-                case HTTP_DELETE:
-                case HTTP_COPY:
-                case HTTP_MKCOL:
-                case HTTP_MOVE:
-                case HTTP_PROPFIND:
-                    return true;
-            }
+            case HTTP_OPTIONS:
+            case HTTP_GET:
+            case HTTP_PUT:
+            case HTTP_DELETE:
+            case HTTP_COPY:
+            case HTTP_MKCOL:
+            case HTTP_MOVE:
+            case HTTP_PROPFIND:
+                return true;
         }
         return false;
     }
 
     bool WebDAV::handle(WebServer& server, HTTPMethod method, String uri)
     {
-        log_i("handle:\nmethod: %d\nuri: %s", int(method), uri.c_str());
+        // search for mounted file system
+        m_mpIndex = -1;
+        for (int i = 0; i < m_mounted.size(); ++i)
+        {
+            if (uri.startsWith(m_mounted[i].mp))
+            {
+                m_mpIndex = i;
+                break;
+            }
+        }
+        if (m_mpIndex < 0) return false;
 
-        m_ws->sendHeader("DAV", "1");
+        // handle request if possible
         switch(method)
         {
             case HTTP_OPTIONS:  handleOPTIONS();  break;
@@ -57,7 +66,6 @@ namespace core
             case HTTP_MOVE:     handleMOVE();     break;
             case HTTP_PROPFIND: handlePROPFIND(); break;
             default:
-                m_ws->send(404);
                 return false;
         }
         return true;
@@ -67,44 +75,45 @@ namespace core
     {
         log_i("handleOPTIONS");
 
-        m_ws->sendHeader("Allow", "OPTIONS, GET, PROPFIND, PUT, DELETE, MKCOL, COPY, MOVE");
-        m_ws->send(200);
+        m_server->sendHeader("DAV", "1");
+        m_server->sendHeader("Allow", "OPTIONS, GET, PROPFIND, PUT, DELETE, MKCOL, COPY, MOVE");
+        m_server->send(200);
     }
 
     void WebDAV::handleGET()
     {
         log_i("handleGET");
-        m_ws->send(501);
+        m_server->send(501);
     }
 
     void WebDAV::handlePUT()    
     { 
         log_i("handlePUT"); 
-        m_ws->send(501);
+        m_server->send(501);
     }
 
     void WebDAV::handleDELETE()
     { 
         log_i("handleDELETE");
-        m_ws->send(501); 
+        m_server->send(501); 
     }
 
     void WebDAV::handleCOPY() 
     {
         log_i("handleCOPY");
-        m_ws->send(501);
+        m_server->send(501);
     }
 
     void WebDAV::handleMKCOL()
     {   
         log_i("handleMKCOL");
-        m_ws->send(501); 
+        m_server->send(501); 
     }
 
     void WebDAV::handleMOVE()
     { 
         log_i("handleMOVE");
-        m_ws->send(501);
+        m_server->send(501);
     }
 
     void WebDAV::handlePROPFIND()
@@ -112,26 +121,34 @@ namespace core
         log_i("handlePROPFIND");
 
         // check if resource available
-        auto path = getFilePath(m_mp, decodeURI(m_ws->uri()));
-        auto resource = getResource(path);
-        if (resource == Resource::None) return m_ws->send(404);
+        String uri = decodeURI(m_server->uri());
+        MountedFS& mounted = m_mounted[m_mpIndex];
+        String path = getFilePath(mounted.mp, uri);
+
+        log_i("uri: %s", uri.c_str());
+        log_i("filesystem: %s (%s)", mounted.mp.c_str(), mounted.alias.c_str());
+        log_i("path: %s", path.c_str());
+
+        Resource resource = getResource(path);
+        if (resource == Resource::None)
+            return m_server->send(404);
 
         // collect the list of resources
         std::vector<Props> resources;
-        fs::File baseFile = m_fs->open(path, "r");
+        fs::File baseFile = mounted.fs->open(path, "r");
         resources.emplace_back(
-            getFileURI(m_mp, baseFile),
+            getFileURI(mounted.mp, baseFile),
             baseFile.getLastWrite(),
             baseFile.size());
 
         auto depth = getDepth();
         if (resource == Resource::Dir && depth == Depth::Child)
         {
-            fs::File dir = m_fs->open(path);
+            fs::File dir = mounted.fs->open(path);
             while (fs::File childFile = dir.openNextFile())
             {
                 resources.emplace_back(
-                    getFileURI(m_mp, childFile),
+                    getFileURI(mounted.mp, childFile),
                     childFile.getLastWrite(),
                     childFile.size());
                 childFile.close();
@@ -154,55 +171,15 @@ namespace core
         contentLength += xmlEpilogue.length();
 
         // send status and content
-        m_ws->setContentLength(contentLength);
-        m_ws->send(207, "text/xml; charset=\"utf-8\"", "");
-        m_ws->sendContent(xmlPreamble);
+        m_server->setContentLength(contentLength);
+        m_server->send(207, "text/xml; charset=\"utf-8\"", "");
+        m_server->sendContent(xmlPreamble);
         for (const auto& resource : resources)
         {
-            m_ws->sendContent(resource.toString());
+            m_server->sendContent(resource.toString());
         }
-        m_ws->sendContent(xmlEpilogue);
+        m_server->sendContent(xmlEpilogue);
     }
-
-
-    // void WebDAV::handlePROPFIND()
-    // {
-    //     log_i("handlePROPFIND");
-
-    //     auto path = getFSPath();
-    //     auto resource = getResource(path);
-    //     if (resource == Resource::None) return m_ws->send(404);
- 
-    //     m_ws->setContentLength(CONTENT_LENGTH_UNKNOWN);
-    //     m_ws->send(207, "application/xml;charset=utf-8", "");
-    //     m_ws->sendContent("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-    //     m_ws->sendContent("<D:multistatus xmlns:D=\"DAV:\">");
-
-    //     auto depth = getDepth();
-    //     fs::File baseFile = m_fs->open(path, "r");
-    //     sendPropResponse(baseFile);
-
-    //     log_i("path: %s\nresource: %d\ndepth: %d", path.c_str(), int(resource), int(depth));
-    //     if (resource == Resource::Dir && depth == Depth::Child)
-    //     {
-    //         fs::File dir = m_fs->open(path);
-    //         log_i("read children for: %s", dir.path());
-    //         while (fs::File childFile = dir.openNextFile())
-    //         {
-    //             log_i("child: %s", childFile.path());
-    //             sendPropResponse(childFile);
-    //             childFile.close();
-    //         }
-    //         dir.close();
-    //     }
-
-    //     baseFile.close();
-    //     m_ws->sendContent("</D:multistatus>");
-
-    //     // m_ws->sendHeader("Content-Type", "application/xml; charset=\"utf-8\"");
-    //     // m_ws->sendHeader("Content-Length", String(body.length()));
-    //     // m_ws->send(207, "application/xml", body);
-    // }
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -326,20 +303,11 @@ namespace core
 
     ////////////////////////////////////////////////////////////////////////////
 
-    String WebDAV::getFSPath()
-    {
-        String uri = decodeURI(m_ws->uri());
-        String path = uri.substring(m_mp.length());
-        if (path.isEmpty()) path = "/";
-        if (path != "/" && path.endsWith("/"))
-            path = path.substring(0, path.length() - 1);
-        return path;
-    }
-
+    
     WebDAV::Resource WebDAV::getResource(const String& fsPath)
     {
         auto res = Resource::None;
-        fs::File file = m_fs->open(fsPath, "r");
+        fs::File file = m_mounted[m_mpIndex].fs->open(fsPath, "r");
         if (file)
         {
             res = file.isDirectory() ? Resource::Dir : Resource::File;
@@ -350,7 +318,7 @@ namespace core
 
     WebDAV::Depth WebDAV::getDepth()
     {
-        const auto depth = m_ws->header("Depth");
+        const auto depth = m_server->header("Depth");
         log_i("header depth: %s", depth.c_str());
         if (!depth.isEmpty())
         {
@@ -359,51 +327,6 @@ namespace core
         }
         return Depth::None;
     }
-
-    // void WebDAV::sendPropResponse(fs::File& file)
-    // {
-    //     String uri = file.path();
-    //     if (!uri.startsWith("/")) uri = "/" + uri;
-    //     if (file.isDirectory() && !uri.endsWith("/")) uri += "/";
-    //     uri = m_mp + uri;
-    //     log_i("uri: %s", uri.c_str());
-    //     m_ws->sendContent(
-    //         "<D:response>");
-    //     sendPropContent(
-    //         "href", core::c2enc(uri));
-    //     m_ws->sendContent(
-    //         "<D:propstat>"
-    //         "<D:prop>");
-    //     time_t lastWrite = file.getLastWrite();
-    //     sendPropContent("getlastmodified", toString(lastWrite));
-    //     if (file.isDirectory())
-    //         sendPropContent("resourcetype", "<D:collection/>");
-    //     else
-    //     {
-    //         sendPropContent("resourcetype", "");
-    //         sendPropContent("getcontentlength", String(file.size()));
-    //         sendPropContent("getcontenttype", getContentType(uri));
-    //         sendPropContent("getetag", getETag(uri, lastWrite));
-    //     }
-    //     m_ws->sendContent(
-    //         "</D:prop>"
-    //         "<D:status>HTTP/1.1 200 OK</D:status>"
-    //         "</D:propstat>"
-    //         "</D:response>");
-    // }
-
-    // void WebDAV::sendPropContent(const String &prop, const String &content)
-    // {
-    //     if (content.isEmpty())
-    //         m_ws->sendContent("<D:" + prop + "/>");
-    //     else
-    //     {
-    //         char buf[2 * prop.length() + content.length() + 16];
-    //         snprintf(buf, sizeof(buf), "<D:%s>%s</D:%s>",
-    //             prop.c_str(), content.c_str(), prop.c_str());
-    //         m_ws->sendContent(buf, strlen(buf));
-    //     }
-    // }
 
     ///////////////////////////////////////////////////////
 
