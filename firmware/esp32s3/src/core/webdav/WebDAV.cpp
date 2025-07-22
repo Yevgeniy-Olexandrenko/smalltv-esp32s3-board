@@ -60,8 +60,7 @@ namespace core
 
         m_server->sendHeader("DAV", "1");
         m_server->sendHeader("Allow", "OPTIONS, GET, PROPFIND, PUT, DELETE, MKCOL, COPY, MOVE");
-        m_server->send(200);
-        return true;
+        return send200OK();
     }
 
     bool WebDAV::handleGET()
@@ -119,9 +118,32 @@ namespace core
         FS* fs = getMountedFS(uri);
         if (!fs) return false;
 
+        // check if resource is NOT available
+        String path = getFilePath(fs->mountPoint, uri);
+        Resource resource = getResource(fs, path);
+
         log_i("handleMKCOL");
-        m_server->send(501);
-        return true;
+        log_i("uri: %s", uri.c_str());
+        log_i("filesystem: %s (%s)", fs->mountPoint.c_str(), fs->alias.c_str());
+        log_i("path: %s", path.c_str());
+
+        if (resource != Resource::None)
+            return send405MethodNotAllowed();
+
+        // check if parent is also a directory
+        int parentIdx = path.lastIndexOf('/');
+        if (parentIdx > 0)
+        {
+            String parentPath = path.substring(0, parentIdx);
+            fs::File parentFile = fs->underlying->open(parentPath, "r");
+            if (!parentFile.isDirectory())
+                return send409Conflict();
+        }
+
+        // try to create directory
+        if (!fs->underlying->mkdir(path))
+            return send507InsufficientStorage();
+        return send201Created();
     }
 
     bool WebDAV::handleMOVE()
@@ -176,11 +198,8 @@ namespace core
             log_i("filesystem: %s (%s)", fs->mountPoint.c_str(), fs->alias.c_str());
             log_i("path: %s", path.c_str());
 
-            if (resource == Resource::None)
-            {
-                m_server->send(404);
-                return true;
-            }
+            if (resource == Resource::None) 
+                return send404NotFound();
 
             // collect the list of resources
             fs::File baseFile = fs->underlying->open(path, "r");
@@ -386,32 +405,20 @@ namespace core
         return Depth::None;
     }
 
+    bool WebDAV::send200OK()
+        { m_server->send(200); return true; }
+    bool WebDAV::send201Created()
+        { m_server->send(201); return true; }
+    bool WebDAV::send404NotFound() 
+        { m_server->send(404); return true; }
+    bool WebDAV::send405MethodNotAllowed() 
+        { m_server->send(405); return true; }
+    bool WebDAV::send409Conflict() 
+        { m_server->send(409); return true; }
+    bool WebDAV::send507InsufficientStorage() 
+        { m_server->send(507); return true; }
+
     ///////////////////////////////////////////////////////
-
-    // <D:response>
-    //   <D:href>/sdcard/folder1/</D:href>
-    //   <D:propstat>
-    //     <D:prop>
-    //       <D:resourcetype><D:collection/></D:resourcetype>
-    //       <D:displayname>folder1</D:displayname>
-    //       <D:getlastmodified>Mon, 21 Jul 2025 15:00:00 GMT</D:getlastmodified>
-    //     </D:prop>
-    //     <D:status>HTTP/1.1 200 OK</D:status>
-    //   </D:propstat>
-    // </D:response>
-
-    // <D:response>
-    //   <D:href>/sdcard/file1.txt</D:href>
-    //   <D:propstat>
-    //     <D:prop>
-    //       <D:resourcetype/>
-    //       <D:getcontentlength>1234</D:getcontentlength>
-    //       <D:getcontenttype>text/plain; charset=UTF-8</D:getcontenttype>
-    //       <D:getlastmodified>Mon, 21 Jul 2025 15:00:00 GMT</D:getlastmodified>
-    //     </D:prop>
-    //     <D:status>HTTP/1.1 200 OK</D:status>
-    //   </D:propstat>
-    // </D:response>
 
     WebDAV::Props::Props(const String &uri, time_t modified, const String &name)
         : m_href(encodeURI(uri))

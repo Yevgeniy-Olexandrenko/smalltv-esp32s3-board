@@ -34,14 +34,14 @@ namespace core
         bool handle(WebServer& server, HTTPMethod method, String uri) override;
 
     private:
-        bool handleOPTIONS();
+        bool handleOPTIONS();   // done
         bool handleGET();
         bool handlePUT();
         bool handleDELETE();
         bool handleCOPY();
-        bool handleMKCOL();
+        bool handleMKCOL();     // done
         bool handleMOVE();
-        bool handlePROPFIND();
+        bool handlePROPFIND();  // done
 
         /////////////////////////////////
 
@@ -62,7 +62,13 @@ namespace core
         FS* getMountedFS(const String &uri);
         Resource getResource(FS* fs, const String& path);
         Depth getDepth();
-        
+
+        bool send200OK();
+        bool send201Created();
+        bool send404NotFound();
+        bool send405MethodNotAllowed();
+        bool send409Conflict();
+        bool send507InsufficientStorage();
 
     private:
         WebServer* m_server = nullptr;
