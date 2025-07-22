@@ -1,13 +1,15 @@
 #pragma once
 
 #include <WebServer.h>
-
-namespace fs { class FS; }
+#include <FS.h>
 
 namespace core
 {
     class WebDAV : public RequestHandler
     {
+        enum class Resource { None, File, Dir };
+        enum class Depth { None, Child, All };
+
     public:
         void begin(WebServer& server, fs::FS& fs, const String& mountPoint);
 
@@ -16,17 +18,29 @@ namespace core
         bool handle(WebServer& server, HTTPMethod method, String uri) override;
 
     private:
-        void handleOPTIONS(WebServer& server);
-        void handleGET(WebServer& server);
-        void handlePUT(WebServer& server);
-        void handleDELETE(WebServer& server);
-        void handleCOPY(WebServer& server);
-        void handleMKCOL(WebServer& server);
-        void handleMOVE(WebServer& server);
-        void handlePROPFIND(WebServer& server);
-        
+        void handleOPTIONS();
+        void handleGET();
+        void handlePUT();
+        void handleDELETE();
+        void handleCOPY();
+        void handleMKCOL();
+        void handleMOVE();
+        void handlePROPFIND();
+
+        String getFSPath();
+        Resource getResource(const String& fsPath);
+        Depth getDepth();
+
+        void sendPropResponse(fs::File &curFile);
+        void sendPropContent(const String& prop, const String& content);
+
+        String toString(time_t date);
+        String getETag(const String& uri, time_t lastWrite);
+        String getContentType(const String& uri);
+
     private:
+        WebServer* m_ws = nullptr;
         fs::FS* m_fs = nullptr;
-        String  m_mp;
+        String m_mp;
     };
 }
