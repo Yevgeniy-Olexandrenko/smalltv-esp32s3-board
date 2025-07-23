@@ -6,7 +6,7 @@ namespace driver::details
 {
     FatFS::FatFS()
         : fs::FS(FSImplPtr(new VFSImpl()))
-        , m_pdrv(-1)
+        , m_pdrv(0xFF)
     {}
 
     uint64_t FatFS::partitionSize() const
@@ -60,6 +60,7 @@ namespace driver::details
 
     void FatFS::resMountPoint() 
     { 
-        _impl->mountpoint(nullptr); 
+        _impl->mountpoint(nullptr);
+        m_pdrv = 0xFF;
     }
 }
