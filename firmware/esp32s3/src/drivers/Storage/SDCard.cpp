@@ -69,7 +69,8 @@ namespace driver::details
         log_i("SD card mounted at: %s\n", mountPoint);
         sdmmc_card_print_info(stdout, m_card);
         
-        setMountPoint(mountPoint);
+        uint8_t pdrv = ff_diskio_get_pdrv_card(m_card);
+        setMountPoint(mountPoint, pdrv);
         return true;
     }
 
@@ -125,7 +126,8 @@ namespace driver::details
         log_i("SD card mounted at: %s\n", mountPoint);
         sdmmc_card_print_info(stdout, m_card);
         
-        setMountPoint(mountPoint);
+        uint8_t pdrv = ff_diskio_get_pdrv_card(m_card);
+        setMountPoint(mountPoint, pdrv);
         return true;
     }
 

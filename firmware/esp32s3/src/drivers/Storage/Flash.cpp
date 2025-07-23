@@ -39,7 +39,8 @@ namespace driver::details
             return false;
         }
 
-        setMountPoint(mountPoint);
+        uint8_t pdrv = ff_diskio_get_pdrv_wl(m_wlHandle);
+        setMountPoint(mountPoint, pdrv);
         return true;
     }
 

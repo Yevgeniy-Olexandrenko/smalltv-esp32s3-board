@@ -26,7 +26,10 @@ namespace driver::details
         virtual bool readSectors(uint8_t* data, uint32_t startSector, uint32_t sectorCount) { return false; }
 
     protected:
-        void setMountPoint(const char* mountPoint);
+        void setMountPoint(const char* mountPoint, uint8_t pdrv);
         void resMountPoint();
+
+    private:
+        uint8_t m_pdrv;
     };
 }

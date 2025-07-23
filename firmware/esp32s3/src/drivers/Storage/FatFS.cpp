@@ -6,6 +6,7 @@ namespace driver::details
 {
     FatFS::FatFS()
         : fs::FS(FSImplPtr(new VFSImpl()))
+        , m_pdrv(-1)
     {}
 
     uint64_t FatFS::partitionSize() const
@@ -23,7 +24,8 @@ namespace driver::details
         if (isMounted())
         {
             DWORD freeClusters; FATFS* fatfs;
-            if (f_getfree(mountPoint(), &freeClusters, &fatfs) == FR_OK)
+            char drv[3] = { char('0' + m_pdrv), ':', 0 };
+            if (f_getfree(drv, &freeClusters, &fatfs) == FR_OK)
             {
                 uint64_t totalClusters = fatfs->n_fatent - 2;
                 uint64_t totalBytes = totalClusters * fatfs->csize * sectorSize();
@@ -38,7 +40,8 @@ namespace driver::details
         if (isMounted())
         {
             DWORD freeClusters; FATFS* fatfs;
-            if (f_getfree(mountPoint(), &freeClusters, &fatfs) == FR_OK)
+            char drv[3] = { char('0' + m_pdrv), ':', 0 };
+            if (f_getfree(drv, &freeClusters, &fatfs) == FR_OK)
             {
                 uint64_t totalClusters = fatfs->n_fatent - 2;
                 uint64_t totalBytes = totalClusters * fatfs->csize * sectorSize();
@@ -49,9 +52,10 @@ namespace driver::details
         return 0;
     }
 
-    void FatFS::setMountPoint(const char* mountPoint) 
+    void FatFS::setMountPoint(const char* mountPoint, uint8_t pdrv) 
     { 
-        _impl->mountpoint(mountPoint); 
+        _impl->mountpoint(mountPoint);
+        m_pdrv = pdrv;
     }
 
     void FatFS::resMountPoint() 
