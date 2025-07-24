@@ -9,7 +9,7 @@ GyverDBFile Settings::m_keys;
 GyverDBFile Settings::m_data;
 SettingsESP Settings::m_sets;
 
-core::WebDAVHandler Settings::m_dav;
+WebDAV::Handler Settings::m_dav;
 
 void Settings::initData()
 {
@@ -33,7 +33,7 @@ void Settings::initSets()
         m_sets.attachDB(&m_data);
         m_initSets = true;
 
-        m_dav.begin(m_sets.server);
+        m_dav.begin(WebDAV::Server(m_sets.server));
         auto quotaCb = [](fs::FS& fs, uint64_t& available, uint64_t& used)
         {
             auto& fatFS = static_cast<driver::details::FatFS&>(fs);

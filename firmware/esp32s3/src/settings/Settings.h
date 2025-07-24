@@ -39,5 +39,5 @@ private:
     static GyverDBFile m_keys;
     static GyverDBFile m_data;
     static SettingsESP m_sets;
-    static core::WebDAVHandler m_dav;
+    static WebDAV::Handler m_dav;
 };
