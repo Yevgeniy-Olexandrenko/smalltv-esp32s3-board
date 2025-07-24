@@ -5,15 +5,34 @@
 
 namespace core
 {
-    class WebDAV : public RequestHandler
+    class WebDAVFileSystem
     {
-        enum class Resource { None, File, Dir };
-        enum class Depth { None, Child, All };
-
+    public:
         using QuotaSz = unsigned long long;
         using QuotaCb = std::function<void(fs::FS& fs, QuotaSz& available, QuotaSz& used)>;
-        struct FS { fs::FS* underlying = nullptr; String mountPoint; QuotaCb quotaCb = nullptr; };
 
+        WebDAVFileSystem(fs::FS& fs, const String& name, QuotaCb quotaCb)
+            : m_fs(fs)
+            , m_name(name)
+            , m_quotaCb(quotaCb)
+        {}
+
+        fs::FS* operator->() { return &m_fs; }
+
+        String resolveURI(fs::File& file);
+        String resolvePath(const String& decodedURI);
+
+        const String& getName() const { return m_name; }
+        bool getQuota(QuotaSz& available, QuotaSz& used);
+
+    private:
+        fs::FS& m_fs;
+        String  m_name;
+        QuotaCb m_quotaCb;
+    };
+
+    class WebDAVHandler : public RequestHandler
+    {
         class ResourceProps
         {
         public:
@@ -31,22 +50,22 @@ namespace core
 
     public:
         void begin(WebServer& server);
-        void addFS(fs::FS& fs, const String& mountPoint, QuotaCb quotaCb = nullptr);
+        void addFS(fs::FS& fs, const String& mountName, WebDAVFileSystem::QuotaCb quotaCb = nullptr);
 
     protected:
         bool canHandle(HTTPMethod method, String uri) override;
         bool handle(WebServer& server, HTTPMethod method, String uri) override;
 
     private:
-        bool handleOPTIONS();   // done
-        bool handleGET();
-        bool handlePUT();
-        bool handleDELETE();
-        bool handleCOPY();
-        bool handleMKCOL();     // done
-        bool handleMOVE();
-        bool handlePROPFIND();  // done
-
+        void handleOPTIONS  ();
+        bool handlePROPFIND (const String& decodedURI);
+        void handleMKCOL    (WebDAVFileSystem& wdfs, const String& path);
+        void handleDELETE   (WebDAVFileSystem& wdfs, const String& path);
+        void handleGET      (WebDAVFileSystem& wdfs, const String& path);
+        void handlePUT      (WebDAVFileSystem& wdfs, const String& path);
+        void handleCOPY     (WebDAVFileSystem& wdfs, const String& path, const String& dest);
+        void handleMOVE     (WebDAVFileSystem& wdfs, const String& path, const String& dest);
+        
         /////////////////////////////////
 
         static String decodeURI(const String& encoded);
@@ -58,24 +77,12 @@ namespace core
         static String buildProp(const String &prop, const String &val);
         static String buildOptProp(const String &prop, const String &val);
 
-        static String getFileURI(const String& mountPoint, fs::File& file);
-        static String resolvePath(const String& mountPoint, const String& decodedURI);
-
         /////////////////////////////////
 
-        FS* getMountedFS(const String &uri);
-        Resource getResource(FS* fs, const String& path);
-        Depth getDepth();
-
-        bool send200OK();
-        bool send201Created();
-        bool send404NotFound();
-        bool send405MethodNotAllowed();
-        bool send409Conflict();
-        bool send507InsufficientStorage();
-
+        WebDAVFileSystem* getMountedFS(const String &uri);
+        
     private:
         WebServer* m_server = nullptr;
-        std::vector<FS> m_mounted;
+        std::vector<WebDAVFileSystem> m_mountedFS;
     };
 }

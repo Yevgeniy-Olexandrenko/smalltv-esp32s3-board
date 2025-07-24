@@ -9,7 +9,7 @@ GyverDBFile Settings::m_keys;
 GyverDBFile Settings::m_data;
 SettingsESP Settings::m_sets;
 
-core::WebDAV Settings::m_dav;
+core::WebDAVHandler Settings::m_dav;
 
 void Settings::initData()
 {

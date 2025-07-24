@@ -7,190 +7,118 @@
 
 namespace core
 {
-    void WebDAV::begin(WebServer &server)
+    void WebDAVHandler::begin(WebServer &server)
     {
-        const char* hdrs[] = { "Depth", "Destination", "Overwrite" };
+        static const char* hdrs[] = 
+        {
+            "Depth", "Destination", "Overwrite",
+            "If-None-Match", "If-Modified-Since", "Range"
+        };
+
         m_server = &server;
+        m_server->collectHeaders(hdrs, sizeof(hdrs) / sizeof(char*));
         m_server->addHandler(this);
-        m_server->collectHeaders(hdrs, 3);
-        m_mounted.clear();
+        m_mountedFS.clear();
     }
 
-    void WebDAV::addFS(fs::FS& fs, const String& mountPoint, QuotaCb quotaCb)
+    void WebDAVHandler::addFS(fs::FS& fs, const String& mountName, WebDAVFileSystem::QuotaCb quotaCb)
     {
-        if (!mountPoint.isEmpty())
+        if (!mountName.isEmpty())
         {
-            if (mountPoint.startsWith("/"))
-                m_mounted.push_back({ &fs, mountPoint, quotaCb });
+            if (mountName.startsWith("/"))
+                m_mountedFS.emplace_back(fs, mountName, quotaCb);
             else
-                m_mounted.push_back({ &fs, "/" + mountPoint, quotaCb });
+                m_mountedFS.emplace_back(fs, "/" + mountName, quotaCb);
         }
     }
 
-    bool WebDAV::canHandle(HTTPMethod method, String uri)
+    bool WebDAVHandler::canHandle(HTTPMethod method, String uri)
     {
         switch(method)
         {
             case HTTP_OPTIONS:
-            case HTTP_GET:
-            case HTTP_PUT:
-            case HTTP_DELETE:
-            case HTTP_COPY:
-            case HTTP_MKCOL:
-            case HTTP_MOVE:
             case HTTP_PROPFIND:
                 return true;
+
+            case HTTP_MKCOL:
+            case HTTP_DELETE:
+            case HTTP_GET:
+            case HTTP_PUT:
+            case HTTP_COPY:
+            case HTTP_MOVE:
+                String decodedURI = decodeURI(uri);
+                WebDAVFileSystem* wdfs = getMountedFS(decodedURI);
+                return (wdfs != nullptr);
         }
         return false;
     }
 
-    bool WebDAV::handle(WebServer& server, HTTPMethod method, String uri)
+    bool WebDAVHandler::handle(WebServer& server, HTTPMethod method, String uri)
     {
-        switch(method)
+        if (method == HTTP_OPTIONS)
         {
-            case HTTP_OPTIONS:  return handleOPTIONS();
-            case HTTP_GET:      return handleGET();
-            case HTTP_PUT:      return handlePUT();
-            case HTTP_DELETE:   return handleDELETE();
-            case HTTP_COPY:     return handleCOPY();
-            case HTTP_MKCOL:    return handleMKCOL();
-            case HTTP_MOVE:     return handleMOVE();
-            case HTTP_PROPFIND: return handlePROPFIND();
+            handleOPTIONS();
+            return true;
         }
+        
+        String decodedURI = decodeURI(uri);
+        if (method == HTTP_PROPFIND)
+        {
+            return handlePROPFIND(decodedURI);
+        }
+
+        WebDAVFileSystem* wdfs = getMountedFS(decodedURI);
+        if (wdfs)
+        {
+            String path = wdfs->resolvePath(decodedURI);
+            String destination = server.header("Destination");
+            switch(method)
+            {
+                case HTTP_MKCOL:  handleMKCOL  (*wdfs, path); break;
+                case HTTP_DELETE: handleDELETE (*wdfs, path); break;
+                case HTTP_GET:    handleGET    (*wdfs, path); break;
+                case HTTP_PUT:    handlePUT    (*wdfs, path); break;
+                case HTTP_COPY:   handleCOPY   (*wdfs, path, destination); break;
+                case HTTP_MOVE:   handleMOVE   (*wdfs, path, destination); break;
+            }
+            return true;
+        }        
         return false;
     }
 
-    bool WebDAV::handleOPTIONS()
+    // done
+    void WebDAVHandler::handleOPTIONS()
     {
         log_i("handleOPTIONS");
-
         m_server->sendHeader("DAV", "1");
         m_server->sendHeader("Allow", "OPTIONS, GET, PROPFIND, PUT, DELETE, MKCOL, COPY, MOVE");
-        return send200OK();
+        m_server->send(200);
     }
 
-    bool WebDAV::handleGET()
+    // done
+    bool WebDAVHandler::handlePROPFIND(const String& decodedURI)
     {
-        // check if request can be processed
-        String uri = decodeURI(m_server->uri());
-        FS* fs = getMountedFS(uri);
-        if (!fs) return false;
-
-        log_i("handleGET");
-        m_server->send(501);
-        return true;
-    }
-
-    bool WebDAV::handlePUT()    
-    { 
-        // check if request can be processed
-        String uri = decodeURI(m_server->uri());
-        FS* fs = getMountedFS(uri);
-        if (!fs) return false;
-
-        log_i("handlePUT"); 
-        m_server->send(501);
-        return true;
-    }
-
-    bool WebDAV::handleDELETE()
-    { 
-        // check if request can be processed
-        String uri = decodeURI(m_server->uri());
-        FS* fs = getMountedFS(uri);
-        if (!fs) return false;
-
-        log_i("handleDELETE");
-        m_server->send(501);
-        return true;
-    }
-
-    bool WebDAV::handleCOPY() 
-    {
-        // check if request can be processed
-        String uri = decodeURI(m_server->uri());
-        FS* fs = getMountedFS(uri);
-        if (!fs) return false;
-
-        log_i("handleCOPY");
-        m_server->send(501);
-        return true;
-    }
-
-    bool WebDAV::handleMKCOL()
-    {   
-        // check if request can be processed
-        String uri = decodeURI(m_server->uri());
-        FS* fs = getMountedFS(uri);
-        if (!fs) return false;
-
-        // check if resource is NOT available
-        String path = resolvePath(fs->mountPoint, uri);
-        Resource resource = getResource(fs, path);
-
-        log_i("handleMKCOL");
-        log_i("uri: %s", uri.c_str());
-        log_i("filesystem: %s", fs->mountPoint.c_str());
-        log_i("path: %s", path.c_str());
-
-        if (resource != Resource::None)
-            return send405MethodNotAllowed();
-
-        // check if parent is also a directory
-        int parentIdx = path.lastIndexOf('/');
-        if (parentIdx > 0)
-        {
-            String parentPath = path.substring(0, parentIdx);
-            fs::File parentFile = fs->underlying->open(parentPath, "r");
-            if (!parentFile.isDirectory())
-                return send409Conflict();
-        }
-
-        // try to create directory
-        if (!fs->underlying->mkdir(path))
-            return send507InsufficientStorage();
-        return send201Created();
-    }
-
-    bool WebDAV::handleMOVE()
-    { 
-        // check if request can be processed
-        String uri = decodeURI(m_server->uri());
-        FS* fs = getMountedFS(uri);
-        if (!fs) return false;
-
-        log_i("handleMOVE");
-        m_server->send(501);
-        return true;
-    }
-
-    bool WebDAV::handlePROPFIND()
-    {
+        bool depthChild = (m_server->header("Depth") == "1");
         std::vector<ResourceProps> resources;
-        String uri = decodeURI(m_server->uri());
-        if (uri == "/")
+        if (decodedURI == "/")
         {
-            log_i("handlePROPFIND (mounts)");
+            log_i("handlePROPFIND (root)");
 
             // collect the list of mounted file systems
-            resources.emplace_back(uri, time(nullptr));
-            if (getDepth() == Depth::Child)
+            resources.emplace_back(decodedURI, time(nullptr));
+            if (depthChild)
             {
-                for (auto& fs : m_mounted)
+                for (auto& wdfs : m_mountedFS)
                 {
-                    if (fs::File childFile = fs.underlying->open("/"))
+                    if (fs::File childFile = wdfs->open("/"))
                     {
                         resources.emplace_back(
-                            getFileURI(fs.mountPoint, childFile),
-                            childFile.getLastWrite());
+                            wdfs.resolveURI(childFile), childFile.getLastWrite());
                         childFile.close();
 
-                        if (fs.quotaCb)
-                        {
-                            QuotaSz available = 0, used = 0;
-                            fs.quotaCb(*fs.underlying, available, used);
+                        WebDAVFileSystem::QuotaSz available, used;
+                        if (wdfs.getQuota(available, used))
                             resources.back().setQuota(available, used);
-                        }
                     }
                 }
             }
@@ -198,41 +126,33 @@ namespace core
         else
         {
             // check if request can be processed
-            FS* fs = getMountedFS(uri);
-            if (!fs) return false;
-
-            // check if resource available
-            String path = resolvePath(fs->mountPoint, uri);
-            Resource resource = getResource(fs, path);
+            WebDAVFileSystem* wdfs = getMountedFS(decodedURI);
+            if (!wdfs) return false;
 
             log_i("handlePROPFIND (resources)");
-            log_i("uri: %s", uri.c_str());
-            log_i("filesystem: %s", fs->mountPoint.c_str());
-            log_i("path: %s", path.c_str());
 
-            if (resource == Resource::None) 
-                return send404NotFound();
+            // check if resource available
+            String path = wdfs->resolvePath(decodedURI);
+            if (!(*wdfs)->exists(path))
+            {
+                m_server->send(404);
+                return true;
+            }
 
             // collect the list of resources
-            fs::File baseFile = fs->underlying->open(path, "r");
+            fs::File baseFile = (*wdfs)->open(path);
             resources.emplace_back(
-                getFileURI(fs->mountPoint, baseFile),
-                baseFile.getLastWrite(),
-                baseFile.size());
-
-            if (resource == Resource::Dir && getDepth() == Depth::Child)
+                wdfs->resolveURI(baseFile), baseFile.getLastWrite(), baseFile.size());
+            if (baseFile.isDirectory() && depthChild)
             {
-                fs::File dir = fs->underlying->open(path);
-                while (fs::File childFile = dir.openNextFile())
+                while (fs::File childFile = baseFile.openNextFile())
                 {
                     resources.emplace_back(
-                        getFileURI(fs->mountPoint, childFile),
-                        childFile.getLastWrite(),
-                        childFile.size());
+                        wdfs->resolveURI(childFile), childFile.getLastWrite(), childFile.size());
                     childFile.close();
                 }
-                dir.close();
             }
+            baseFile.close();
         }
 
         // compute content length
@@ -261,15 +181,72 @@ namespace core
         return true;
     }
 
+    void WebDAVHandler::handleMKCOL(WebDAVFileSystem& wdfs, const String& path)
+    {   
+        log_i("handleMKCOL");
+
+        // check that the request should not have a body
+        if (m_server->hasHeader("Content-Length"))
+        {
+            if (m_server->header("Content-Length").toInt() > 0)
+                return m_server->send(415, "text/plain", "MKCOL with body not supported");
+        }
+
+        // check if resource is NOT available
+        if (wdfs->exists(path)) 
+            return m_server->send(405, "text/plain", "File or directory already exists");
+
+        // check if parent directory exists
+        int slashIdx = path.lastIndexOf('/');
+        String parent = (slashIdx > 0) ? path.substring(0, slashIdx) : "/";
+        if (!wdfs->exists(parent)) 
+            return m_server->send(409, "text/plain", "Parent directory does not exist");
+
+        // trying to create the directory
+        if (!wdfs->mkdir(path)) 
+            return m_server->send(500, "text/plain", "Failed to create directory");
+        m_server->send(201, "text/plain", "Directory created");
+    }
+
+    void WebDAVHandler::handleDELETE(WebDAVFileSystem& wdfs, const String& path)
+    { 
+        log_i("handleDELETE");
+        m_server->send(501);
+    }
+
+    void WebDAVHandler::handleGET(WebDAVFileSystem& wdfs, const String& path)
+    {
+        log_i("handleGET");
+        m_server->send(501);
+    }
+
+    void WebDAVHandler::handlePUT(WebDAVFileSystem& wdfs, const String& path)    
+    { 
+        log_i("handlePUT"); 
+        m_server->send(501);
+    }
+
+    void WebDAVHandler::handleCOPY(WebDAVFileSystem& wdfs, const String& path, const String& dest) 
+    {
+        log_i("handleCOPY");
+        m_server->send(501);
+    }
+
+    void WebDAVHandler::handleMOVE(WebDAVFileSystem& wdfs, const String& path, const String& dest)
+    { 
+        log_i("handleMOVE");
+        m_server->send(501);
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
-    String WebDAV::decodeURI(const String& encoded)
+    String WebDAVHandler::decodeURI(const String& encoded)
     {
         return WebServer::urlDecode(encoded);
     }
 
     // TODO: check implementation!
-    String WebDAV::encodeURI(const String& decoded)
+    String WebDAVHandler::encodeURI(const String& decoded)
     {
         static const char hex[] = "0123456789ABCDEF";
         String encoded;
@@ -293,7 +270,7 @@ namespace core
         return encoded;
     }
 
-    String WebDAV::getDateString(time_t date)
+    String WebDAVHandler::getDateString(time_t date)
     {
         const char *months[] = 
         {
@@ -321,14 +298,14 @@ namespace core
         return buf;
     }
 
-    String WebDAV::getContentType(const String& uri)
+    String WebDAVHandler::getContentType(const String& uri)
     {
         for (const auto& e : mime::mimeTable)
             if (uri.endsWith(e.endsWith)) return e.mimeType;
         return mime::mimeTable[mime::none].mimeType;
     }
 
-    String WebDAV::getETag(const String &uri, time_t modified)
+    String WebDAVHandler::getETag(const String &uri, time_t modified)
     {
         char buf[uri.length() + 32];
         sprintf(buf, "%s%lu", uri.c_str(), (unsigned long)modified);
@@ -339,7 +316,7 @@ namespace core
 
     ////////////////////////////////////////////////////////////////////////////
 
-    String WebDAV::buildProp(const String &prop, const String &val)
+    String WebDAVHandler::buildProp(const String &prop, const String &val)
     {
         // examples:
         // <D:resourcetype/>
@@ -358,81 +335,24 @@ namespace core
         return str;
     }
 
-    String WebDAV::buildOptProp(const String &prop, const String &val)
+    String WebDAVHandler::buildOptProp(const String &prop, const String &val)
     {
         if (val.isEmpty()) return "";
         return buildProp(prop, val);
     }
 
-    String WebDAV::getFileURI(const String& mountPoint, fs::File &file)
-    {
-        String path = file.path();
-        if (!path.startsWith("/")) path = "/" + path;
-        if (file.isDirectory() && !path.endsWith("/")) path += "/";
-        return (mountPoint + path);
-    }
-
-    String WebDAV::resolvePath(const String& mountPoint, const String& decodedURI)
-    {
-        String path = decodedURI.substring(mountPoint.length());
-        if (path.isEmpty()) path = "/";
-        if (path != "/" && path.endsWith("/"))
-            path = path.substring(0, path.length() - 1);
-        return path;
-    }
-
     ////////////////////////////////////////////////////////////////////////////
 
-    WebDAV::FS* WebDAV::getMountedFS(const String &uri)
+    WebDAVFileSystem* WebDAVHandler::getMountedFS(const String &uri)
     {
-        for (auto& fs : m_mounted)
-            if (uri.startsWith(fs.mountPoint)) return &fs;
+        for (auto& wdfs : m_mountedFS)
+            if (uri.startsWith(wdfs.getName())) return &wdfs;
         return nullptr;
     }
 
-    WebDAV::Resource WebDAV::getResource(FS* mounted, const String& path)
-    {
-        auto res = Resource::None;
-        if (mounted)
-        {
-            fs::File file = mounted->underlying->open(path, "r");
-            if (file)
-            {
-                res = file.isDirectory() ? Resource::Dir : Resource::File;
-                file.close();
-            }
-        }
-        return res;
-    }
-
-    WebDAV::Depth WebDAV::getDepth()
-    {
-        const auto depth = m_server->header("Depth");
-        log_i("header depth: %s", depth.c_str());
-        if (!depth.isEmpty())
-        {
-            if (depth == "1") return Depth::Child;
-            if (depth == "infinity") return Depth::All;
-        }
-        return Depth::None;
-    }
-
-    bool WebDAV::send200OK()
-        { m_server->send(200); return true; }
-    bool WebDAV::send201Created()
-        { m_server->send(201); return true; }
-    bool WebDAV::send404NotFound() 
-        { m_server->send(404); return true; }
-    bool WebDAV::send405MethodNotAllowed() 
-        { m_server->send(405); return true; }
-    bool WebDAV::send409Conflict() 
-        { m_server->send(409); return true; }
-    bool WebDAV::send507InsufficientStorage() 
-        { m_server->send(507); return true; }
-
     ///////////////////////////////////////////////////////
 
-    WebDAV::ResourceProps::ResourceProps(const String &uri, time_t modified)
+    WebDAVHandler::ResourceProps::ResourceProps(const String &uri, time_t modified)
         : m_href(encodeURI(uri))
         , m_lastModified(getDateString(modified))
         , m_etag(getETag(uri, modified))
@@ -441,7 +361,7 @@ namespace core
             m_resourceType = "<D:collection/>";
     }
 
-    WebDAV::ResourceProps::ResourceProps(const String &uri, time_t modified, size_t size)
+    WebDAVHandler::ResourceProps::ResourceProps(const String &uri, time_t modified, size_t size)
         : m_href(encodeURI(uri))
         , m_lastModified(getDateString(modified))
         , m_etag(getETag(uri, modified))
@@ -455,13 +375,13 @@ namespace core
         }
     }
 
-    void WebDAV::ResourceProps::setQuota(unsigned long available, unsigned long used)
+    void WebDAVHandler::ResourceProps::setQuota(unsigned long available, unsigned long used)
     {
         m_availableBytes = String(available);
         m_usedBytes = String(used);
     }
 
-    String WebDAV::ResourceProps::toString() const
+    String WebDAVHandler::ResourceProps::toString() const
     {
         return
         buildProp("response",
@@ -479,5 +399,35 @@ namespace core
                 buildProp("status", "HTTP/1.1 200 OK")
             )
         );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    String WebDAVFileSystem::resolveURI(fs::File &file)
+    {
+        String path = file.path();
+        if (!path.startsWith("/")) path = "/" + path;
+        if (file.isDirectory() && !path.endsWith("/")) path += "/";
+        return (m_name + path);
+    }
+
+    String WebDAVFileSystem::resolvePath(const String &decodedURI)
+    {
+        String path = decodedURI.substring(m_name.length());
+        if (path.isEmpty()) path = "/";
+        if (path != "/" && path.endsWith("/"))
+            path = path.substring(0, path.length() - 1);
+        return path;
+    }
+
+    bool WebDAVFileSystem::getQuota(QuotaSz &available, QuotaSz &used)
+    {
+        available = 0, used = 0;
+        if (m_quotaCb)
+        {
+            m_quotaCb(m_fs, available, used);
+            return true;
+        }
+        return false;
     }
 }
