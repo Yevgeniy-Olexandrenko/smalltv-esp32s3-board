@@ -73,6 +73,26 @@ namespace WebDAV
         return path;
     }
 
+    bool FileSystem::deleteRecursive(const String &path)
+    {
+        if (fs::File entry = m_fs.open(path))
+        {
+            if (!entry.isDirectory())
+            {
+                entry.close();
+                return m_fs.remove(path);
+            }
+            while (fs::File child = entry.openNextFile())
+            {
+                deleteRecursive(path + "/" + child.name());
+                child = entry.openNextFile();
+            }
+            entry.close();
+            return m_fs.rmdir(path);
+        }
+        return false;
+    }
+
     String FileSystem::convertTimestamp(time_t timestamp)
     {
         static const char *months[] = 
@@ -399,7 +419,26 @@ namespace WebDAV
     void Handler::handleDELETE(FileSystem& wdfs, const String& path)
     { 
         log_i("handleDELETE");
-        m_server.sendCode(501, "");
+        
+        // do not remove the root
+        if (path == "/")
+            return m_server.sendCode(403, "Forbidden: can't delete root");
+
+        // check if an object exists
+        if (!wdfs->exists(path))
+            return m_server.sendCode(404, "Not found");
+
+        // determine whether it is a file or a directory
+        File file = wdfs->open(path);
+        if (!file)
+            m_server.sendCode(500, "Cannot open file/dir");
+        bool isDir = file.isDirectory();
+        file.close();
+
+        // trying to delete and check the result
+        if (!(isDir ? wdfs.deleteRecursive(path) : wdfs->remove(path)))
+            return m_server.sendCode(500, "Delete failed");
+        return m_server.sendCode(204, "Deleted");
     }
 
     void Handler::handleGET(FileSystem& wdfs, const String& path)

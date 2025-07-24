@@ -52,6 +52,8 @@ namespace WebDAV
         String resolveURI(fs::File& file);
         String resolvePath(const String& decodedURI);
 
+        bool deleteRecursive(const String& path);
+
         static String convertTimestamp(time_t timestamp);
         static String generateETag(const String& uri, time_t modified, size_t size);
 
