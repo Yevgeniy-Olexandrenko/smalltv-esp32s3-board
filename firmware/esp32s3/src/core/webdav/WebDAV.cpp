@@ -301,7 +301,7 @@ namespace WebDAV
     // done
     void Handler::handleOPTIONS()
     {
-        log_i("handleOPTIONS");
+        log_i("OPTIONS");
         m_server.sendHeader("DAV", "1");
         m_server.sendHeader("Allow", "OPTIONS, GET, PROPFIND, PUT, DELETE, MKCOL, COPY, MOVE");
         m_server.sendCode(200, "OK");
@@ -310,12 +310,12 @@ namespace WebDAV
     // done
     bool Handler::handlePROPFIND(const String& decodedURI)
     {
+        log_i("PROPFIND: %s", decodedURI.c_str());
+
         bool depthChild = (m_server.getHeader("Depth") == "1");
         std::vector<Resource> resources;
         if (decodedURI == "/")
         {
-            log_i("handlePROPFIND (root)");
-
             // collect the list of mounted file systems
             resources.emplace_back(*this, decodedURI, time(nullptr));
             if (depthChild)
@@ -340,8 +340,6 @@ namespace WebDAV
             // check if request can be processed
             FileSystem* wdfs = getMountedFS(decodedURI);
             if (!wdfs) return false;
-
-            log_i("handlePROPFIND (resources)");
 
             // check if resource available
             String path = wdfs->resolvePath(decodedURI);
@@ -394,7 +392,7 @@ namespace WebDAV
     // done
     void Handler::handleMKCOL(FileSystem& wdfs, const String& path)
     {   
-        log_i("handleMKCOL");
+        log_i("MKCOL: %s : %s", wdfs.getName().c_str(), path.c_str());
 
         // check that the request should not have a body
         if (m_server.getContentLength() > 0)
@@ -418,7 +416,7 @@ namespace WebDAV
 
     void Handler::handleDELETE(FileSystem& wdfs, const String& path)
     { 
-        log_i("handleDELETE");
+        log_i("DELETE: %s : %s", wdfs.getName().c_str(), path.c_str());
         
         // do not remove the root
         if (path == "/")
@@ -443,25 +441,25 @@ namespace WebDAV
 
     void Handler::handleGET(FileSystem& wdfs, const String& path)
     {
-        log_i("handleGET");
-        m_server.sendCode(501, "");
+        log_i("GET: %s : %s", wdfs.getName().c_str(), path.c_str());
+        m_server.sendCode(501, "Not implemented");
     }
 
     void Handler::handlePUT(FileSystem& wdfs, const String& path)    
     { 
-        log_i("handlePUT"); 
-        m_server.sendCode(501, "");
+        log_i("PUT: %s : %s", wdfs.getName().c_str(), path.c_str()); 
+        m_server.sendCode(501, "Not implemented");
     }
 
     void Handler::handleCOPY(FileSystem& wdfs, const String& path, const String& dest) 
     {
-        log_i("handleCOPY");
-        m_server.sendCode(501, "");
+        log_i("COPY: %s : %s -> %s", wdfs.getName().c_str(), path.c_str(), dest.c_str());
+        m_server.sendCode(501, "Not implemented");
     }
 
     void Handler::handleMOVE(FileSystem& wdfs, const String& path, const String& dest)
     { 
-        log_i("handleMOVE");
-        m_server.sendCode(501, "");
+        log_i("MOVE: %s : %s -> %s", wdfs.getName().c_str(), path.c_str(), dest.c_str());
+        m_server.sendCode(501, "Not implemented");
     }   
 }
