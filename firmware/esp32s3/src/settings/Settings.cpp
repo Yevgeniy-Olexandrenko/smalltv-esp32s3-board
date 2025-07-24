@@ -45,11 +45,9 @@ void Settings::initSets()
         };
         m_dav.addFS(
             driver::storage.getFlashFS(),
-            driver::storage.getFlashFS().mountPoint(),
             "Embedded Flash", quotaCb);
         m_dav.addFS(
-            driver::storage.getSDCardFS(), 
-            driver::storage.getSDCardFS().mountPoint(),
+            driver::storage.getSDCardFS(),
             "External SD Card", quotaCb);
     }
 }

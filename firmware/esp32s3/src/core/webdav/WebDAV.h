@@ -12,12 +12,12 @@ namespace core
 
         using QuotaSz = unsigned long long;
         using QuotaCb = std::function<void(fs::FS& fs, QuotaSz& available, QuotaSz& used)>;
-        struct FS { fs::FS* underlying = nullptr; String mountPoint, alias; QuotaCb quotaCb = nullptr; };
+        struct FS { fs::FS* underlying = nullptr; String mountPoint; QuotaCb quotaCb = nullptr; };
 
         class ResourceProps
         {
         public:
-            ResourceProps(const String& uri, time_t modified, const String& name);
+            ResourceProps(const String& uri, time_t modified);
             ResourceProps(const String& uri, time_t modified, size_t size);
 
             void setQuota(unsigned long available, unsigned long used);
@@ -25,13 +25,13 @@ namespace core
 
         private:
             String m_href, m_resourceType, m_lastModified;
-            String m_displayName, m_contentLength, m_contentType, m_etag;
+            String m_contentLength, m_contentType, m_etag;
             String m_availableBytes, m_usedBytes; // RFC 4331
         };
 
     public:
         void begin(WebServer& server);
-        void addFS(fs::FS& fs, const String& mountPoint, const String& alias = "", QuotaCb quotaCb = nullptr);
+        void addFS(fs::FS& fs, const String& mountPoint, QuotaCb quotaCb = nullptr);
 
     protected:
         bool canHandle(HTTPMethod method, String uri) override;
@@ -59,7 +59,7 @@ namespace core
         static String buildOptProp(const String &prop, const String &val);
 
         static String getFileURI(const String& mountPoint, fs::File& file);
-        static String getFilePath(const String &mountPoint, const String &uri);
+        static String resolvePath(const String& mountPoint, const String& decodedURI);
 
         /////////////////////////////////
 

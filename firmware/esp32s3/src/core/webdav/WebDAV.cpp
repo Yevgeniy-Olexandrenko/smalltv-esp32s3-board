@@ -16,9 +16,15 @@ namespace core
         m_mounted.clear();
     }
 
-    void WebDAV::addFS(fs::FS& fs, const String& mountPoint, const String& alias, QuotaCb quotaCb)
+    void WebDAV::addFS(fs::FS& fs, const String& mountPoint, QuotaCb quotaCb)
     {
-        m_mounted.push_back({ &fs, mountPoint, alias, quotaCb });
+        if (!mountPoint.isEmpty())
+        {
+            if (mountPoint.startsWith("/"))
+                m_mounted.push_back({ &fs, mountPoint, quotaCb });
+            else
+                m_mounted.push_back({ &fs, "/" + mountPoint, quotaCb });
+        }
     }
 
     bool WebDAV::canHandle(HTTPMethod method, String uri)
@@ -119,12 +125,12 @@ namespace core
         if (!fs) return false;
 
         // check if resource is NOT available
-        String path = getFilePath(fs->mountPoint, uri);
+        String path = resolvePath(fs->mountPoint, uri);
         Resource resource = getResource(fs, path);
 
         log_i("handleMKCOL");
         log_i("uri: %s", uri.c_str());
-        log_i("filesystem: %s (%s)", fs->mountPoint.c_str(), fs->alias.c_str());
+        log_i("filesystem: %s", fs->mountPoint.c_str());
         log_i("path: %s", path.c_str());
 
         if (resource != Resource::None)
@@ -167,7 +173,7 @@ namespace core
             log_i("handlePROPFIND (mounts)");
 
             // collect the list of mounted file systems
-            resources.emplace_back(uri, time(nullptr), "");
+            resources.emplace_back(uri, time(nullptr));
             if (getDepth() == Depth::Child)
             {
                 for (auto& fs : m_mounted)
@@ -176,15 +182,15 @@ namespace core
                     {
                         resources.emplace_back(
                             getFileURI(fs.mountPoint, childFile),
-                            childFile.getLastWrite(),
-                            fs.alias);
+                            childFile.getLastWrite());
+                        childFile.close();
+
                         if (fs.quotaCb)
                         {
                             QuotaSz available = 0, used = 0;
                             fs.quotaCb(*fs.underlying, available, used);
                             resources.back().setQuota(available, used);
                         }
-                        childFile.close();
                     }
                 }
             }
@@ -196,12 +202,12 @@ namespace core
             if (!fs) return false;
 
             // check if resource available
-            String path = getFilePath(fs->mountPoint, uri);
+            String path = resolvePath(fs->mountPoint, uri);
             Resource resource = getResource(fs, path);
 
             log_i("handlePROPFIND (resources)");
             log_i("uri: %s", uri.c_str());
-            log_i("filesystem: %s (%s)", fs->mountPoint.c_str(), fs->alias.c_str());
+            log_i("filesystem: %s", fs->mountPoint.c_str());
             log_i("path: %s", path.c_str());
 
             if (resource == Resource::None) 
@@ -366,9 +372,9 @@ namespace core
         return (mountPoint + path);
     }
 
-    String WebDAV::getFilePath(const String& mountPoint, const String& uri)
+    String WebDAV::resolvePath(const String& mountPoint, const String& decodedURI)
     {
-        String path = uri.substring(mountPoint.length());
+        String path = decodedURI.substring(mountPoint.length());
         if (path.isEmpty()) path = "/";
         if (path != "/" && path.endsWith("/"))
             path = path.substring(0, path.length() - 1);
@@ -426,10 +432,9 @@ namespace core
 
     ///////////////////////////////////////////////////////
 
-    WebDAV::ResourceProps::ResourceProps(const String &uri, time_t modified, const String &name)
+    WebDAV::ResourceProps::ResourceProps(const String &uri, time_t modified)
         : m_href(encodeURI(uri))
         , m_lastModified(getDateString(modified))
-        , m_displayName(name)
         , m_etag(getETag(uri, modified))
     {
         if (uri.endsWith("/"))
@@ -464,7 +469,6 @@ namespace core
             buildProp("propstat",
                 buildProp("prop",
                     buildProp   ("resourcetype", m_resourceType) +
-                    buildOptProp("displayname", m_displayName) +
                     buildOptProp("getcontentlength", m_contentLength) +
                     buildOptProp("getcontenttype", m_contentType) +
                     buildOptProp("getetag", m_etag) +
