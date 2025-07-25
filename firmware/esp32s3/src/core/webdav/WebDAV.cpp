@@ -414,7 +414,41 @@ namespace WebDAV
     void Handler::handleGET(FileSystem& fs, const String& path)
     {
         log_i("GET: %s : %s", fs.getName().c_str(), path.c_str());
-        m_server.sendCode(501, "Not implemented");
+
+        // check if an object exists
+        if (!fs->exists(path))
+            return m_server.sendCode(404, "Not found");
+
+        // check if object is not a directory
+        File file = fs->open(path);
+        if (!file || file.isDirectory()) 
+        {
+            if (file) file.close();
+            return m_server.sendCode(403, "Forbidden (is directory)");
+        }
+
+        // collecting basic information about a file for caching
+        String etag = getETag(file.size(), file.getLastWrite());
+        String lastmod = m_server.getHttpDateTime(file.getLastWrite());
+        String contentType = m_server.getContentType(path);
+
+        // handling caching and checking file for modification
+        if (m_server.getHeader("If-None-Match") == etag ||
+            m_server.getHeader("If-Modified-Since") == lastmod)
+        {
+            file.close();
+            m_server.sendHeader("ETag", etag);
+            m_server.sendHeader("Last-Modified", lastmod);
+            return m_server.sendCode(304, "");
+        }
+
+        // setting cache parameters and sending the file
+        m_server.sendHeader("ETag", etag);
+        m_server.sendHeader("Last-Modified", lastmod);
+        m_server.sendHeader("Cache-Control", "private, max-age=0, must-revalidate");
+        m_server.sendHeader("Content-Type", contentType);
+        m_server.sendFile(file, contentType);
+        file.close();
     }
 
     void Handler::handlePUT(FileSystem& fs, const String& path)    

@@ -31,6 +31,8 @@ namespace WebDAV
         virtual void sendContent(const String& content) { m_server->sendContent(content); }
         virtual void sendCode(int code, const String& contentType, const String& msg) { m_server->send(code, contentType, msg); }
         virtual void sendCode(int code, const String& msg) { m_server->send(code, "text/plain", msg); }
+        virtual void sendData(const uint8_t *buf, size_t size) { m_server->client().write(buf, size); }
+        virtual void sendFile(fs::File file, const String& contentType) { m_server->streamFile(file, contentType); }
 
     private:
         WebServer* m_server;
