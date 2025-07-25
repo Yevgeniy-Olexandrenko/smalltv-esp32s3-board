@@ -1,8 +1,5 @@
-#include <rom/miniz.h>
 #include <detail/mimetable.h>
 #include "WebDAV.h"
-
-#define crc32(a, len) mz_crc32(0xffffffff, (const unsigned char *)a, len)
 
 namespace WebDAV
 {
@@ -10,7 +7,8 @@ namespace WebDAV
     {
         static const char* hdrs[] = 
         {
-            "Depth", "Destination", "Overwrite", "If-None-Match", "If-Modified-Since", "Range"
+            "Depth", "Destination", "Overwrite", 
+            "If-None-Match", "If-Modified-Since"
         };
 
         RequestHandler& requestHandler = static_cast<RequestHandler&>(handler);
@@ -214,10 +212,11 @@ namespace WebDAV
 
             case HTTP_MKCOL:
             case HTTP_DELETE:
+            case HTTP_HEAD:
             case HTTP_GET:
             case HTTP_PUT:
-            case HTTP_COPY:
             case HTTP_MOVE:
+            case HTTP_COPY:
                 String decodedURI = m_server.decodeURI(uri);
                 FileSystem* fs = getMountedFS(decodedURI);
                 return (fs != nullptr);
@@ -246,12 +245,25 @@ namespace WebDAV
             String destination = server.header("Destination");
             switch(method)
             {
-                case HTTP_MKCOL:  handleMKCOL  (*fs, path); break;
-                case HTTP_DELETE: handleDELETE (*fs, path); break;
-                case HTTP_GET:    handleGET    (*fs, path); break;
-                case HTTP_PUT:    handlePUT    (*fs, path); break;
-                case HTTP_COPY:   handleCOPY   (*fs, path, destination); break;
-                case HTTP_MOVE:   handleMOVE   (*fs, path, destination); break;
+                case HTTP_MKCOL:
+                    handleMKCOL(*fs, path);
+                    break;
+                case HTTP_DELETE:
+                    handleDELETE(*fs, path); 
+                    break;
+                case HTTP_HEAD:
+                case HTTP_GET:
+                    handleGET_HEAD(*fs, path, method == HTTP_HEAD); 
+                    break;
+                case HTTP_PUT:
+                    handlePUT(*fs, path); 
+                    break;
+                case HTTP_MOVE:
+                    handleMOVE(*fs, path, destination);
+                    break;
+                case HTTP_COPY:
+                    handleCOPY(*fs, path, destination);
+                    break;
             }
             return true;
         }        
@@ -275,7 +287,7 @@ namespace WebDAV
     {
         log_i("OPTIONS");
         m_server.sendHeader("DAV", "1");
-        m_server.sendHeader("Allow", "OPTIONS, GET, PROPFIND, PUT, DELETE, MKCOL, COPY, MOVE");
+        m_server.sendHeader("Allow", "OPTIONS, PROPFIND, MKCOL, DELETE, HEAD, GET, PUT, MOVE, COPY");
         m_server.sendCode(200, "OK");
     }
 
@@ -411,9 +423,12 @@ namespace WebDAV
         return m_server.sendCode(204, "Deleted");
     }
 
-    void Handler::handleGET(FileSystem& fs, const String& path)
+    void Handler::handleGET_HEAD(FileSystem& fs, const String& path, bool isHEAD)
     {
-        log_i("GET: %s : %s", fs.getName().c_str(), path.c_str());
+        if (isHEAD)
+            log_i("HEAD: %s : %s", fs.getName().c_str(), path.c_str());
+        else
+            log_i("GET: %s : %s", fs.getName().c_str(), path.c_str());
 
         // check if an object exists
         if (!fs->exists(path))
@@ -446,8 +461,14 @@ namespace WebDAV
         m_server.sendHeader("ETag", etag);
         m_server.sendHeader("Last-Modified", lastmod);
         m_server.sendHeader("Cache-Control", "private, max-age=0, must-revalidate");
-        m_server.sendHeader("Content-Type", contentType);
-        m_server.sendFile(file, contentType);
+        m_server.sendHeader("Accept-Ranges", "bytes");
+        if (isHEAD)
+        {
+            m_server.setContentLength(file.size());
+            m_server.sendCode(200, contentType, "");
+        }
+        else
+            m_server.sendFile(file, contentType);
         file.close();
     }
 
@@ -457,15 +478,15 @@ namespace WebDAV
         m_server.sendCode(501, "Not implemented");
     }
 
-    void Handler::handleCOPY(FileSystem& fs, const String& path, const String& dest) 
-    {
-        log_i("COPY: %s : %s -> %s", fs.getName().c_str(), path.c_str(), dest.c_str());
-        m_server.sendCode(501, "Not implemented");
-    }
-
     void Handler::handleMOVE(FileSystem& fs, const String& path, const String& dest)
     { 
         log_i("MOVE: %s : %s -> %s", fs.getName().c_str(), path.c_str(), dest.c_str());
+        m_server.sendCode(501, "Not implemented");
+    }
+
+    void Handler::handleCOPY(FileSystem& fs, const String& path, const String& dest) 
+    {
+        log_i("COPY: %s : %s -> %s", fs.getName().c_str(), path.c_str(), dest.c_str());
         m_server.sendCode(501, "Not implemented");
     }   
 }

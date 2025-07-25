@@ -101,12 +101,12 @@ namespace WebDAV
 
         void handleOPTIONS  ();
         bool handlePROPFIND (const String& decodedURI);
-        void handleMKCOL    (FileSystem& wdfs, const String& path);
-        void handleDELETE   (FileSystem& wdfs, const String& path);
-        void handleGET      (FileSystem& wdfs, const String& path);
-        void handlePUT      (FileSystem& wdfs, const String& path);
-        void handleCOPY     (FileSystem& wdfs, const String& path, const String& dest);
-        void handleMOVE     (FileSystem& wdfs, const String& path, const String& dest);
+        void handleMKCOL    (FileSystem& fs, const String& path);
+        void handleDELETE   (FileSystem& fs, const String& path);
+        void handleGET_HEAD (FileSystem& fs, const String& path, bool isHEAD);
+        void handlePUT      (FileSystem& fs, const String& path);
+        void handleMOVE     (FileSystem& fs, const String& path, const String& dest);
+        void handleCOPY     (FileSystem& fs, const String& path, const String& dest);
 
     private:
         Server m_server;
