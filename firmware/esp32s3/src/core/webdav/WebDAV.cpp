@@ -54,6 +54,14 @@ namespace WebDAV
         return mime::mimeTable[mime::none].mimeType;
     }
 
+    String Server::getHttpDateTime(time_t timestamp) const
+    {
+        char buf[40];
+        struct tm* tmstruct = gmtime(&timestamp);
+        strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tmstruct);
+        return String(buf);
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
     String FileSystem::resolveURI(fs::File &file)
@@ -93,46 +101,6 @@ namespace WebDAV
         return false;
     }
 
-    String FileSystem::convertTimestamp(time_t timestamp)
-    {
-        static const char *months[] = 
-        {
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        };
-
-        static const char *wdays[] = 
-        {
-            "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
-        };
-
-        // get & convert time to required format
-        // Tue, 13 Oct 2015 17:07:35 GMT
-        tm* gTm = gmtime(&timestamp);
-        char buf[40];
-        snprintf(buf, sizeof(buf), "%s, %02d %s %04d %02d:%02d:%02d GMT",
-            wdays[gTm->tm_wday],
-            gTm->tm_mday,
-            months[gTm->tm_mon],
-            gTm->tm_year + 1900,
-            gTm->tm_hour,
-            gTm->tm_min,
-            gTm->tm_sec);
-        return buf;
-    }
-
-    String FileSystem::generateETag(const String &uri, time_t modified, size_t size)
-    {
-        char buf[uri.length() + 32];
-        snprintf(buf, sizeof(buf), "%s%ld%u",
-            uri.c_str(), 
-            static_cast<long>(modified),
-            static_cast<unsigned int>(size));
-        uint32_t crc = crc32(buf, strlen(buf));
-        snprintf(buf, sizeof(buf), "\"%08x\"", crc);
-        return buf;
-    }
-
     bool FileSystem::getQuota(QuotaSz &available, QuotaSz &used)
     {
         available = 0, used = 0;
@@ -148,8 +116,7 @@ namespace WebDAV
 
     Handler::Resource::Resource(Handler &handler, const String &uri, time_t modified)
         : m_href(handler.m_server.encodeURI(uri))
-        , m_lastModified(FileSystem::convertTimestamp(modified))
-        , m_etag(FileSystem::generateETag(uri, modified, 0))
+        , m_lastModified(handler.m_server.getHttpDateTime(modified))
     {
         if (uri.endsWith("/"))
             m_resourceType = "<D:collection/>";
@@ -157,8 +124,8 @@ namespace WebDAV
 
     Handler::Resource::Resource(Handler &handler, const String &uri, time_t modified, size_t size)
         : m_href(handler.m_server.encodeURI(uri))
-        , m_lastModified(FileSystem::convertTimestamp(modified))
-        , m_etag(FileSystem::generateETag(uri, modified, size))
+        , m_lastModified(handler.m_server.getHttpDateTime(modified))
+        , m_etag(handler.getETag(size, modified))
     {
         if (uri.endsWith("/"))
             m_resourceType = "<D:collection/>";
@@ -252,8 +219,8 @@ namespace WebDAV
             case HTTP_COPY:
             case HTTP_MOVE:
                 String decodedURI = m_server.decodeURI(uri);
-                FileSystem* wdfs = getMountedFS(decodedURI);
-                return (wdfs != nullptr);
+                FileSystem* fs = getMountedFS(decodedURI);
+                return (fs != nullptr);
         }
         return false;
     }
@@ -272,19 +239,19 @@ namespace WebDAV
             return handlePROPFIND(decodedURI);
         }
 
-        FileSystem* wdfs = getMountedFS(decodedURI);
-        if (wdfs)
+        FileSystem* fs = getMountedFS(decodedURI);
+        if (fs)
         {
-            String path = wdfs->resolvePath(decodedURI);
+            String path = fs->resolvePath(decodedURI);
             String destination = server.header("Destination");
             switch(method)
             {
-                case HTTP_MKCOL:  handleMKCOL  (*wdfs, path); break;
-                case HTTP_DELETE: handleDELETE (*wdfs, path); break;
-                case HTTP_GET:    handleGET    (*wdfs, path); break;
-                case HTTP_PUT:    handlePUT    (*wdfs, path); break;
-                case HTTP_COPY:   handleCOPY   (*wdfs, path, destination); break;
-                case HTTP_MOVE:   handleMOVE   (*wdfs, path, destination); break;
+                case HTTP_MKCOL:  handleMKCOL  (*fs, path); break;
+                case HTTP_DELETE: handleDELETE (*fs, path); break;
+                case HTTP_GET:    handleGET    (*fs, path); break;
+                case HTTP_PUT:    handlePUT    (*fs, path); break;
+                case HTTP_COPY:   handleCOPY   (*fs, path, destination); break;
+                case HTTP_MOVE:   handleMOVE   (*fs, path, destination); break;
             }
             return true;
         }        
@@ -293,9 +260,14 @@ namespace WebDAV
 
     FileSystem* Handler::getMountedFS(const String &uri)
     {
-        for (auto& wdfs : m_mountedFS)
-            if (uri.startsWith(wdfs.getName())) return &wdfs;
+        for (auto& fs : m_mountedFS)
+            if (uri.startsWith(fs.getName())) return &fs;
         return nullptr;
+    }
+
+    String Handler::getETag(size_t size, time_t modified) const
+    {
+        return ('"' + String(size) + '-' + String(modified) + '"');
     }
 
     // done
@@ -320,16 +292,16 @@ namespace WebDAV
             resources.emplace_back(*this, decodedURI, time(nullptr));
             if (depthChild)
             {
-                for (auto& wdfs : m_mountedFS)
+                for (auto& fs : m_mountedFS)
                 {
-                    if (fs::File childFile = wdfs->open("/"))
+                    if (fs::File childFile = fs->open("/"))
                     {
                         resources.emplace_back(
-                            *this, wdfs.resolveURI(childFile), childFile.getLastWrite());
+                            *this, fs.resolveURI(childFile), childFile.getLastWrite());
                         childFile.close();
 
                         FileSystem::QuotaSz available, used;
-                        if (wdfs.getQuota(available, used))
+                        if (fs.getQuota(available, used))
                             resources.back().setQuota(available, used);
                     }
                 }
@@ -338,27 +310,27 @@ namespace WebDAV
         else
         {
             // check if request can be processed
-            FileSystem* wdfs = getMountedFS(decodedURI);
-            if (!wdfs) return false;
+            FileSystem* fs = getMountedFS(decodedURI);
+            if (!fs) return false;
 
             // check if resource available
-            String path = wdfs->resolvePath(decodedURI);
-            if (!(*wdfs)->exists(path))
+            String path = fs->resolvePath(decodedURI);
+            if (!(*fs)->exists(path))
             {
                 m_server.sendCode(404, "Not found");
                 return true;
             }
 
             // collect the list of resources
-            fs::File baseFile = (*wdfs)->open(path);
+            fs::File baseFile = (*fs)->open(path);
             resources.emplace_back(
-                *this, wdfs->resolveURI(baseFile), baseFile.getLastWrite(), baseFile.size());
+                *this, fs->resolveURI(baseFile), baseFile.getLastWrite(), baseFile.size());
             if (baseFile.isDirectory() && depthChild)
             {
                 while (fs::File childFile = baseFile.openNextFile())
                 {
                     resources.emplace_back(
-                        *this, wdfs->resolveURI(childFile), childFile.getLastWrite(), childFile.size());
+                        *this, fs->resolveURI(childFile), childFile.getLastWrite(), childFile.size());
                     childFile.close();
                 }
             }
@@ -390,76 +362,76 @@ namespace WebDAV
     }
 
     // done
-    void Handler::handleMKCOL(FileSystem& wdfs, const String& path)
+    void Handler::handleMKCOL(FileSystem& fs, const String& path)
     {   
-        log_i("MKCOL: %s : %s", wdfs.getName().c_str(), path.c_str());
+        log_i("MKCOL: %s : %s", fs.getName().c_str(), path.c_str());
 
         // check that the request should not have a body
         if (m_server.getContentLength() > 0)
             return m_server.sendCode(415, "MKCOL with body not supported");
 
         // check if resource is NOT available
-        if (wdfs->exists(path)) 
+        if (fs->exists(path)) 
             return m_server.sendCode(405, "File or directory already exists");
 
         // check if parent directory exists
         int slashIdx = path.lastIndexOf('/');
         String parent = (slashIdx > 0) ? path.substring(0, slashIdx) : "/";
-        if (!wdfs->exists(parent)) 
+        if (!fs->exists(parent)) 
             return m_server.sendCode(409, "Parent directory does not exist");
 
         // trying to create the directory
-        if (!wdfs->mkdir(path)) 
+        if (!fs->mkdir(path)) 
             return m_server.sendCode(500, "Failed to create directory");
         m_server.sendCode(201, "Directory created");
     }
 
-    void Handler::handleDELETE(FileSystem& wdfs, const String& path)
+    void Handler::handleDELETE(FileSystem& fs, const String& path)
     { 
-        log_i("DELETE: %s : %s", wdfs.getName().c_str(), path.c_str());
+        log_i("DELETE: %s : %s", fs.getName().c_str(), path.c_str());
         
         // do not remove the root
         if (path == "/")
             return m_server.sendCode(403, "Forbidden: can't delete root");
 
         // check if an object exists
-        if (!wdfs->exists(path))
+        if (!fs->exists(path))
             return m_server.sendCode(404, "Not found");
 
         // determine whether it is a file or a directory
-        File file = wdfs->open(path);
+        File file = fs->open(path);
         if (!file)
             m_server.sendCode(500, "Cannot open file/dir");
         bool isDir = file.isDirectory();
         file.close();
 
         // trying to delete and check the result
-        if (!(isDir ? wdfs.deleteRecursive(path) : wdfs->remove(path)))
+        if (!(isDir ? fs.deleteRecursive(path) : fs->remove(path)))
             return m_server.sendCode(500, "Delete failed");
         return m_server.sendCode(204, "Deleted");
     }
 
-    void Handler::handleGET(FileSystem& wdfs, const String& path)
+    void Handler::handleGET(FileSystem& fs, const String& path)
     {
-        log_i("GET: %s : %s", wdfs.getName().c_str(), path.c_str());
+        log_i("GET: %s : %s", fs.getName().c_str(), path.c_str());
         m_server.sendCode(501, "Not implemented");
     }
 
-    void Handler::handlePUT(FileSystem& wdfs, const String& path)    
+    void Handler::handlePUT(FileSystem& fs, const String& path)    
     { 
-        log_i("PUT: %s : %s", wdfs.getName().c_str(), path.c_str()); 
+        log_i("PUT: %s : %s", fs.getName().c_str(), path.c_str()); 
         m_server.sendCode(501, "Not implemented");
     }
 
-    void Handler::handleCOPY(FileSystem& wdfs, const String& path, const String& dest) 
+    void Handler::handleCOPY(FileSystem& fs, const String& path, const String& dest) 
     {
-        log_i("COPY: %s : %s -> %s", wdfs.getName().c_str(), path.c_str(), dest.c_str());
+        log_i("COPY: %s : %s -> %s", fs.getName().c_str(), path.c_str(), dest.c_str());
         m_server.sendCode(501, "Not implemented");
     }
 
-    void Handler::handleMOVE(FileSystem& wdfs, const String& path, const String& dest)
+    void Handler::handleMOVE(FileSystem& fs, const String& path, const String& dest)
     { 
-        log_i("MOVE: %s : %s -> %s", wdfs.getName().c_str(), path.c_str(), dest.c_str());
+        log_i("MOVE: %s : %s -> %s", fs.getName().c_str(), path.c_str(), dest.c_str());
         m_server.sendCode(501, "Not implemented");
     }   
 }

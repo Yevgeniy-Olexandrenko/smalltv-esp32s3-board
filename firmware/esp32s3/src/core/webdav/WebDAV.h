@@ -18,6 +18,7 @@ namespace WebDAV
         virtual String decodeURI(const String& encodedURI) const;
         virtual String encodeURI(const String& decodedURI) const;
         virtual String getContentType(const String& uri) const;
+        virtual String getHttpDateTime(time_t timestamp) const;
 
         // get headers
         virtual bool hasHeader(const String& hdr) { return m_server->hasHeader(hdr); }
@@ -53,9 +54,6 @@ namespace WebDAV
         String resolvePath(const String& decodedURI);
 
         bool deleteRecursive(const String& path);
-
-        static String convertTimestamp(time_t timestamp);
-        static String generateETag(const String& uri, time_t modified, size_t size);
 
         const String& getName() const { return m_name; }
         bool getQuota(QuotaSz& available, QuotaSz& used);
@@ -97,6 +95,7 @@ namespace WebDAV
 
     private:
         FileSystem* getMountedFS(const String& uri);
+        String getETag(size_t size, time_t modified) const;
 
         void handleOPTIONS  ();
         bool handlePROPFIND (const String& decodedURI);
