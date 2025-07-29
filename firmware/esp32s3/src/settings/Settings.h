@@ -3,7 +3,7 @@
 #include <GyverDBFile.h>
 #include <SettingsESP.h>
 #include "DBKeys.h"
-#include "core/webdav/WebDAV.h"
+#include "core/webdav/Handler.h"
 
 class Settings
 {

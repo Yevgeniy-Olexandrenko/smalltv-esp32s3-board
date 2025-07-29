@@ -1,5 +1,5 @@
 #include <detail/mimetable.h>
-#include "WebDAV.h"
+#include "Handler.h"
 
 namespace WebDAV
 {
@@ -58,56 +58,6 @@ namespace WebDAV
         struct tm* tmstruct = gmtime(&timestamp);
         strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tmstruct);
         return String(buf);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    String FileSystem::resolveURI(fs::File &file)
-    {
-        String path = file.path();
-        if (!path.startsWith("/")) path = "/" + path;
-        if (file.isDirectory() && !path.endsWith("/")) path += "/";
-        return (m_name + path);
-    }
-
-    String FileSystem::resolvePath(const String &decodedURI)
-    {
-        String path = decodedURI.substring(m_name.length());
-        if (path.isEmpty()) path = "/";
-        if (path != "/" && path.endsWith("/"))
-            path = path.substring(0, path.length() - 1);
-        return path;
-    }
-
-    bool FileSystem::deleteRecursive(const String &path)
-    {
-        if (fs::File entry = m_fs.open(path))
-        {
-            if (!entry.isDirectory())
-            {
-                entry.close();
-                return m_fs.remove(path);
-            }
-            while (fs::File child = entry.openNextFile())
-            {
-                deleteRecursive(path + "/" + child.name());
-                child = entry.openNextFile();
-            }
-            entry.close();
-            return m_fs.rmdir(path);
-        }
-        return false;
-    }
-
-    bool FileSystem::getQuota(QuotaSz &available, QuotaSz &used)
-    {
-        available = 0, used = 0;
-        if (m_quotaCb)
-        {
-            m_quotaCb(m_fs, available, used);
-            return true;
-        }
-        return false;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -218,7 +168,7 @@ namespace WebDAV
             case HTTP_MOVE:
             case HTTP_COPY:
                 String decodedURI = m_server.decodeURI(uri);
-                FileSystem* fs = getMountedFS(decodedURI);
+                FileSystem* fs = resolveFS(decodedURI);
                 return (fs != nullptr);
         }
         return false;
@@ -238,39 +188,48 @@ namespace WebDAV
             return handlePROPFIND(decodedURI);
         }
 
-        FileSystem* fs = getMountedFS(decodedURI);
-        if (fs)
+        if (FileSystem* sfs = resolveFS(decodedURI))
         {
-            String path = fs->resolvePath(decodedURI);
-            String destination = server.header("Destination");
+            String spath = sfs->resolvePath(decodedURI);
             switch(method)
             {
                 case HTTP_MKCOL:
-                    handleMKCOL(*fs, path);
-                    break;
+                    handleMKCOL(*sfs, spath);
+                    return true;
+
                 case HTTP_DELETE:
-                    handleDELETE(*fs, path); 
-                    break;
+                    handleDELETE(*sfs, spath); 
+                    return true;
+
                 case HTTP_HEAD:
                 case HTTP_GET:
-                    handleGET_HEAD(*fs, path, method == HTTP_HEAD); 
-                    break;
+                    handleGET_HEAD(*sfs, spath, method == HTTP_HEAD); 
+                    return true;
+
                 case HTTP_PUT:
-                    handlePUT(*fs, path); 
-                    break;
-                case HTTP_MOVE:
-                    handleMOVE(*fs, path, destination);
-                    break;
-                case HTTP_COPY:
-                    handleCOPY(*fs, path, destination);
-                    break;
+                    handlePUT(*sfs, spath); 
+                    return true;
             }
-            return true;
-        }        
+
+            String destination = server.header("Destination");
+            if (!destination.isEmpty())
+            {
+                decodedURI = m_server.decodeURI(destination.substring(destination.indexOf('/', 8)));
+                if (FileSystem* dfs = resolveFS(decodedURI))
+                {
+                    String dpath = dfs->resolvePath(decodedURI);
+                    if (method == HTTP_MOVE)
+                        handleMOVE(*sfs, spath, *dfs, dpath);
+                    else if (method == HTTP_COPY)
+                        handleCOPY(*sfs, spath, *dfs, dpath);
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
-    FileSystem* Handler::getMountedFS(const String &uri)
+    FileSystem* Handler::resolveFS(const String &uri)
     {
         for (auto& fs : m_mountedFS)
             if (uri.startsWith(fs.getName())) return &fs;
@@ -322,7 +281,7 @@ namespace WebDAV
         else
         {
             // check if request can be processed
-            FileSystem* fs = getMountedFS(decodedURI);
+            FileSystem* fs = resolveFS(decodedURI);
             if (!fs) return false;
 
             // check if resource available
@@ -410,15 +369,8 @@ namespace WebDAV
         if (!fs->exists(path))
             return m_server.sendCode(404, "Not found");
 
-        // determine whether it is a file or a directory
-        File file = fs->open(path);
-        if (!file)
-            m_server.sendCode(500, "Cannot open file/dir");
-        bool isDir = file.isDirectory();
-        file.close();
-
         // trying to delete and check the result
-        if (!(isDir ? fs.deleteRecursive(path) : fs->remove(path)))
+        if (!FileSystem::removeFileDir(fs, path))
             return m_server.sendCode(500, "Delete failed");
         return m_server.sendCode(204, "Deleted");
     }
@@ -478,15 +430,15 @@ namespace WebDAV
         m_server.sendCode(501, "Not implemented");
     }
 
-    void Handler::handleMOVE(FileSystem& fs, const String& path, const String& dest)
-    { 
-        log_i("MOVE: %s : %s -> %s", fs.getName().c_str(), path.c_str(), dest.c_str());
+    void Handler::handleMOVE(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath)
+    {
+        log_i("MOVE: %s : %s -> %s : %s", sfs.getName().c_str(), spath.c_str(), dfs.getName().c_str(), dpath.c_str());
         m_server.sendCode(501, "Not implemented");
     }
 
-    void Handler::handleCOPY(FileSystem& fs, const String& path, const String& dest) 
+    void Handler::handleCOPY(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath)
     {
-        log_i("COPY: %s : %s -> %s", fs.getName().c_str(), path.c_str(), dest.c_str());
+        log_i("COPY: %s : %s -> %s : %s", sfs.getName().c_str(), spath.c_str(), dfs.getName().c_str(), dpath.c_str());
         m_server.sendCode(501, "Not implemented");
-    }   
+    }
 }

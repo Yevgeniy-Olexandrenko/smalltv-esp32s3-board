@@ -1,7 +1,7 @@
 #pragma once
 
 #include <WebServer.h>
-#include <FS.h>
+#include "FileSystem.h"
 
 namespace WebDAV
 {
@@ -38,34 +38,6 @@ namespace WebDAV
         WebServer* m_server;
     };
 
-    class FileSystem
-    {
-    public:
-        using QuotaSz = unsigned long long;
-        using QuotaCb = std::function<void(fs::FS& fs, QuotaSz& available, QuotaSz& used)>;
-
-        FileSystem(fs::FS& fs, const String& name, QuotaCb quotaCb)
-            : m_fs(fs)
-            , m_name(name)
-            , m_quotaCb(quotaCb)
-        {}
-
-        fs::FS* operator->() { return &m_fs; }
-
-        String resolveURI(fs::File& file);
-        String resolvePath(const String& decodedURI);
-
-        bool deleteRecursive(const String& path);
-
-        const String& getName() const { return m_name; }
-        bool getQuota(QuotaSz& available, QuotaSz& used);
-
-    private:
-        fs::FS& m_fs;
-        String  m_name;
-        QuotaCb m_quotaCb;
-    };
-
     class Handler : public RequestHandler
     {
         class Resource
@@ -96,7 +68,7 @@ namespace WebDAV
         bool handle(WebServer& server, HTTPMethod method, String uri) override;
 
     private:
-        FileSystem* getMountedFS(const String& uri);
+        FileSystem* resolveFS(const String& uri);
         String getETag(size_t size, time_t modified) const;
 
         void handleOPTIONS  ();
@@ -105,8 +77,8 @@ namespace WebDAV
         void handleDELETE   (FileSystem& fs, const String& path);
         void handleGET_HEAD (FileSystem& fs, const String& path, bool isHEAD);
         void handlePUT      (FileSystem& fs, const String& path);
-        void handleMOVE     (FileSystem& fs, const String& path, const String& dest);
-        void handleCOPY     (FileSystem& fs, const String& path, const String& dest);
+        void handleMOVE     (FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
+        void handleCOPY     (FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
 
     private:
         Server m_server;
