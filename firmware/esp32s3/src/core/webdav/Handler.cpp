@@ -272,7 +272,7 @@ namespace WebDAV
             {
                 for (auto& fs : m_mountedFS)
                 {
-                    if (fs::File childFile = fs->open("/"))
+                    if (fs::File childFile = fs->open("/", FILE_READ))
                     {
                         resources.emplace_back(
                             *this, fs.resolveURI(childFile), childFile.getLastWrite());
@@ -300,7 +300,7 @@ namespace WebDAV
             }
 
             // collect the list of resources
-            fs::File baseFile = (*fs)->open(path);
+            fs::File baseFile = (*fs)->open(path, FILE_READ);
             resources.emplace_back(
                 *this, fs->resolveURI(baseFile), baseFile.getLastWrite(), baseFile.size());
             if (baseFile.isDirectory() && depthChild)
@@ -393,7 +393,7 @@ namespace WebDAV
             return m_server.sendCode(404, "Not found");
 
         // check if object is not a directory
-        File file = fs->open(path);
+        File file = fs->open(path, FILE_READ);
         if (!file || file.isDirectory()) 
             return m_server.sendCode(403, "Forbidden (is directory)");
 

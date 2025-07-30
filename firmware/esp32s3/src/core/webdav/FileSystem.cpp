@@ -30,6 +30,59 @@ namespace WebDAV
         return false;
     }
 
+    bool FileSystem::copyFileDir(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath)
+    {
+        if (!sfs->exists(spath)) return false;
+
+        // checks if the source is a file or directory
+        if (fs::File file = sfs->open(spath, FILE_READ))
+        {
+            bool isDir = file.isDirectory();
+            file.close();
+
+            if (isDir)
+                return copyDir(sfs, spath, dfs, dpath);
+            else
+                return copyFile(sfs, spath, dfs, dpath);
+        }
+        return false;
+    }
+
+    bool FileSystem::removeFileDir(FileSystem& fs, const String& path)
+    {
+        if (!fs->exists(path)) return false;
+
+        // checks if it's a file path and tries to delete it
+        if (fs::File file = fs->open(path, FILE_READ))
+        {
+            if (!file.isDirectory()) return fs->remove(path);
+        }
+        else return false;
+
+        // tries to delete a directory with its contents
+        std::vector<String> dirs { path };
+        for (size_t i = 0; i < dirs.size(); ++i)
+        {
+            if (fs::File dir = fs->open(dirs[i], FILE_READ))
+            {
+                if (dir.isDirectory())
+                {
+                    bool isDir;
+                    String child;
+                    dir.rewindDirectory();
+                    while (!(child = dir.getNextFileName(&isDir)).isEmpty())
+                    {
+                        if (isDir) dirs.push_back(child);
+                        else if (!fs->remove(child)) return false;
+                    }
+                }
+            }
+        }
+        for (size_t i = dirs.size(); i-- > 0;) 
+            if (!fs->rmdir(dirs[i])) return false;
+        return true;
+    }
+
     bool FileSystem::copyFile(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath)
     {
         // open sourse and destination files
@@ -90,59 +143,6 @@ namespace WebDAV
                 }
             }
         }
-        return true;
-    }
-
-    bool FileSystem::copyFileDir(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath)
-    {
-        if (!sfs->exists(spath)) return false;
-
-        // checks if the source is a file or directory
-        if (fs::File file = sfs->open(spath, FILE_READ))
-        {
-            bool isDir = file.isDirectory();
-            file.close();
-
-            if (isDir)
-                return copyDir(sfs, spath, dfs, dpath);
-            else
-                return copyFile(sfs, spath, dfs, dpath);
-        }
-        return false;
-    }
-
-    bool FileSystem::removeFileDir(FileSystem& fs, const String& path)
-    {
-        if (!fs->exists(path)) return false;
-
-        // checks if it's a file path and tries to delete it
-        if (fs::File file = fs->open(path, FILE_READ))
-        {
-            if (!file.isDirectory()) return fs->remove(path);
-        }
-        else return false;
-
-        // tries to delete a directory with its contents
-        std::vector<String> dirs { path };
-        for (size_t i = 0; i < dirs.size(); ++i)
-        {
-            if (fs::File dir = fs->open(dirs[i], FILE_READ))
-            {
-                if (dir.isDirectory())
-                {
-                    bool isDir;
-                    String child;
-                    dir.rewindDirectory();
-                    while (!(child = dir.getNextFileName(&isDir)).isEmpty())
-                    {
-                        if (isDir) dirs.push_back(child);
-                        else if (!fs->remove(child)) return false;
-                    }
-                }
-            }
-        }
-        for (size_t i = dirs.size(); i-- > 0;) 
-            if (!fs->rmdir(dirs[i])) return false;
         return true;
     }
 }

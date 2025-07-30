@@ -23,11 +23,12 @@ namespace WebDAV
         String resolveURI(fs::File& file);
         String resolvePath(const String& decodedURI);
 
-    public:
-        static bool copyFile(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
-        static bool copyDir(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
         static bool copyFileDir(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath);
         static bool removeFileDir(FileSystem &fs, const String &path);
+
+    private:
+        static bool copyFile(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
+        static bool copyDir(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
 
     private:
         fs::FS& m_fs;
