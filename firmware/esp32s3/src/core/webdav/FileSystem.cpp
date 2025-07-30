@@ -33,9 +33,9 @@ namespace WebDAV
     bool FileSystem::copyFile(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath)
     {
         // open sourse and destination files
-        fs::File sfile  = sfs->open(spath, FILE_READ);
+        fs::File sfile = sfs->open(spath, FILE_READ);
         if (!sfile) return false;
-        File dfile = dfs->open(dpath, FILE_WRITE);
+        fs::File dfile = dfs->open(dpath, FILE_WRITE);
         if (!dfile) return false;
 
         // allocate buffer in PSRAM if possible
@@ -91,6 +91,24 @@ namespace WebDAV
             }
         }
         return true;
+    }
+
+    bool FileSystem::copyFileDir(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath)
+    {
+        if (!sfs->exists(spath)) return false;
+
+        // checks if the source is a file or directory
+        if (fs::File file = sfs->open(spath, FILE_READ))
+        {
+            bool isDir = file.isDirectory();
+            file.close();
+
+            if (isDir)
+                return copyDir(sfs, spath, dfs, dpath);
+            else
+                return copyFile(sfs, spath, dfs, dpath);
+        }
+        return false;
     }
 
     bool FileSystem::removeFileDir(FileSystem& fs, const String& path)

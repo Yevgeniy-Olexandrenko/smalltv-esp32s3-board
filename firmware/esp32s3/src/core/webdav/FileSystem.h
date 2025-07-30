@@ -26,7 +26,8 @@ namespace WebDAV
     public:
         static bool copyFile(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
         static bool copyDir(FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
-        static bool removeFileDir(FileSystem& fs, const String& path);
+        static bool copyFileDir(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath);
+        static bool removeFileDir(FileSystem &fs, const String &path);
 
     private:
         fs::FS& m_fs;

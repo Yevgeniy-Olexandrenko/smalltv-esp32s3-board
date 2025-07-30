@@ -211,17 +211,26 @@ namespace WebDAV
                     return true;
             }
 
-            String destination = server.header("Destination");
-            if (!destination.isEmpty())
+            // handle destination
+            String destinationHeader = m_server.getHeader("Destination");
+            if (!destinationHeader.isEmpty())
             {
-                decodedURI = m_server.decodeURI(destination.substring(destination.indexOf('/', 8)));
+                decodedURI = m_server.decodeURI(destinationHeader.substring(destinationHeader.indexOf('/', 8)));
                 if (FileSystem* dfs = resolveFS(decodedURI))
                 {
                     String dpath = dfs->resolvePath(decodedURI);
+
+                    // handle overwrite
+                    bool overwrite = true;
+                    String overwriteHeader = m_server.getHeader("Overwrite");
+                    if (!overwriteHeader.isEmpty()) 
+                        overwrite = (overwriteHeader[0] == 'T' || overwriteHeader[0] == 't');
+
+                    // handle operation
                     if (method == HTTP_MOVE)
-                        handleMOVE(*sfs, spath, *dfs, dpath);
+                        handleMOVE(*sfs, spath, *dfs, dpath, overwrite);
                     else if (method == HTTP_COPY)
-                        handleCOPY(*sfs, spath, *dfs, dpath);
+                        handleCOPY(*sfs, spath, *dfs, dpath, overwrite);
                     return true;
                 }
             }
@@ -241,7 +250,6 @@ namespace WebDAV
         return ('"' + String(size) + '-' + String(modified) + '"');
     }
 
-    // done
     void Handler::handleOPTIONS()
     {
         log_i("OPTIONS");
@@ -250,7 +258,6 @@ namespace WebDAV
         m_server.sendCode(200, "OK");
     }
 
-    // done
     bool Handler::handlePROPFIND(const String& decodedURI)
     {
         log_i("PROPFIND: %s", decodedURI.c_str());
@@ -332,7 +339,6 @@ namespace WebDAV
         return true;
     }
 
-    // done
     void Handler::handleMKCOL(FileSystem& fs, const String& path)
     {   
         log_i("MKCOL: %s : %s", fs.getName().c_str(), path.c_str());
@@ -343,7 +349,7 @@ namespace WebDAV
 
         // check if resource is NOT available
         if (fs->exists(path)) 
-            return m_server.sendCode(405, "File or directory already exists");
+            return m_server.sendCode(409, "File or directory already exists");
 
         // check if parent directory exists
         int slashIdx = path.lastIndexOf('/');
@@ -389,10 +395,7 @@ namespace WebDAV
         // check if object is not a directory
         File file = fs->open(path);
         if (!file || file.isDirectory()) 
-        {
-            if (file) file.close();
             return m_server.sendCode(403, "Forbidden (is directory)");
-        }
 
         // collecting basic information about a file for caching
         String etag = getETag(file.size(), file.getLastWrite());
@@ -403,7 +406,6 @@ namespace WebDAV
         if (m_server.getHeader("If-None-Match") == etag ||
             m_server.getHeader("If-Modified-Since") == lastmod)
         {
-            file.close();
             m_server.sendHeader("ETag", etag);
             m_server.sendHeader("Last-Modified", lastmod);
             return m_server.sendCode(304, "");
@@ -413,7 +415,6 @@ namespace WebDAV
         m_server.sendHeader("ETag", etag);
         m_server.sendHeader("Last-Modified", lastmod);
         m_server.sendHeader("Cache-Control", "private, max-age=0, must-revalidate");
-        m_server.sendHeader("Accept-Ranges", "bytes");
         if (isHEAD)
         {
             m_server.setContentLength(file.size());
@@ -421,7 +422,6 @@ namespace WebDAV
         }
         else
             m_server.sendFile(file, contentType);
-        file.close();
     }
 
     void Handler::handlePUT(FileSystem& fs, const String& path)    
@@ -430,15 +430,94 @@ namespace WebDAV
         m_server.sendCode(501, "Not implemented");
     }
 
-    void Handler::handleMOVE(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath)
+    void Handler::handleMOVE(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath, bool overwrite)
     {
-        log_i("MOVE: %s : %s -> %s : %s", sfs.getName().c_str(), spath.c_str(), dfs.getName().c_str(), dpath.c_str());
-        m_server.sendCode(501, "Not implemented");
+        log_i("MOVE: %s : %s -> %s : %s", 
+            sfs.getName().c_str(), spath.c_str(), 
+            dfs.getName().c_str(), dpath.c_str());
+
+        // check source and destination
+        if (!sfs->exists(spath))
+            return m_server.sendCode(404, "Source not found");
+        if (&sfs == &dfs && spath == dpath)
+            return m_server.sendCode(403, "Source and destination are the same");
+        if (&sfs == &dfs && dpath.startsWith(spath) && (dpath.length() == spath.length() || dpath[spath.length()] == '/'))
+            return m_server.sendCode(403, "Destination is subdirectory of source");
+
+        // ensure parent directory exists
+        String dparent = dpath.substring(0, dpath.lastIndexOf('/'));
+        if (!dparent.isEmpty() && !dfs->exists(dparent))
+            return m_server.sendCode(409, "Parent directory does not exist");
+
+        // handle overwrite logic
+        bool overwritten = false;
+        if (dfs->exists(dpath))
+        {
+            if (!overwrite)
+                return m_server.sendCode(412, "Overwrite forbidden");
+            if (!FileSystem::removeFileDir(dfs, dpath))
+                return m_server.sendCode(500, "Destination delete failed");
+            overwritten = true;
+        }
+
+        // do actual move
+        bool ok = false;
+        if (&sfs == &dfs)
+            // atomic move on the same file system
+            ok = sfs->rename(spath, dpath);
+        else
+        {
+            // copy-delete aproach on different file systems
+            if (!FileSystem::copyFileDir(sfs, spath, dfs, dpath))
+                return m_server.sendCode(500, "Copy failed");
+            ok = FileSystem::removeFileDir(sfs, spath);
+        }
+
+        // handle operation result
+        if (!ok)
+            return m_server.sendCode(500, "Move failed");
+        if (overwritten)
+            return m_server.sendCode(204, "Moved with overwrite");
+        m_server.sendCode(201, "Moved");
     }
 
-    void Handler::handleCOPY(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath)
+    void Handler::handleCOPY(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath, bool overwrite)
     {
-        log_i("COPY: %s : %s -> %s : %s", sfs.getName().c_str(), spath.c_str(), dfs.getName().c_str(), dpath.c_str());
-        m_server.sendCode(501, "Not implemented");
+        log_i("COPY: %s : %s -> %s : %s", 
+            sfs.getName().c_str(), spath.c_str(), 
+            dfs.getName().c_str(), dpath.c_str());
+        
+        // check source and destination
+        if (!sfs->exists(spath))
+            return m_server.sendCode(404, "Source not found");
+        if (&sfs == &dfs && spath == dpath)
+            return m_server.sendCode(403, "Source and destination are the same");
+        if (&sfs == &dfs && dpath.startsWith(spath) && (dpath.length() == spath.length() || dpath[spath.length()] == '/'))
+            return m_server.sendCode(403, "Destination is subdirectory of source");
+
+        // ensure parent directory exists
+        String dparent = dpath.substring(0, dpath.lastIndexOf('/'));
+        if (!dparent.isEmpty() && !dfs->exists(dparent))
+            return m_server.sendCode(409, "Parent directory does not exist");
+
+        // handle overwrite logic
+        bool overwritten = false;
+        if (dfs->exists(dpath))
+        {
+            if (!overwrite)
+                return m_server.sendCode(412, "Overwrite forbidden");
+            if (!FileSystem::removeFileDir(dfs, dpath))
+                return m_server.sendCode(500, "Destination delete failed");
+            overwritten = true;
+        }
+
+        // do actual copy
+        if (!FileSystem::copyFileDir(sfs, spath, dfs, dpath))
+            return m_server.sendCode(500, "Copy failed");
+
+        // handle operation result
+        if (overwritten)
+            return m_server.sendCode(204, "Copied with overwrite");
+        m_server.sendCode(201, "Copied");
     }
 }

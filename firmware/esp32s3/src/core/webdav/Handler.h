@@ -77,8 +77,8 @@ namespace WebDAV
         void handleDELETE   (FileSystem& fs, const String& path);
         void handleGET_HEAD (FileSystem& fs, const String& path, bool isHEAD);
         void handlePUT      (FileSystem& fs, const String& path);
-        void handleMOVE     (FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
-        void handleCOPY     (FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath);
+        void handleMOVE     (FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath, bool overwrite);
+        void handleCOPY     (FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath, bool overwrite);
 
     private:
         Server m_server;
