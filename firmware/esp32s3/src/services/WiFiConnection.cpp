@@ -51,27 +51,31 @@ namespace service
 
     void WiFiConnection::beginConnection()
     {
-        if (m_connect.ssid.isEmpty())
+        if (!m_connect.ssid.isEmpty())
         {
-            // new network is not set, so do not 
-            // try to connect, just turn on the AP
-            m_connect.trying = false;
-            WiFi.softAP(WiFi.getHostname(), AP_PASS);
-            log_i("start AP: %s (%s)", 
-                WiFi.softAPSSID().c_str(), 
-                WiFi.softAPIP().toString().c_str());
+            // start connection attempt
+            m_connect.trying = true;
+            m_connect.timer.start(Settings::data()[wifi::tout]);
+            log_i("try connect to: %s", m_connect.ssid.c_str());
+
+            // trying to connect to STA
+            WiFi.softAPdisconnect(true);
+            WiFi.disconnect(true);
+            WiFi.mode(WIFI_STA);
+            WiFi.begin(m_connect.ssid, m_connect.pass);
         }
         else
         {
-            // start connection attempt
-            log_i("try connect to: %s", m_connect.ssid.c_str());
-            m_connect.timer.start(Settings::data()[wifi::tout]);
-            m_connect.trying = true;
+            // network SSID is not set, so do not 
+            // try to connect, just turn on the AP
+            m_connect.trying = false;
+            m_connect.rollback = false;
 
-            // trying to connect to STA with AP enabled
-            WiFi.begin(m_connect.ssid, m_connect.pass);
+            // trying to start the AP
+            WiFi.disconnect(true);
+            WiFi.mode(WIFI_AP);
             WiFi.softAP(WiFi.getHostname(), AP_PASS);
-            log_i("start AP + STA: %s (%s)", 
+            log_i("start AP: %s (%s)", 
                 WiFi.softAPSSID().c_str(), 
                 WiFi.softAPIP().toString().c_str());
         }
@@ -84,53 +88,44 @@ namespace service
             if (m_connect.timer.active())
             {
                 // trying to connect
-                if (isConnectedToAP())
+                if (WiFi.isConnected())
                 {
                     // connection is established
                     m_connect.trying = false;
+                    m_connect.rollback = false;
                     log_i("connected to: %s (%s)",
                         WiFi.SSID().c_str(),
                         WiFi.localIP().toString().c_str());
 
                     // save the current connected network
-                    // for future possible rollback
+                    // for future connect or possible rollback
                     Settings::data()[wifi::ssid] = m_connect.ssid;
                     Settings::data()[wifi::pass] = m_connect.pass;
                     Settings::data().update();
-
-                    // turn off the AP mode
-                    if (WiFi.getMode() & WIFI_AP) 
-                    {
-                        WiFi.softAPdisconnect(true);
-                        WiFi.mode(WIFI_STA);
-                        log_i("stop AP");
-                    }
                 }
             }
-            else
+            else if (!m_connect.rollback)
             {
                 // connection timeout expired, trying to 
                 // rollback to a previously connected STA
                 String ssid = Settings::data()[wifi::ssid];
                 String pass = Settings::data()[wifi::pass];
-
-                if (ssid.isEmpty())
-                    log_i("rollback impossible");
-                else
-                    log_i("try rollback to: %s", ssid.c_str());
-
-                // disable rollback repeat and connect
-                Settings::data()[wifi::ssid] = "";
-                Settings::data()[wifi::pass] = "";
-                Settings::data().update();
+                log_i("try rollback to: %s", ssid.c_str());
+                m_connect.rollback = true;
                 connect(ssid, pass);
+            }
+            else
+            {
+                log_i("rollback failed");
+                m_connect.rollback = false;
+                connect("", "");
             }
         }
     }
 
     void WiFiConnection::updateInternet()
     {
-        if (isConnectedToAP())
+        if (WiFi.isConnected())
         {
             if (m_internet.timer.expired())
             {

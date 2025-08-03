@@ -38,6 +38,7 @@ namespace service
         details::WiFiConnectionUI m_ui;
         struct {
             bool trying;
+            bool rollback;
             String ssid, pass;
             core::TimerSec<> timer;
         } m_connect; 
