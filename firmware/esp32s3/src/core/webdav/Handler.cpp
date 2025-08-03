@@ -70,18 +70,15 @@ namespace WebDAV
             m_resourceType = "<D:collection/>";
     }
 
-    Handler::Resource::Resource(Handler &handler, const String &uri, time_t modified, size_t size)
-        : m_href(handler.m_server.encodeURI(uri))
-        , m_lastModified(handler.m_server.getHttpDateTime(modified))
-        , m_etag(handler.getETag(size, modified))
+    Handler::Resource::Resource(Handler &handler, const String &uri, time_t modified, FileSystem::QuotaSz size)
+        : Resource(handler, uri, modified)
     {
-        if (uri.endsWith("/"))
-            m_resourceType = "<D:collection/>";
-        else
+        if (!uri.endsWith("/"))
         {
             m_contentLength = String(size);
             m_contentType = handler.m_server.getContentType(uri);
         }
+        m_etag = handler.getETag(size, modified);
     }
 
     void Handler::Resource::setQuota(FileSystem::QuotaSz available, FileSystem::QuotaSz used)
@@ -93,24 +90,24 @@ namespace WebDAV
     String Handler::Resource::toString() const
     {
         return
-        buildProp("response",
-            buildProp("href", m_href) +
-            buildProp("propstat",
-                buildProp("prop",
-                    buildProp   ("resourcetype", m_resourceType) +
-                    buildOptProp("getcontentlength", m_contentLength) +
-                    buildOptProp("getcontenttype", m_contentType) +
-                    buildOptProp("getetag", m_etag) +
-                    buildProp   ("getlastmodified", m_lastModified) +
-                    buildOptProp("quota-available-bytes", m_availableBytes) +
-                    buildOptProp("quota-used-bytes", m_usedBytes)
+        reqProp("response",
+            reqProp("href", m_href) +
+            reqProp("propstat",
+                reqProp("prop",
+                    reqProp("resourcetype", m_resourceType) +
+                    optProp("getcontentlength", m_contentLength) +
+                    optProp("getcontenttype", m_contentType) +
+                    optProp("getetag", m_etag) +
+                    reqProp("getlastmodified", m_lastModified) +
+                    optProp("quota-available-bytes", m_availableBytes) +
+                    optProp("quota-used-bytes", m_usedBytes)
                 ) +
-                buildProp("status", "HTTP/1.1 200 OK")
+                reqProp("status", "HTTP/1.1 200 OK")
             )
         );
     }
 
-    String Handler::Resource::buildProp(const String &prop, const String &val) const
+    String Handler::Resource::reqProp(const String &prop, const String &val) const
     {
         String str;
         if (val.isEmpty())
@@ -126,10 +123,10 @@ namespace WebDAV
         return str;
     }
 
-    String Handler::Resource::buildOptProp(const String &prop, const String &val) const
+    String Handler::Resource::optProp(const String &prop, const String &val) const
     {
         if (val.isEmpty()) return "";
-        return buildProp(prop, val);
+        return reqProp(prop, val);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -245,9 +242,9 @@ namespace WebDAV
         return nullptr;
     }
 
-    String Handler::getETag(size_t size, time_t modified) const
+    String Handler::getETag(FileSystem::QuotaSz size, time_t modified) const
     {
-        return ('"' + String(size) + '-' + String(modified) + '"');
+        return ('"' + String(size, 16) + '-' + String(modified, 16) + '"');
     }
 
     void Handler::handleOPTIONS()
@@ -260,30 +257,38 @@ namespace WebDAV
 
     bool Handler::handlePROPFIND(const String& decodedURI)
     {
-        log_i("PROPFIND: %s", decodedURI.c_str());
-
         bool depthChild = (m_server.getHeader("Depth") == "1");
+        log_i("PROPFIND: depth = %d : %s", int(depthChild), decodedURI.c_str());
+
+        // collect the list of resources
         std::vector<Resource> resources;
         if (decodedURI == "/")
         {
             // collect the list of mounted file systems
-            resources.emplace_back(*this, decodedURI, time(nullptr));
+            time_t fakeModifyTime = time(nullptr);
             if (depthChild)
             {
                 for (auto& fs : m_mountedFS)
                 {
                     if (fs::File childFile = fs->open("/", FILE_READ))
                     {
-                        resources.emplace_back(
-                            *this, fs.resolveURI(childFile), childFile.getLastWrite());
-                        childFile.close();
-
-                        FileSystem::QuotaSz available, used;
-                        if (fs.getQuota(available, used))
-                            resources.back().setQuota(available, used);
+                        FileSystem::QuotaSz free, used;
+                        if (fs.getQuota(free, used))
+                        {
+                            resources.emplace_back(
+                                *this, fs.resolveURI(childFile), fakeModifyTime, used);
+                            resources.back().setQuota(free, used);
+                        }
+                        else
+                        {
+                            resources.emplace_back(
+                                *this, fs.resolveURI(childFile), fakeModifyTime);
+                        }
                     }
                 }
             }
+            resources.emplace_back(
+                *this, decodedURI, fakeModifyTime);
         }
         else
         {
@@ -301,17 +306,23 @@ namespace WebDAV
 
             // collect the list of resources
             fs::File baseFile = (*fs)->open(path, FILE_READ);
-            resources.emplace_back(
-                *this, fs->resolveURI(baseFile), baseFile.getLastWrite(), baseFile.size());
+            time_t modifyTime = baseFile.getLastWrite();
+            size_t childCount = 0;
             if (baseFile.isDirectory() && depthChild)
             {
                 while (fs::File childFile = baseFile.openNextFile())
                 {
+                    time_t childModifyTime = childFile.getLastWrite();
+                    if (childModifyTime > modifyTime) 
+                        modifyTime = childModifyTime;
+
                     resources.emplace_back(
-                        *this, fs->resolveURI(childFile), childFile.getLastWrite(), childFile.size());
-                    childFile.close();
+                        *this, fs->resolveURI(childFile), childModifyTime, childFile.size());
+                    childCount++;
                 }
             }
+            resources.emplace_back(
+                *this, fs->resolveURI(baseFile), modifyTime, childCount);
             baseFile.close();
         }
 

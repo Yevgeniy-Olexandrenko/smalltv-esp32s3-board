@@ -44,14 +44,14 @@ namespace WebDAV
         {
         public:
             Resource(Handler& handler, const String& uri, time_t modified);
-            Resource(Handler& handler, const String& uri, time_t modified, size_t size);
+            Resource(Handler& handler, const String& uri, time_t modified, FileSystem::QuotaSz size);
 
             void setQuota(FileSystem::QuotaSz available, FileSystem::QuotaSz used);
             String toString() const;
 
         private:
-            String buildProp(const String& prop, const String& val) const;
-            String buildOptProp(const String& prop, const String& val) const;
+            String reqProp(const String& prop, const String& val) const;
+            String optProp(const String& prop, const String& val) const;
 
         private:
             String m_href, m_resourceType, m_lastModified;
@@ -69,7 +69,7 @@ namespace WebDAV
 
     private:
         FileSystem* resolveFS(const String& uri);
-        String getETag(size_t size, time_t modified) const;
+        String getETag(FileSystem::QuotaSz size, time_t modified) const;
 
         void handleOPTIONS  ();
         bool handlePROPFIND (const String& decodedURI);
