@@ -12,6 +12,7 @@ namespace service
         Settings::data().init(wifi::tout, DEFAULT_CONNECT_TOUT_SEC);
 
         m_ui.begin();
+        WiFi.setMinSecurity(WIFI_AUTH_WEP);
         WiFi.setHostname(Settings::getHostName().c_str());
         WiFi.setAutoReconnect(true);
         Task::start("wifi_connection");
