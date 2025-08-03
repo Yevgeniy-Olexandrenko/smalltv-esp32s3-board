@@ -200,40 +200,44 @@ namespace service
 
     bool GeoLocation::requestGeoLocation()
     {
-        log_i("request geolocation");
-
-        int tzh, tzm;
-        bool ok = false;
-        switch (getMethod())
+        if (service::wifiConnection.isInternetAvailable())
         {
-            case Method::Manual:
-                decodeTimeZone(tzh, tzm);
-                ok = service::wifiConnection.isInternetAvailable();
-                break;
+            log_i("request geolocation");
 
-            case Method::IPAddress: 
-                ok = m_requests.requestUsingIPAddress(m_lat, m_lon, tzh, tzm);
-                break;
-
-            case Method::WiFiStations:
-                ok = m_requests.requestUsingWiFiStations(m_lat, m_lon, tzh, tzm);
-                break;
-        }
-        if (ok)
-        {
-            if (!hasLocality() || hasNewCoords())
+            int tzh, tzm;
+            bool ok = false;
+            switch (getMethod())
             {
-                log_i("request locality: %f, %f", m_lat, m_lon);
-                if (m_requests.requestReverseGeocoding(m_lat, m_lon, m_locality, m_countryCode))
-                {
-                    generateCountryFlag(m_countryCode, m_countryFlag);
-                }
+                case Method::Manual:
+                    decodeTimeZone(tzh, tzm);
+                    ok = true;
+                    break;
+
+                case Method::IPAddress: 
+                    ok = m_requests.requestUsingIPAddress(m_lat, m_lon, tzh, tzm);
+                    break;
+
+                case Method::WiFiStations:
+                    ok = m_requests.requestUsingWiFiStations(m_lat, m_lon, tzh, tzm);
+                    break;
             }
-            encodeCoords(m_lat, m_lon);
-            encodeTimeZone(tzh, tzm);
+            if (ok)
+            {
+                if (!hasLocality() || hasNewCoords())
+                {
+                    log_i("request locality: %f, %f", m_lat, m_lon);
+                    if (m_requests.requestReverseGeocoding(m_lat, m_lon, m_locality, m_countryCode))
+                    {
+                        generateCountryFlag(m_countryCode, m_countryFlag);
+                    }
+                }
+                encodeCoords(m_lat, m_lon);
+                encodeTimeZone(tzh, tzm);
+            }
+            log_i("request geolocation: %s", (ok ? "SUCCESS" : "FAILED"));
+            return ok;
         }
-        log_i("request geolocation: %s", (ok ? "SUCCESS" : "FAILED"));
-        return ok;
+        return false;
     }
 
     GeoLocation geoLocation;
