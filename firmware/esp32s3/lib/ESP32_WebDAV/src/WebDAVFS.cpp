@@ -1,5 +1,23 @@
 #include "WebDAVFS.h"
 
+WebDAVFS::WebDAVFS(fs::FS &fs, const String &name, QuotaCb quotaCb)
+    : m_fs(fs)
+    , m_name(name)
+    , m_quotaCb(quotaCb)
+{
+}
+
+bool WebDAVFS::getQuota(QuotaSz &available, QuotaSz &used)
+{
+    available = 0, used = 0;
+    if (m_quotaCb)
+    {
+        m_quotaCb(m_fs, available, used);
+        return true;
+    }
+    return false;
+}
+
 String WebDAVFS::resolveURI(fs::File& file)
 {
     String path = file.path();
@@ -15,17 +33,6 @@ String WebDAVFS::resolvePath(const String& decodedURI)
     if (path != "/" && path.endsWith("/"))
         path = path.substring(0, path.length() - 1);
     return path;
-}
-
-bool WebDAVFS::getQuota(QuotaSz &available, QuotaSz &used)
-{
-    available = 0, used = 0;
-    if (m_quotaCb)
-    {
-        m_quotaCb(m_fs, available, used);
-        return true;
-    }
-    return false;
 }
 
 bool WebDAVFS::copyFileDir(WebDAVFS& sfs, const String& spath, WebDAVFS& dfs, const String& dpath)

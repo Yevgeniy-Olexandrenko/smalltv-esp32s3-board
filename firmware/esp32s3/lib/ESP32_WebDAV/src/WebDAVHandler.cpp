@@ -1,70 +1,4 @@
-#include <detail/mimetable.h>
 #include "WebDAVHandler.h"
-
-void WebDAVServer::setHandler(WebDAVHandler &handler)
-{
-    static const char* hdrs[] = 
-    {
-        //"Content-Length", "Transfer-Encoding", "Expect"
-        "Depth", "Destination", "Overwrite", 
-        "If-None-Match", "If-Modified-Since"
-    };
-
-    RequestHandler& requestHandler = static_cast<RequestHandler&>(handler);
-    m_server->collectHeaders(hdrs, sizeof(hdrs) / sizeof(char*));
-    m_server->addHandler(&requestHandler);
-}
-
-String WebDAVServer::decodeURI(const String &encodedURI) const
-{
-    return m_server->urlDecode(encodedURI);
-}
-
-String WebDAVServer::encodeURI(const String &decodedURI) const
-{
-    static const char hex[] = "0123456789ABCDEF";
-    String encoded;
-    encoded.reserve(decodedURI.length() * 3);
-    for (size_t i = 0; i < decodedURI.length(); ++i) {
-        char c = decodedURI[i];
-        if ((c >= 'A' && c <= 'Z') ||
-            (c >= 'a' && c <= 'z') ||
-            (c >= '0' && c <= '9') ||
-            c == '-' || c == '_' ||
-            c == '.' || c == '~' ||
-            c == '/') 
-        {
-            encoded += c;
-        } else {
-            encoded += '%';
-            encoded += hex[(c >> 4) & 0x0F];
-            encoded += hex[c & 0x0F];
-        }
-    }
-    return encoded;
-}
-
-String WebDAVServer::getContentType(const String& uri) const
-{
-    for (const auto& e : mime::mimeTable)
-        if (uri.endsWith(e.endsWith)) return e.mimeType;
-    return mime::mimeTable[mime::none].mimeType;
-}
-
-String WebDAVServer::getHttpDateTime(time_t timestamp) const
-{
-    char buf[40];
-    struct tm* tmstruct = gmtime(&timestamp);
-    strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tmstruct);
-    return String(buf);
-}
-
-String WebDAVServer::getETag(WebDAVFS::QuotaSz size, time_t modified) const
-{
-    return ('"' + String(size, 16) + '-' + String(modified, 16) + '"');
-}
-
-////////////////////////////////////////////////////////////////////////////
 
 WebDAVHandler::Resource::Resource(WebDAVServer& server, const String &uri, time_t modified)
     : m_href(server.encodeURI(uri))
@@ -138,7 +72,7 @@ String WebDAVHandler::Resource::optProp(const String &prop, const String &val) c
 void WebDAVHandler::begin(const WebDAVServer& server)
 {
     m_server = server;
-    m_server.setHandler(*this);
+    m_server.attachHandler(*this);
     m_mountedFS.clear();
 }
 
@@ -174,12 +108,7 @@ bool WebDAVHandler::canHandle(HTTPMethod method, String uri)
     return false;
 }
 
-bool WebDAVHandler::canRaw(String uri)
-{
-    return canHandleURI(uri);
-}
-
-bool WebDAVHandler::handle(WebServer& server, HTTPMethod method, String uri)
+bool WebDAVHandler::handle(HTTPMethod method, String uri)
 {
     if (method == HTTP_OPTIONS)
     {
@@ -230,28 +159,33 @@ bool WebDAVHandler::handle(WebServer& server, HTTPMethod method, String uri)
     return false;
 }
 
-void WebDAVHandler::raw(WebServer &server, String uri, HTTPRaw &raw)
+bool WebDAVHandler::canRaw(HTTPMethod method, String uri)
 {
-    HTTPMethod method = server.method();
-    if (method != HTTP_PUT) return;
+    return (method == HTTP_PUT ? canHandleURI(uri) : false);
+}
 
-    if (!m_uploadFile)
+void WebDAVHandler::raw(HTTPMethod method, String uri, HTTPRaw &raw)
+{
+    if (method == HTTP_PUT)
     {
-        if (raw.status == HTTPRawStatus::RAW_START)
+        if (!m_upload.file)
         {
-            String decodedURI = m_server.decodeURI(uri);
-            if (WebDAVFS* fs = resolveFS(decodedURI))
+            if (raw.status == HTTPRawStatus::RAW_START)
             {
-                String path = fs->resolvePath(decodedURI);
-                handlePUT_init(*fs, path);
+                String decodedURI = m_server.decodeURI(uri);
+                if (WebDAVFS* fs = resolveFS(decodedURI))
+                {
+                    String path = fs->resolvePath(decodedURI);
+                    handlePUT_init(*fs, path);
+                }
             }
         }
-    }
-    else
-    {
-        if (raw.status != HTTPRawStatus::RAW_START)
+        else
         {
-            handlePUT_loop(raw, m_uploadFile, m_uploadOverwrite);
+            if (raw.status != HTTPRawStatus::RAW_START)
+            {
+                handlePUT_loop(raw, m_upload.file, m_upload.overwrite);
+            }
         }
     }
 }
@@ -272,8 +206,8 @@ WebDAVFS *WebDAVHandler::resolveFS(const String &uri)
 void WebDAVHandler::handleOPTIONS()
 {
     log_i("OPTIONS");
-    m_server.sendHeader("DAV", "1");
-    m_server.sendHeader("Allow", "OPTIONS, PROPFIND, MKCOL, DELETE, HEAD, GET, PUT, MOVE, COPY");
+    m_server.setHeader("DAV", "1");
+    m_server.setHeader("Allow", "OPTIONS, PROPFIND, MKCOL, DELETE, HEAD, GET, PUT, MOVE, COPY");
     m_server.sendCode(200, "OK");
 }
 
@@ -365,7 +299,9 @@ bool WebDAVHandler::handlePROPFIND(const String& decodedURI)
     m_server.sendCode(207, "text/xml; charset=\"utf-8\"", "");
     m_server.sendContent(xmlPreamble);
     for (const auto& resource : resources)
+    {
         m_server.sendContent(resource.toString());
+    }
     m_server.sendContent(xmlEpilogue);
     return true;
 }
@@ -434,15 +370,15 @@ void WebDAVHandler::handleGET(WebDAVFS& fs, const String& path, bool isHEAD)
     if (m_server.getHeader("If-None-Match") == etag ||
         m_server.getHeader("If-Modified-Since") == lastmod)
     {
-        m_server.sendHeader("ETag", etag);
-        m_server.sendHeader("Last-Modified", lastmod);
+        m_server.setHeader("ETag", etag);
+        m_server.setHeader("Last-Modified", lastmod);
         return m_server.sendCode(304, "");
     }
 
     // setting cache parameters and sending the file
-    m_server.sendHeader("ETag", etag);
-    m_server.sendHeader("Last-Modified", lastmod);
-    m_server.sendHeader("Cache-Control", "private, max-age=0, must-revalidate");
+    m_server.setHeader("ETag", etag);
+    m_server.setHeader("Last-Modified", lastmod);
+    m_server.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
     if (isHEAD)
     {
         m_server.setContentLength(file.size());
@@ -469,8 +405,8 @@ void WebDAVHandler::handlePUT_init(WebDAVFS &fs, const String &path)
     if (!file)
         return m_server.sendCode(500, "Failed to open file");
 
-    m_uploadFile = std::move(file);
-    m_uploadOverwrite = exists;
+    m_upload.file = std::move(file);
+    m_upload.overwrite = exists;
 }
 
 void WebDAVHandler::handlePUT_loop(HTTPRaw &raw, fs::File &file, bool overwrite)

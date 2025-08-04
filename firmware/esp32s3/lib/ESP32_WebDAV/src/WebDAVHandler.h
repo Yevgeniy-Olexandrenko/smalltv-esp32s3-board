@@ -1,51 +1,9 @@
 #pragma once
 
-#include <WebServer.h>
 #include "WebDAVFS.h"
+#include "WebDAVServer.h"
 
-class WebDAVHandler;
-
-class WebDAVServer
-{
-public:
-    WebDAVServer() : m_server(nullptr) {}
-    WebDAVServer(WebServer& server) : m_server(&server) {}
-    virtual void setHandler(WebDAVHandler& handler); 
-    WebServer& getWebServer() { return *m_server; }
-    
-    // helpers
-    virtual String decodeURI(const String& encodedURI) const;
-    virtual String encodeURI(const String& decodedURI) const;
-    virtual String getContentType(const String& uri) const;
-    virtual String getHttpDateTime(time_t timestamp) const;
-    virtual String getETag(WebDAVFS::QuotaSz size, time_t modified) const;
-
-    // get headers
-    virtual bool hasHeader(const String& hdr) { return m_server->hasHeader(hdr); }
-    virtual String getHeader(const String& hdr) { return m_server->header(hdr); }
-    virtual size_t getContentLength() { return m_server->header("Content-Length").toInt(); }
-    
-    // send headers and content
-    virtual void sendHeader(const String& hdr, const String& val) { m_server->sendHeader(hdr, val); }
-    virtual void setContentLength(size_t length) { m_server->setContentLength(length); }
-    virtual void sendContent(const String& content) { m_server->sendContent(content); }
-    virtual void sendCode(int code, const String& contentType, const String& msg) 
-    { 
-        m_server->send(code, contentType, msg); 
-    }
-    virtual void sendCode(int code, const String& msg) 
-    { 
-        log_i("code: %d : %s", code, msg.c_str());
-        m_server->send(code, "text/plain", msg); 
-    }
-    virtual void sendData(const uint8_t *buf, size_t size) { m_server->client().write(buf, size); }
-    virtual void sendFile(fs::File file, const String& contentType) { m_server->streamFile(file, contentType); }
-
-private:
-    WebServer* m_server;
-};
-
-class WebDAVHandler : public RequestHandler
+class WebDAVHandler
 {
     class Resource
     {
@@ -70,11 +28,11 @@ public:
     void begin(const WebDAVServer& server);
     void addFS(fs::FS& fs, const String& mountName, WebDAVFS::QuotaCb quotaCb = nullptr);
 
-protected:
-    bool canHandle(HTTPMethod method, String uri) override;
-    bool canRaw(String uri) override;
-    bool handle(WebServer& server, HTTPMethod method, String uri) override;
-    void raw(WebServer& server, String uri, HTTPRaw& raw) override;
+    bool canHandle(HTTPMethod method, String uri);
+    bool handle(HTTPMethod method, String uri);
+
+    bool canRaw(HTTPMethod method, String uri);
+    void raw(HTTPMethod method, String uri, HTTPRaw& raw);
 
 private:
     bool canHandleURI(const String& uri);
@@ -98,6 +56,5 @@ private:
 private:
     WebDAVServer m_server;
     std::vector<WebDAVFS> m_mountedFS;
-    fs::File m_uploadFile;
-    bool m_uploadOverwrite;
+    struct { fs::File file; bool overwrite = false; } m_upload;
 };
