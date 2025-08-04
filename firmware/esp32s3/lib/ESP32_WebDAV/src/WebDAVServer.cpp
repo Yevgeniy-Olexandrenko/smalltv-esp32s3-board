@@ -21,13 +21,19 @@ WebDAVServer::WebDAVServer(WebServer &server)
     : m_server(&server)
     , m_handler(nullptr)
 {
-    m_server->collectHeaders(EXTRA_HEADERS, sizeof(EXTRA_HEADERS) / sizeof(char*));
-    m_server->addHandler(this);
 }
 
 void WebDAVServer::attachHandler(WebDAVHandler &handler)
 {
-    m_handler = &handler;
+    if (m_server)
+    {
+        if (!m_handler)
+        {
+            m_server->collectHeaders(EXTRA_HEADERS, sizeof(EXTRA_HEADERS) / sizeof(char*));
+            m_server->addHandler(this);
+        }
+        m_handler = &handler;
+    }
 }
 
 String WebDAVServer::decodeURI(const String &encodedURI) const
