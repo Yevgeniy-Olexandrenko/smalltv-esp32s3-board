@@ -20,6 +20,7 @@ namespace WebDAV
         virtual String encodeURI(const String& decodedURI) const;
         virtual String getContentType(const String& uri) const;
         virtual String getHttpDateTime(time_t timestamp) const;
+        virtual String getETag(FileSystem::QuotaSz size, time_t modified) const;
 
         // get headers
         virtual bool hasHeader(const String& hdr) { return m_server->hasHeader(hdr); }
@@ -51,8 +52,8 @@ namespace WebDAV
         class Resource
         {
         public:
-            Resource(Handler& handler, const String& uri, time_t modified);
-            Resource(Handler& handler, const String& uri, time_t modified, FileSystem::QuotaSz size);
+            Resource(Server& server, const String& uri, time_t modified);
+            Resource(Server& server, const String& uri, time_t modified, FileSystem::QuotaSz size);
 
             void setQuota(FileSystem::QuotaSz available, FileSystem::QuotaSz used);
             String toString() const;
@@ -75,18 +76,19 @@ namespace WebDAV
         bool canHandle(HTTPMethod method, String uri) override;
         bool canRaw(String uri) override;
         bool handle(WebServer& server, HTTPMethod method, String uri) override;
-        void raw(WebServer& server, String requestUri, HTTPRaw& raw) override;
+        void raw(WebServer& server, String uri, HTTPRaw& raw) override;
 
     private:
+        bool canHandleURI(const String& uri);
         FileSystem* resolveFS(const String& uri);
-        String getETag(FileSystem::QuotaSz size, time_t modified) const;
 
         void handleOPTIONS  ();
         bool handlePROPFIND (const String& decodedURI);
         void handleMKCOL    (FileSystem& fs, const String& path);
         void handleDELETE   (FileSystem& fs, const String& path);
-        void handleGET_HEAD (FileSystem& fs, const String& path, bool isHEAD);
-        void handlePUT      (FileSystem& fs, const String& path);
+        void handleGET      (FileSystem& fs, const String& path, bool isHEAD);
+        void handlePUT_init (FileSystem& fs, const String& path);
+        void handlePUT_loop (HTTPRaw& raw, fs::File& file, bool overwrite);
         void handleMOVE     (FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath, bool overwrite);
         void handleCOPY     (FileSystem& sfs, const String& spath, FileSystem& dfs, const String& dpath, bool overwrite);
 
@@ -99,6 +101,6 @@ namespace WebDAV
         Server m_server;
         std::vector<FileSystem> m_mountedFS;
         fs::File m_uploadFile;
-        bool m_uploadFileExists;
+        bool m_uploadOverwrite;
     };
 }

@@ -7,7 +7,7 @@ namespace WebDAV
     {
         static const char* hdrs[] = 
         {
-            "Content-Length", "Transfer-Encoding", "Expect"
+            //"Content-Length", "Transfer-Encoding", "Expect"
             "Depth", "Destination", "Overwrite", 
             "If-None-Match", "If-Modified-Since"
         };
@@ -61,25 +61,30 @@ namespace WebDAV
         return String(buf);
     }
 
+    String Server::getETag(FileSystem::QuotaSz size, time_t modified) const
+    {
+        return ('"' + String(size, 16) + '-' + String(modified, 16) + '"');
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
-    Handler::Resource::Resource(Handler &handler, const String &uri, time_t modified)
-        : m_href(handler.m_server.encodeURI(uri))
-        , m_lastModified(handler.m_server.getHttpDateTime(modified))
+    Handler::Resource::Resource(Server& server, const String &uri, time_t modified)
+        : m_href(server.encodeURI(uri))
+        , m_lastModified(server.getHttpDateTime(modified))
     {
         if (uri.endsWith("/"))
             m_resourceType = "<D:collection/>";
     }
 
-    Handler::Resource::Resource(Handler &handler, const String &uri, time_t modified, FileSystem::QuotaSz size)
-        : Resource(handler, uri, modified)
+    Handler::Resource::Resource(Server& server, const String &uri, time_t modified, FileSystem::QuotaSz size)
+        : Resource(server, uri, modified)
     {
         if (!uri.endsWith("/"))
         {
             m_contentLength = String(size);
-            m_contentType = handler.m_server.getContentType(uri);
+            m_contentType = server.getContentType(uri);
         }
-        m_etag = handler.getETag(size, modified);
+        m_etag = server.getETag(size, modified);
     }
 
     void Handler::Resource::setQuota(FileSystem::QuotaSz available, FileSystem::QuotaSz used)
@@ -156,6 +161,7 @@ namespace WebDAV
         {
             case HTTP_OPTIONS:
             case HTTP_PROPFIND:
+            case HTTP_PROPPATCH:
                 return true;
 
             case HTTP_MKCOL:
@@ -165,18 +171,14 @@ namespace WebDAV
             case HTTP_PUT:
             case HTTP_MOVE:
             case HTTP_COPY:
-                String decodedURI = m_server.decodeURI(uri);
-                FileSystem* fs = resolveFS(decodedURI);
-                return (fs != nullptr);
+                return canHandleURI(uri);
         }
         return false;
     }
 
     bool Handler::canRaw(String uri)
     {
-        log_i("canRaw: %d : %s", bool(m_uploadFile), uri.c_str());
-        //return bool(m_uploadFile);
-        return true;
+        return canHandleURI(uri);
     }
 
     bool Handler::handle(WebServer& server, HTTPMethod method, String uri)
@@ -188,7 +190,7 @@ namespace WebDAV
         }
         
         String decodedURI = m_server.decodeURI(uri);
-        if (method == HTTP_PROPFIND)
+        if (method == HTTP_PROPFIND || method == HTTP_PROPPATCH)
         {
             return handlePROPFIND(decodedURI);
         }
@@ -198,40 +200,27 @@ namespace WebDAV
             String spath = sfs->resolvePath(decodedURI);
             switch(method)
             {
-                case HTTP_MKCOL:
-                    handleMKCOL(*sfs, spath);
-                    return true;
-
-                case HTTP_DELETE:
-                    handleDELETE(*sfs, spath); 
-                    return true;
-
-                case HTTP_HEAD:
-                case HTTP_GET:
-                    handleGET_HEAD(*sfs, spath, method == HTTP_HEAD); 
-                    return true;
-
-                case HTTP_PUT:
-                    handlePUT(*sfs, spath); 
-                    return true;
+                case HTTP_MKCOL:  handleMKCOL  (*sfs, spath   ); return true;
+                case HTTP_DELETE: handleDELETE (*sfs, spath   ); return true;
+                case HTTP_HEAD:   handleGET    (*sfs, spath, 1); return true;
+                case HTTP_GET:    handleGET    (*sfs, spath, 0); return true;
             }
 
             // handle destination
-            String destinationHeader = m_server.getHeader("Destination");
-            if (!destinationHeader.isEmpty())
+            String hdrDestination = m_server.getHeader("Destination");
+            if (!hdrDestination.isEmpty())
             {
-                decodedURI = m_server.decodeURI(destinationHeader.substring(destinationHeader.indexOf('/', 8)));
+                decodedURI = m_server.decodeURI(hdrDestination.substring(hdrDestination.indexOf('/', 8)));
                 if (FileSystem* dfs = resolveFS(decodedURI))
                 {
-                    String dpath = dfs->resolvePath(decodedURI);
-
                     // handle overwrite
                     bool overwrite = true;
-                    String overwriteHeader = m_server.getHeader("Overwrite");
-                    if (!overwriteHeader.isEmpty()) 
-                        overwrite = (overwriteHeader[0] == 'T' || overwriteHeader[0] == 't');
+                    String hdrOverwrite = m_server.getHeader("Overwrite");
+                    if (!hdrOverwrite.isEmpty()) 
+                        overwrite = (hdrOverwrite[0] == 'T' || hdrOverwrite[0] == 't');
 
                     // handle operation
+                    String dpath = dfs->resolvePath(decodedURI);
                     if (method == HTTP_MOVE)
                         handleMOVE(*sfs, spath, *dfs, dpath, overwrite);
                     else if (method == HTTP_COPY)
@@ -243,59 +232,43 @@ namespace WebDAV
         return false;
     }
 
-    void Handler::raw(WebServer &server, String requestUri, HTTPRaw &raw)
+    void Handler::raw(WebServer &server, String uri, HTTPRaw &raw)
     {
-        log_i("raw: %d", raw.status);
-        log_i("content-length: %d", server.clientContentLength());
+        HTTPMethod method = server.method();
+        if (method != HTTP_PUT) return;
 
-        switch (raw.status)
+        if (!m_uploadFile)
         {
-            case RAW_START:
+            if (raw.status == HTTPRawStatus::RAW_START)
+            {
+                String decodedURI = m_server.decodeURI(uri);
+                if (FileSystem* fs = resolveFS(decodedURI))
                 {
-                log_i("RAW_START");
-
-                log_i("=== Incoming HTTP Request ===");
-                log_i("Method: %d : %s", server.method(), server.uri().c_str());
-                for (int i = 0; i < server.headers(); ++i) 
-                {
-                    log_i("%s: %s", server.headerName(i).c_str(), server.header(i).c_str());
+                    String path = fs->resolvePath(decodedURI);
+                    handlePUT_init(*fs, path);
                 }
-                log_i("=============================");
-
-                auto length   = m_server.getHeader("Content-Length").toInt();
-                bool chunked  = m_server.getHeader("Transfer-Encoding").equalsIgnoreCase("chunked");
-
-                log_i("length: %d", length);
-                log_i("chunked: %d", chunked);
-
-                m_server.sendCode(100, "");
-                }
-                break;
-
-            case RAW_WRITE:
-                log_i("RAW_WRITE");
-                break;
-
-            case RAW_END:
-                log_i("RAW_END");
-                break;
-
-            case RAW_ABORTED:
-                log_i("RAW_ABORTED");
-                break;
+            }
+        }
+        else
+        {
+            if (raw.status != HTTPRawStatus::RAW_START)
+            {
+                handlePUT_loop(raw, m_uploadFile, m_uploadOverwrite);
+            }
         }
     }
 
-    FileSystem* Handler::resolveFS(const String &uri)
+    bool Handler::canHandleURI(const String &uri)
+    {
+        String decodedURI = m_server.decodeURI(uri);
+        return (resolveFS(decodedURI) != nullptr);
+    }
+
+    FileSystem *Handler::resolveFS(const String &uri)
     {
         for (auto& fs : m_mountedFS)
             if (uri.startsWith(fs.getName())) return &fs;
         return nullptr;
-    }
-
-    String Handler::getETag(FileSystem::QuotaSz size, time_t modified) const
-    {
-        return ('"' + String(size, 16) + '-' + String(modified, 16) + '"');
     }
 
     void Handler::handleOPTIONS()
@@ -327,19 +300,19 @@ namespace WebDAV
                         if (fs.getQuota(free, used))
                         {
                             resources.emplace_back(
-                                *this, fs.resolveURI(childFile), fakeModifyTime, used);
+                                m_server, fs.resolveURI(childFile), fakeModifyTime, used);
                             resources.back().setQuota(free, used);
                         }
                         else
                         {
                             resources.emplace_back(
-                                *this, fs.resolveURI(childFile), fakeModifyTime);
+                                m_server, fs.resolveURI(childFile), fakeModifyTime);
                         }
                     }
                 }
             }
             resources.emplace_back(
-                *this, decodedURI, fakeModifyTime);
+                m_server, decodedURI, fakeModifyTime);
         }
         else
         {
@@ -364,16 +337,14 @@ namespace WebDAV
                 while (fs::File childFile = baseFile.openNextFile())
                 {
                     time_t childModifyTime = childFile.getLastWrite();
-                    if (childModifyTime > modifyTime) 
-                        modifyTime = childModifyTime;
-
+                    if (childModifyTime > modifyTime) modifyTime = childModifyTime;
                     resources.emplace_back(
-                        *this, fs->resolveURI(childFile), childModifyTime, childFile.size());
+                        m_server, fs->resolveURI(childFile), childModifyTime, childFile.size());
                     childCount++;
                 }
             }
             resources.emplace_back(
-                *this, fs->resolveURI(baseFile), modifyTime, childCount);
+                m_server, fs->resolveURI(baseFile), modifyTime, childCount);
             baseFile.close();
         }
 
@@ -440,7 +411,7 @@ namespace WebDAV
         return m_server.sendCode(204, "Deleted");
     }
 
-    void Handler::handleGET_HEAD(FileSystem& fs, const String& path, bool isHEAD)
+    void Handler::handleGET(FileSystem& fs, const String& path, bool isHEAD)
     {
         if (isHEAD)
             log_i("HEAD: %s : %s", fs.getName().c_str(), path.c_str());
@@ -457,7 +428,7 @@ namespace WebDAV
             return m_server.sendCode(403, "Forbidden (is directory)");
 
         // collecting basic information about a file for caching
-        String etag = getETag(file.size(), file.getLastWrite());
+        String etag = m_server.getETag(file.size(), file.getLastWrite());
         String lastmod = m_server.getHttpDateTime(file.getLastWrite());
         String contentType = m_server.getContentType(path);
 
@@ -483,8 +454,8 @@ namespace WebDAV
             m_server.sendFile(file, contentType);
     }
 
-    void Handler::handlePUT(FileSystem& fs, const String& path)    
-    { 
+    void Handler::handlePUT_init(FileSystem &fs, const String &path)
+    {
         log_i("PUT: %s : %s", fs.getName().c_str(), path.c_str()); 
         
         // check that the distination is not a directory
@@ -495,55 +466,31 @@ namespace WebDAV
         if (!handleParentExists(fs, path)) return;
 
         // try to open destination file
-        // bool exists = fs->exists(path);
-        // File file = fs->open(path, FILE_WRITE);
-        // if (!file)
-        //     return m_server.sendCode(500, "Failed to open file");
-        
-        // start pending upload logic
-        // int contentLen = m_server.getWebServer().clientContentLength();
-        // WiFiClient client = m_server.getWebServer().client();
-        // log_i("content-length: %d", contentLen);
+        bool exists = fs->exists(path);
+        fs::File file = fs->open(path, FILE_WRITE);
+        if (!file)
+            return m_server.sendCode(500, "Failed to open file");
 
-        // const size_t BUF_SIZE = 4096;
-        // uint8_t* buf = (uint8_t*)malloc(BUF_SIZE);
-        // if (!buf) {
-        //     file.close();
-        //     m_server.sendCode(500, "Memory allocation failed");
-        //     return;
-        // }
+        m_uploadFile = std::move(file);
+        m_uploadOverwrite = exists;
+    }
 
-        // log_i("start copying");
-        // int remaining = contentLen;
-        // bool ok = true;
-        // while (remaining > 0 && client.connected()) {
-        //     size_t toRead = remaining < BUF_SIZE ? remaining : BUF_SIZE;
-        //     int n = client.readBytes(buf, toRead);
-        //     log_i("read: %d : %d", toRead, n);
-        //     if (n <= 0) { ok = false; break; }
-        //     int m = file.write(buf, n);
-        //     log_i("write: %d : %d", n, m);
-        //     if (m != n) { ok = false; break; }
-        //     remaining -= n;
-        // }
+    void Handler::handlePUT_loop(HTTPRaw &raw, fs::File &file, bool overwrite)
+    {
+        if (raw.status == HTTPRawStatus::RAW_WRITE)
+        {
+            // TODO
+        }
 
-        // free(buf);
-        // file.close();
+        if (raw.status == HTTPRawStatus::RAW_END)
+        {
+            // TODO
+        }
 
-        // log_i("result: %d", (ok && remaining == 0));
-        // if (ok && remaining == 0)
-        //     m_server.sendCode(fs->exists(path) ? 204 : 201, "File uploaded");
-        // else
-        //     m_server.sendCode(500, "Upload failed");
-
-        auto length   = m_server.getHeader("Content-Length").toInt();
-        bool chunked  = m_server.getHeader("Transfer-Encoding").equalsIgnoreCase("chunked");
-
-        log_i("length: %d", length);
-        log_i("chunked: %d", chunked);
-
-        if (!length || chunked)
-            m_server.sendCode(411, "");
+        if (raw.status == HTTPRawStatus::RAW_ABORTED)
+        {
+            // TODO
+        }
     }
 
     void Handler::handleMOVE(FileSystem &sfs, const String &spath, FileSystem &dfs, const String &dpath, bool overwrite)
@@ -611,7 +558,6 @@ namespace WebDAV
 
     bool Handler::sendErrorCode(int code, const String &msg)
     {
-        log_e("ERROR: %d : %s", code, msg.c_str());
         m_server.sendCode(code, msg);
         return false;
     }
