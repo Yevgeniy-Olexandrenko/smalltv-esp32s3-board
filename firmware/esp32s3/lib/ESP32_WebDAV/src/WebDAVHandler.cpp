@@ -1,22 +1,17 @@
 #include "WebDAVHandler.h"
 
-WebDAVHandler::Resource::Resource(WebDAVServer& server, const String &uri, time_t modified)
+WebDAVHandler::Resource::Resource(WebDAVServer& server, const String &uri, time_t modified, WebDAVFS::QuotaSz size)
     : m_href(server.encodeURI(uri))
     , m_lastModified(server.getHttpDateTime(modified))
 {
     if (uri.endsWith("/"))
         m_resourceType = "<D:collection/>";
-}
-
-WebDAVHandler::Resource::Resource(WebDAVServer& server, const String &uri, time_t modified, WebDAVFS::QuotaSz size)
-    : Resource(server, uri, modified)
-{
-    if (!uri.endsWith("/"))
+    else
     {
         m_contentLength = String(size);
         m_contentType = server.getContentType(uri);
+        m_etag = server.getETag(size, modified);
     }
-    m_etag = server.getETag(size, modified);
 }
 
 void WebDAVHandler::Resource::setQuota(WebDAVFS::QuotaSz available, WebDAVFS::QuotaSz used)
@@ -242,25 +237,22 @@ void WebDAVHandler::handlePROPFIND(bool depth)
 
     // collect the list of mounted file systems
     std::vector<Resource> resources;
-    time_t fakeModifyTime = time(nullptr);
+    time_t modifyTime = time(nullptr);
+    resources.emplace_back(m_server, "/", modifyTime, 0);
     if (depth)
     {
+        WebDAVFS::QuotaSz free;
+        WebDAVFS::QuotaSz used;
         for (auto& fs : m_mountedFS)
         {
             if (fs::File file = fs->open("/", FILE_READ))
             {
-                WebDAVFS::QuotaSz free, used;
-                if (fs.getQuota(free, used))
-                {
-                    resources.emplace_back(m_server, fs.resolveURI(file), fakeModifyTime, used);
+                resources.emplace_back(m_server, fs.resolveURI(file), modifyTime, 0);
+                if (fs.getQuota(free, used)) 
                     resources.back().setQuota(free, used);
-                }
-                else
-                    resources.emplace_back(m_server, fs.resolveURI(file), fakeModifyTime);
             }
         }
     }
-    resources.emplace_back(m_server, "/", fakeModifyTime);
 
     // send the list of collected resources
     sendPROPFINDContent(resources);
@@ -276,26 +268,24 @@ void WebDAVHandler::handlePROPFIND(WebDAVFS &fs, const String &path, bool depth)
 
     // collect the list of resources
     std::vector<Resource> resources;
-    if (fs::File baseFile = fs->open(path, FILE_READ))
+    if (fs::File file = fs->open(path, FILE_READ))
     {
-        time_t modifyTime = baseFile.getLastWrite();
-        size_t childCount = 0;
-
-        if (depth && baseFile.isDirectory())
+        resources.emplace_back(
+            m_server, 
+            fs.resolveURI(file), 
+            file.getLastWrite(), 
+            file.size()
+        );
+        if (depth && file.isDirectory())
         {
-            while (fs::File childFile = baseFile.openNextFile())
-            {
-                time_t childModifyTime = childFile.getLastWrite();
-                if (childModifyTime > modifyTime) modifyTime = childModifyTime;
-
-                const String uri = fs.resolveURI(childFile);
-                resources.emplace_back(m_server, uri, childModifyTime, childFile.size());
-                childCount++;
-            }
+            while (fs::File child = file.openNextFile())
+                resources.emplace_back(
+                    m_server,
+                    fs.resolveURI(child),
+                    child.getLastWrite(),
+                    child.size()
+                );
         }
-
-        const String uri = fs.resolveURI(baseFile);
-        resources.emplace_back(m_server, uri, modifyTime, childCount);
     }
     
     // send the list of collected resources

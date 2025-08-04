@@ -8,7 +8,6 @@ class WebDAVHandler
     class Resource
     {
     public:
-        Resource(WebDAVServer& server, const String& uri, time_t modified);
         Resource(WebDAVServer& server, const String& uri, time_t modified, WebDAVFS::QuotaSz size);
 
         void setQuota(WebDAVFS::QuotaSz available, WebDAVFS::QuotaSz used);
