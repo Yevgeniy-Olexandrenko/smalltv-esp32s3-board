@@ -8,7 +8,8 @@ static const char* EXTRA_HEADERS[] =
     "Destination", 
     "Overwrite", 
     "If-None-Match", 
-    "If-Modified-Since"
+    "If-Modified-Since",
+    "Range"
 };
 
 WebDAVServer::WebDAVServer()
@@ -92,7 +93,10 @@ bool WebDAVServer::hasHeader(const String &hdr)
 
 String WebDAVServer::getHeader(const String &hdr)
 {
-    return m_server->header(hdr);
+    String val = m_server->header(hdr);
+    if (!val.isEmpty())
+        log_i("%s : %s", hdr.c_str(), val.c_str());
+    return val;
 }
 
 size_t WebDAVServer::getContentLength()
@@ -102,11 +106,13 @@ size_t WebDAVServer::getContentLength()
 
 void WebDAVServer::setHeader(const String &hdr, const String &val)
 {
+    log_i("%s : %s", hdr.c_str(), val.c_str());
     m_server->sendHeader(hdr, val);
 }
 
 void WebDAVServer::setContentLength(size_t length)
 { 
+    log_i("Content-Length : %d", length);
     m_server->setContentLength(length); 
 }
 
@@ -117,7 +123,7 @@ void WebDAVServer::sendContent(const String& content)
 
 void WebDAVServer::sendCode(int code, const String& contentType, const String& msg) 
 { 
-    log_i("code: %d : %s", code, msg.c_str());
+    log_i("%d : %s", code, msg.c_str());
     m_server->send(code, contentType, msg); 
 }
 
@@ -126,9 +132,90 @@ void WebDAVServer::sendCode(int code, const String& msg)
     sendCode(code, "text/plain", msg);
 }
 
-void WebDAVServer::sendFile(fs::File file, const String& contentType)
+void WebDAVServer::sendFile(fs::File file, const String& contentType, bool isHEAD)
 {
-    m_server->streamFile(file, contentType); 
+    // special case for empty file
+    size_t fileSize = file.size();
+    if (fileSize == 0) 
+    {
+        setContentLength(0);
+        sendCode(200, contentType, "");
+        return;
+    }
+
+    // parse range header
+    bool hasRange = false;
+    size_t last = fileSize - 1;
+    size_t from = 0, to = last;
+    
+    String hdrRange = getHeader("Range");
+    if (hdrRange.startsWith("bytes=")) 
+    {
+        int sep = hdrRange.indexOf('-', 6);
+        if (sep > 6) 
+        {
+            String strFrom = hdrRange.substring(6, sep);
+            String strTo = hdrRange.substring(sep + 1);
+            from = strFrom.isEmpty() ? 0 : strFrom.toInt();
+            to = strTo.isEmpty() ? last : strTo.toInt();
+            if (to > last) to = last;
+            if (from > to || from > last) 
+            {
+                setHeader("Content-Range", "bytes */" + String(fileSize));
+                sendCode(416, "Requested Range Not Satisfiable");
+                return;
+            }
+            hasRange = true;
+        }
+    }
+
+    // trying to seek the position in file
+    size_t sendSize = to - from + 1;
+    if (!file.seek(from)) 
+    {
+        sendCode(500, "Failed to seek file");
+        return;
+    }
+
+    // set headers and send response code
+    if (hasRange) 
+    {
+        setHeader("Content-Range", "bytes " + String(from) + "-" + String(to) + "/" + String(fileSize));
+        setContentLength(sendSize);
+        sendCode(206, contentType, "");
+    } 
+    else 
+    {
+        setContentLength(fileSize);
+        sendCode(200, contentType, "");
+    }
+    if (isHEAD) return;
+
+    // allocate buffer in PSRAM if possible
+    log_i("begin file transfer");
+    const size_t BUF_SIZE = 4096;
+    uint8_t*  buf = (uint8_t*)ps_malloc(BUF_SIZE);
+    if (!buf) buf = (uint8_t*)malloc(BUF_SIZE);
+    if (!buf) 
+    {
+        sendCode(500, "Out of memory");
+        return;
+    }
+
+    // sending file contents
+    WiFiClient client = m_server->client();
+    for (size_t remaining = sendSize; remaining > 0 && client.connected(); yield())
+    {
+        size_t chunk = (remaining > BUF_SIZE ? BUF_SIZE : remaining);
+        int readBytes = file.read(buf, chunk);
+        if (readBytes <= 0) break;
+        size_t writeBytes = client.write(buf, readBytes);
+        if (writeBytes != size_t(readBytes)) break;
+        remaining -= readBytes;
+    }
+    client.flush();
+    free(buf);
+    log_i("end file transfer");
 }
 
 bool WebDAVServer::canHandle(HTTPMethod method, String uri)

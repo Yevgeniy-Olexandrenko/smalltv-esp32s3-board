@@ -30,7 +30,7 @@ public:
     void sendContent(const String& content);
     void sendCode(int code, const String& contentType, const String& msg);
     void sendCode(int code, const String& msg);
-    void sendFile(fs::File file, const String& contentType);
+    void sendFile(fs::File file, const String& contentType, bool isHEAD);
 
 protected:
     bool canHandle(HTTPMethod method, String uri) override;

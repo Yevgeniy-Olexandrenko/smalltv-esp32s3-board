@@ -105,6 +105,8 @@ bool WebDAVHandler::canHandle(HTTPMethod method, String uri)
         case HTTP_COPY:
             return canHandleURI(uri);
     }
+
+    log_i("%s : %s", http_method_str(method), uri.c_str());
     return false;
 }
 
@@ -177,6 +179,8 @@ bool WebDAVHandler::handle(HTTPMethod method, String uri)
             }
         }
     }
+
+    log_i("%s : %s", http_method_str(method), uri.c_str());
     return false;
 }
 
@@ -371,13 +375,7 @@ void WebDAVHandler::handleGET(WebDAVFS& fs, const String& path, bool isHEAD)
     m_server.setHeader("ETag", etag);
     m_server.setHeader("Last-Modified", lastmod);
     m_server.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
-    if (isHEAD)
-    {
-        m_server.setContentLength(file.size());
-        m_server.sendCode(200, contentType, "");
-    }
-    else
-        m_server.sendFile(file, contentType);
+    m_server.sendFile(file, contentType, isHEAD);
 }
 
 void WebDAVHandler::handlePUT_init(WebDAVFS &fs, const String &path)
