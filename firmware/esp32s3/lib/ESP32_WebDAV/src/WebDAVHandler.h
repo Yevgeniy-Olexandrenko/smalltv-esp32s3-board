@@ -39,7 +39,8 @@ private:
     WebDAVFS* resolveFS(const String& uri);
 
     void handleOPTIONS  ();
-    bool handlePROPFIND (const String& decodedURI);
+    void handlePROPFIND (bool depth);
+    void handlePROPFIND (WebDAVFS& fs, const String& path, bool depth);
     void handleMKCOL    (WebDAVFS& fs, const String& path);
     void handleDELETE   (WebDAVFS& fs, const String& path);
     void handleGET      (WebDAVFS& fs, const String& path, bool isHEAD);
@@ -49,6 +50,8 @@ private:
     void handleCOPY     (WebDAVFS& sfs, const String& spath, WebDAVFS& dfs, const String& dpath, bool overwrite);
 
     bool sendErrorCode(int code, const String& msg);
+    void sendPROPFINDContent(std::vector<Resource> resources);
+    
     bool handleSrcDstCheck(WebDAVFS& sfs, const String& spath, WebDAVFS& dfs, const String& dpath);
     bool handleParentExists(WebDAVFS& fs, const String& path);
     bool handleOverwrite(WebDAVFS& fs, const String& path, bool overwrite, bool& overwritten);

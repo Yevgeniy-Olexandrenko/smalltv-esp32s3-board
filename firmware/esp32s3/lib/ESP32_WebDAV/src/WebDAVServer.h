@@ -35,7 +35,6 @@ public:
 protected:
     bool canHandle(HTTPMethod method, String uri) override;
     bool handle(WebServer& server, HTTPMethod method, String uri) override;
-
     bool canRaw(String uri) override;
     void raw(WebServer& server, String uri, HTTPRaw& raw) override;
 

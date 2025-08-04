@@ -117,20 +117,41 @@ bool WebDAVHandler::handle(HTTPMethod method, String uri)
     }
     
     String decodedURI = m_server.decodeURI(uri);
-    if (method == HTTP_PROPFIND || method == HTTP_PROPPATCH)
+    bool depth = (m_server.getHeader("Depth") == "1");
+
+    if (decodedURI == "/" && (method == HTTP_PROPFIND || method == HTTP_PROPPATCH))
     {
-        return handlePROPFIND(decodedURI);
+        // handle file system root
+        handlePROPFIND(depth);
+        return true;
     }
 
     if (WebDAVFS* sfs = resolveFS(decodedURI))
     {
+        // handle resource on file system
         String spath = sfs->resolvePath(decodedURI);
         switch(method)
         {
-            case HTTP_MKCOL:  handleMKCOL  (*sfs, spath   ); return true;
-            case HTTP_DELETE: handleDELETE (*sfs, spath   ); return true;
-            case HTTP_HEAD:   handleGET    (*sfs, spath, 1); return true;
-            case HTTP_GET:    handleGET    (*sfs, spath, 0); return true;
+            case HTTP_PROPFIND:
+            case HTTP_PROPPATCH: 
+                handlePROPFIND(*sfs, spath, depth);
+                return true;
+
+            case HTTP_MKCOL:
+                handleMKCOL(*sfs, spath);
+                return true;
+
+            case HTTP_DELETE:
+                handleDELETE(*sfs, spath);
+                return true;
+
+            case HTTP_HEAD:
+                handleGET(*sfs, spath, true); 
+                return true;
+
+            case HTTP_GET:
+                handleGET(*sfs, spath, false);
+                return true;
         }
 
         // handle destination
@@ -207,106 +228,77 @@ void WebDAVHandler::handleOPTIONS()
 {
     log_i("OPTIONS");
     m_server.setHeader("DAV", "1");
-    m_server.setHeader("Allow", "OPTIONS, PROPFIND, MKCOL, DELETE, HEAD, GET, PUT, MOVE, COPY");
+    m_server.setHeader("Allow", "OPTIONS, PROPFIND, PROPPATCH, MKCOL, DELETE, HEAD, GET, PUT, MOVE, COPY");
     m_server.sendCode(200, "OK");
 }
 
-bool WebDAVHandler::handlePROPFIND(const String& decodedURI)
+void WebDAVHandler::handlePROPFIND(bool depth)
 {
-    bool depthChild = (m_server.getHeader("Depth") == "1");
-    log_i("PROPFIND: depth = %d : %s", int(depthChild), decodedURI.c_str());
+    log_i("PROPFIND: depth = %d : %s", depth, "/");
+
+    // collect the list of mounted file systems
+    std::vector<Resource> resources;
+    time_t fakeModifyTime = time(nullptr);
+    if (depth)
+    {
+        for (auto& fs : m_mountedFS)
+        {
+            if (fs::File file = fs->open("/", FILE_READ))
+            {
+                WebDAVFS::QuotaSz free, used;
+                if (fs.getQuota(free, used))
+                {
+                    resources.emplace_back(m_server, fs.resolveURI(file), fakeModifyTime, used);
+                    resources.back().setQuota(free, used);
+                }
+                else
+                    resources.emplace_back(m_server, fs.resolveURI(file), fakeModifyTime);
+            }
+        }
+    }
+    resources.emplace_back(m_server, "/", fakeModifyTime);
+
+    // send the list of collected resources
+    sendPROPFINDContent(resources);
+}
+
+void WebDAVHandler::handlePROPFIND(WebDAVFS &fs, const String &path, bool depth)
+{
+    log_i("PROPFIND: depth = %d : %s", depth, path.c_str());
+
+    // check if resource is available
+    if (!fs->exists(path))
+        return m_server.sendCode(404, "Not found");
 
     // collect the list of resources
     std::vector<Resource> resources;
-    if (decodedURI == "/")
+    if (fs::File baseFile = fs->open(path, FILE_READ))
     {
-        // collect the list of mounted file systems
-        time_t fakeModifyTime = time(nullptr);
-        if (depthChild)
-        {
-            for (auto& fs : m_mountedFS)
-            {
-                if (fs::File childFile = fs->open("/", FILE_READ))
-                {
-                    WebDAVFS::QuotaSz free, used;
-                    if (fs.getQuota(free, used))
-                    {
-                        resources.emplace_back(
-                            m_server, fs.resolveURI(childFile), fakeModifyTime, used);
-                        resources.back().setQuota(free, used);
-                    }
-                    else
-                    {
-                        resources.emplace_back(
-                            m_server, fs.resolveURI(childFile), fakeModifyTime);
-                    }
-                }
-            }
-        }
-        resources.emplace_back(
-            m_server, decodedURI, fakeModifyTime);
-    }
-    else
-    {
-        // check if request can be processed
-        WebDAVFS* fs = resolveFS(decodedURI);
-        if (!fs) return false;
-
-        // check if resource available
-        String path = fs->resolvePath(decodedURI);
-        if (!(*fs)->exists(path))
-        {
-            m_server.sendCode(404, "Not found");
-            return true;
-        }
-
-        // collect the list of resources
-        fs::File baseFile = (*fs)->open(path, FILE_READ);
         time_t modifyTime = baseFile.getLastWrite();
         size_t childCount = 0;
-        if (baseFile.isDirectory() && depthChild)
+
+        if (depth && baseFile.isDirectory())
         {
             while (fs::File childFile = baseFile.openNextFile())
             {
                 time_t childModifyTime = childFile.getLastWrite();
                 if (childModifyTime > modifyTime) modifyTime = childModifyTime;
-                resources.emplace_back(
-                    m_server, fs->resolveURI(childFile), childModifyTime, childFile.size());
+
+                const String uri = fs.resolveURI(childFile);
+                resources.emplace_back(m_server, uri, childModifyTime, childFile.size());
                 childCount++;
             }
         }
-        resources.emplace_back(
-            m_server, fs->resolveURI(baseFile), modifyTime, childCount);
-        baseFile.close();
-    }
 
-    // compute content length
-    const String xmlPreamble = 
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-        "<D:multistatus xmlns:D=\"DAV:\">";
-    const String xmlEpilogue =
-        "</D:multistatus>";
-    size_t contentLength = 0;
-    for (const auto& resource : resources)
-    {
-        contentLength += resource.toString().length();
+        const String uri = fs.resolveURI(baseFile);
+        resources.emplace_back(m_server, uri, modifyTime, childCount);
     }
-    contentLength += xmlPreamble.length();
-    contentLength += xmlEpilogue.length();
-
-    // send status and content
-    m_server.setContentLength(contentLength);
-    m_server.sendCode(207, "text/xml; charset=\"utf-8\"", "");
-    m_server.sendContent(xmlPreamble);
-    for (const auto& resource : resources)
-    {
-        m_server.sendContent(resource.toString());
-    }
-    m_server.sendContent(xmlEpilogue);
-    return true;
+    
+    // send the list of collected resources
+    sendPROPFINDContent(resources);
 }
 
-void WebDAVHandler::handleMKCOL(WebDAVFS& fs, const String& path)
+void WebDAVHandler::handleMKCOL(WebDAVFS &fs, const String &path)
 {   
     log_i("MKCOL: %s : %s", fs.getName().c_str(), path.c_str());
 
@@ -494,6 +486,33 @@ bool WebDAVHandler::sendErrorCode(int code, const String &msg)
 {
     m_server.sendCode(code, msg);
     return false;
+}
+
+void WebDAVHandler::sendPROPFINDContent(std::vector<Resource> resources)
+{
+    // compute content length
+    const String xmlPreamble = 
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        "<D:multistatus xmlns:D=\"DAV:\">";
+    const String xmlEpilogue =
+        "</D:multistatus>";
+    size_t contentLength = 0;
+    for (const auto& resource : resources)
+    {
+        contentLength += resource.toString().length();
+    }
+    contentLength += xmlPreamble.length();
+    contentLength += xmlEpilogue.length();
+
+    // send status and content
+    m_server.setContentLength(contentLength);
+    m_server.sendCode(207, "text/xml; charset=\"utf-8\"", "");
+    m_server.sendContent(xmlPreamble);
+    for (const auto& resource : resources)
+    {
+        m_server.sendContent(resource.toString());
+    }
+    m_server.sendContent(xmlEpilogue);
 }
 
 bool WebDAVHandler::handleSrcDstCheck(WebDAVFS &sfs, const String &spath, WebDAVFS &dfs, const String &dpath)
