@@ -9,7 +9,7 @@ GyverDBFile Settings::m_keys;
 GyverDBFile Settings::m_data;
 SettingsESP Settings::m_sets;
 
-WebDAV::Handler Settings::m_dav;
+WebDAVHandler Settings::m_webdav;
 
 void Settings::initData()
 {
@@ -33,7 +33,7 @@ void Settings::initSets()
         m_sets.attachDB(&m_data);
         m_initSets = true;
 
-        m_dav.begin(WebDAV::Server(m_sets.server));
+        m_webdav.begin(WebDAVServer(m_sets.server));
         auto quotaCb = [](fs::FS& fs, uint64_t& available, uint64_t& used)
         {
             auto& fatFS = static_cast<driver::details::FatFS&>(fs);
@@ -43,10 +43,10 @@ void Settings::initSets()
                 "quota callback: %s %llu / %llu",
                 fatFS.mountPoint(), used, used + available);
         };
-        m_dav.addFS(
+        m_webdav.addFS(
             driver::storage.getFlashFS(),
             driver::storage.getFlashFS().mountPoint(), quotaCb);
-        m_dav.addFS(
+        m_webdav.addFS(
             driver::storage.getSDCardFS(),
             driver::storage.getSDCardFS().mountPoint(), quotaCb);
     }
