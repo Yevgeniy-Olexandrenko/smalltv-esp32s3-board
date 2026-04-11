@@ -2,8 +2,8 @@
 
 #include <USB.h>
 #include <USBMSC.h>
-#include "Storage/Flash.h"
-#include "Storage/SDCard.h"
+#include <storage/Flash.h>
+#include <storage/SDCard.h>
 
 namespace driver
 {

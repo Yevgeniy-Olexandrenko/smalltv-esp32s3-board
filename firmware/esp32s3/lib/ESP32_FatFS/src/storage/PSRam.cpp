@@ -1,8 +1,6 @@
-#ifndef NO_PSRAM
-
 #include <esp_vfs_fat.h>
-#include "fatfs/vfs_fat_psram.h"
-#include "fatfs/diskio_psram.h"
+#include "../fatfs/vfs_fat_psram.h"
+#include "../fatfs/diskio_psram.h"
 #include "PSRam.h"
 
 namespace driver::details
@@ -100,4 +98,3 @@ namespace driver::details
         return (res == ESP_OK);
     }
 }
-#endif

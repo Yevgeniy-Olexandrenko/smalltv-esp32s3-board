@@ -1,20 +1,20 @@
 #pragma once
 
-#include <wear_levelling.h>
-#include "FatFS.h"
+#include "../fatfs/psram_partition.h"
+#include "../FatFS.h"
 
 namespace driver::details
 {
-    class Flash final : public FatFS
+    class PSRam final : public FatFS
     {
     public:
-        constexpr static auto DEFAULT_MOUNT_POINT = "/flash";
-        constexpr static auto DEFAULT_PARTITION_LABEL = "ffat";
+        constexpr static auto DEFAULT_MOUNT_POINT = "/psram";
 
-        Flash();
-        ~Flash() override;
+        PSRam();
+        ~PSRam() override;
 
-        bool begin(const char* mountPoint, const char* partitionLabel = DEFAULT_PARTITION_LABEL);
+        bool begin(const char* mountPoint, float portion = 0.5f);
+        bool begin(const char* mountPoint, uint32_t sectors);
         void end();
 
         // partition and file system properties
@@ -27,6 +27,6 @@ namespace driver::details
         bool readSectors(uint8_t* data, uint32_t startSector, uint32_t sectorCount) override;
 
     private:
-        wl_handle_t m_wlHandle;
+        psram_partition_t* m_psram;
     };
 }

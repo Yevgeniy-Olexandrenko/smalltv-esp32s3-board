@@ -1,8 +1,7 @@
 #pragma once
-#ifndef NO_SDCARD
 
 #include <driver/sdmmc_types.h>
-#include "FatFS.h"
+#include "../FatFS.h"
 
 namespace driver::details
 {
@@ -40,4 +39,3 @@ namespace driver::details
         sdmmc_card_t* m_card;
     };
 }
-#endif

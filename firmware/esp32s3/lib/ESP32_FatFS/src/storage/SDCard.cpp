@@ -1,5 +1,3 @@
-#ifndef NO_SDCARD
-
 #include <esp_vfs_fat.h>
 #include <driver/sdmmc_defs.h>
 #include <driver/sdmmc_host.h>
@@ -180,4 +178,3 @@ namespace driver::details
         return (res == ESP_OK);
     }
 }
-#endif
