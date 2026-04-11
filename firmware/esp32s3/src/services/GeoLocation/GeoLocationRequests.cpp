@@ -135,7 +135,8 @@ namespace service::details
         log_i("payload_text: %s", payload);
 
         char url[128];
-        snprintf(url, sizeof(url), URL, Settings::keys()[apikey::google].c_str());
+        String key = Settings::keys()[apikey::google];
+        snprintf(url, sizeof(url), URL, key.c_str());
 
         if (m_http.begin(url))
         {
@@ -166,7 +167,8 @@ namespace service::details
             "?location=%.6f,%.6f&timestamp=%ld&key=%s";
 
         char url[192];
-        snprintf(url, sizeof(url), URL, lat, lon, timestamp, Settings::keys()[apikey::google].c_str());
+        String key = Settings::keys()[apikey::google];
+        snprintf(url, sizeof(url), URL, lat, lon, timestamp, key.c_str());
 
         if (m_http.begin(url))
         {
