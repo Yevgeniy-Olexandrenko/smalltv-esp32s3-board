@@ -1,9 +1,9 @@
 #include <esp_vfs_fat.h>
-#include "../fatfs/vfs_fat_psram.h"
-#include "../fatfs/diskio_psram.h"
+#include "../fatfs_psram/vfs_fat_psram.h"
+#include "../fatfs_psram/diskio_psram.h"
 #include "PSRam.h"
 
-namespace driver::details
+namespace fatfs
 {
     PSRam::PSRam()
         : FatFS()
@@ -97,4 +97,6 @@ namespace driver::details
         esp_err_t res = ff_diskio_read_sectors_psram(m_psram, data, startSector, sectorCount);
         return (res == ESP_OK);
     }
+
+    PSRam psram;
 }

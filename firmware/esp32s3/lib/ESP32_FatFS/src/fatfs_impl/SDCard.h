@@ -3,7 +3,7 @@
 #include <driver/sdmmc_types.h>
 #include "../FatFS.h"
 
-namespace driver::details
+namespace fatfs
 {
     class SDCard final : public FatFS
     {
@@ -38,4 +38,6 @@ namespace driver::details
         bool m_oneBitMode;
         sdmmc_card_t* m_card;
     };
+
+    extern SDCard sdcard;
 }

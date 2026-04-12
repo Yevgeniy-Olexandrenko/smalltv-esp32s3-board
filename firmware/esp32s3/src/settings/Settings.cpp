@@ -36,7 +36,7 @@ void Settings::initSets()
         m_webdav.begin(WebDAVServer(m_sets.server));
         auto quotaCb = [](fs::FS& fs, uint64_t& available, uint64_t& used)
         {
-            auto& fatFS = static_cast<driver::details::FatFS&>(fs);
+            auto& fatFS = static_cast<fatfs::FatFS&>(fs);
             available = fatFS.totalBytes() - fatFS.usedBytes();
             used = fatFS.usedBytes();
             log_i(

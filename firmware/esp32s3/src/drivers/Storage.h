@@ -2,15 +2,13 @@
 
 #include <USB.h>
 #include <USBMSC.h>
-#include <storage/Flash.h>
-#include <storage/SDCard.h>
+#include <fatfs_impl/Flash.h>
+#include <fatfs_impl/SDCard.h>
 
 namespace driver
 {
     class Storage
     {
-        using FSPtr = std::unique_ptr<details::FatFS>;
-
     public:
         enum class Type { None, Flash, SDCard, Auto };
 
@@ -21,21 +19,21 @@ namespace driver
         void end();
 
         Type getType() const;
-        details::FatFS& getFS() const;
-        details::FatFS& getFlashFS() const;
-        details::FatFS& getSDCardFS() const;
+        fatfs::FatFS& getFS() const;
+        fatfs::FatFS& getFlashFS() const;
+        fatfs::FatFS& getSDCardFS() const;
 
         void startMSC();
         bool isMSCRunning() const { return m_runMSC; }
         bool isUSBMounted() const { return bool(USB); }
 
     private:
-        details::FatFS* fatFS();
+        fatfs::FatFS& MSC_FS() const;
 
     private:
         Type m_type;
-        mutable FSPtr m_flashFS;
-        mutable FSPtr m_sdcardFS;
+        mutable fatfs::FatFS* m_flashFS;
+        mutable fatfs::FatFS* m_sdcardFS;
         USBMSC m_usbMSC;
         bool m_runMSC;
     };

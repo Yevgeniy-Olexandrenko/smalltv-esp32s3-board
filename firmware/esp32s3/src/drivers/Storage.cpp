@@ -5,10 +5,10 @@
 
 namespace driver
 {
-    namespace details { FatFS invalidFS; }
-
     Storage::Storage()
         : m_type(Type::None)
+        , m_flashFS(nullptr)
+        , m_sdcardFS(nullptr)
         , m_runMSC(false)
     {}
 
@@ -29,9 +29,8 @@ namespace driver
     {
         if (!m_runMSC)
         {
-            m_flashFS.reset();
-            m_sdcardFS.reset();
             m_type = Type::None;
+            m_flashFS = m_sdcardFS = nullptr;
         }
     }
 
@@ -40,64 +39,57 @@ namespace driver
         return (getFS().isMounted() ? m_type : Type::None);
     }
 
-    details::FatFS& Storage::getFS() const
+    fatfs::FatFS& Storage::getFS() const
     {
         if (m_type == Type::Flash) return getFlashFS();
         if (m_type == Type::SDCard) return getSDCardFS();
-        return details::invalidFS;
+        return fatfs::invalid;
     }
 
-    details::FatFS& Storage::getFlashFS() const
+    fatfs::FatFS& Storage::getFlashFS() const
     {
         if (!m_flashFS)
         {
-            auto flash = new details::Flash();
-            m_flashFS.reset(flash);
-
-            if (!flash->begin(details::Flash::DEFAULT_MOUNT_POINT))
+            m_flashFS = &fatfs::invalid;
+            if (fatfs::flash.begin(fatfs::Flash::DEFAULT_MOUNT_POINT))
             {
-                // something went wrong, init
-                // with invalid file system!
-                m_flashFS.reset(new details::FatFS());
+                m_flashFS = &fatfs::flash;
             }
         }
-        return (m_runMSC ? details::invalidFS : (*m_flashFS));
+        return (m_runMSC ? fatfs::invalid : *m_flashFS);
     }
 
-    details::FatFS &Storage::getSDCardFS() const
+    fatfs::FatFS &Storage::getSDCardFS() const
     {
         if (!m_sdcardFS)
         {
-            #ifndef NO_SDCARD
-            auto sdcard = new details::SDCard();
-            m_sdcardFS.reset(sdcard);
+            m_sdcardFS = &fatfs::invalid;
 
+            #ifndef NO_SDCARD
             #if defined(SDCARD_SPI)
-            if (!sdcard->begin(
-                details::SDCard::DEFAULT_MOUNT_POINT,
+            if (fatfs::sdcard.begin(
+                fatfs::SDCard::DEFAULT_MOUNT_POINT,
                 PIN_SD_SCK, PIN_SD_MOSI, PIN_SD_MISO, PIN_SD_CS))
             #elif defined(SDCARD_SDIO1)
-            if (!sdcard->begin(
-                details::SDCard::DEFAULT_MOUNT_POINT,
+            if (fatfs::sdcard.begin(
+                fatfs::SDCard::DEFAULT_MOUNT_POINT,
                 PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0))
             #else // SDCARD_SDIO4
-            if (!sdcard->begin(
-                details::SDCard::DEFAULT_MOUNT_POINT,
+            if (fatfs::sdcard.begin(
+                fatfs::SDCard::DEFAULT_MOUNT_POINT,
                 PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0, PIN_SD_D1, PIN_SD_D2, PIN_SD_D3))
             #endif
             #endif
             {
-                // something went wrong, init
-                // with invalid file system!
-                m_sdcardFS.reset(new details::FatFS());
+                m_sdcardFS = &fatfs::sdcard;
             }
         }
-        return (m_runMSC ? details::invalidFS : (*m_sdcardFS));
+        return (m_runMSC ? fatfs::invalid : *m_sdcardFS);
     }
 
     void Storage::startMSC()
     {
-        if (getFS().isMounted())
+        if (MSC_FS().isMounted())
         {
             // configure MSC device properties
             m_usbMSC.vendorID(STORAGE_MSC_VENDORID);
@@ -120,29 +112,29 @@ namespace driver
             // on read data from MSC device FAT sectors
             m_usbMSC.onRead([](uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) -> int
             {
-                const uint32_t sectorCount = (bufsize / storage.fatFS()->sectorSize());
-                return (storage.fatFS()->readSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0);
+                const uint32_t sectorCount = (bufsize / storage.MSC_FS().sectorSize());
+                return (storage.MSC_FS().readSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0);
             });
 
             // on write data to MSC device FAT sectors
             m_usbMSC.onWrite([](uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) -> int
             {
-                const uint32_t sectorCount = (bufsize / storage.fatFS()->sectorSize());
-                return (storage.fatFS()->writeSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0);
+                const uint32_t sectorCount = (bufsize / storage.MSC_FS().sectorSize());
+                return (storage.MSC_FS().writeSectors((uint8_t*)buffer, lba, sectorCount) ? bufsize : 0);
             });
 
             // start MSC device over USB
-            m_runMSC = m_usbMSC.begin(fatFS()->sectorCount(), fatFS()->sectorSize());
+            m_runMSC = m_usbMSC.begin(MSC_FS().sectorCount(), MSC_FS().sectorSize());
             USB.begin();
         }
     }
 
-    details::FatFS* Storage::fatFS()
+    fatfs::FatFS& Storage::MSC_FS() const
     {
-        details::FatFS* fatFS = nullptr;
-        if (m_type == Type::Flash) fatFS = m_flashFS.get();
-        if (m_type == Type::SDCard) fatFS = m_sdcardFS.get();
-        return (fatFS ? fatFS : &details::invalidFS);
+        fatfs::FatFS* fatFS = nullptr;
+        if (m_type == Type::Flash) fatFS = m_flashFS;
+        if (m_type == Type::SDCard) fatFS = m_sdcardFS;
+        return (fatFS ? *fatFS : fatfs::invalid);
     }
 
     Storage storage;

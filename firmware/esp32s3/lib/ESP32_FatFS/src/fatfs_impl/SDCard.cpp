@@ -6,7 +6,7 @@
 #include <diskio_sdmmc.h>
 #include "SDCard.h"
 
-namespace driver::details
+namespace fatfs
 {
     SDCard::SDCard()
         : FatFS()
@@ -177,4 +177,6 @@ namespace driver::details
         esp_err_t res = sdmmc_read_sectors(m_card, data, startSector, sectorCount);
         return (res == ESP_OK);
     }
+
+    SDCard sdcard;
 }

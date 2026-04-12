@@ -2,7 +2,7 @@
 #include <ff.h>
 #include "FatFS.h"
 
-namespace driver::details
+namespace fatfs
 {
     FatFS::FatFS()
         : fs::FS(FSImplPtr(new VFSImpl()))
@@ -63,4 +63,6 @@ namespace driver::details
         _impl->mountpoint(nullptr);
         m_pdrv = 0xFF;
     }
+
+    FatFS invalid;
 }

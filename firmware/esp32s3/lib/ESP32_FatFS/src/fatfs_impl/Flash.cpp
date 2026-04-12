@@ -2,7 +2,7 @@
 #include <diskio_wl.h>
 #include "Flash.h"
 
-namespace driver::details
+namespace fatfs
 {
     Flash::Flash()
         : FatFS()
@@ -85,4 +85,6 @@ namespace driver::details
         esp_err_t res = wl_read(m_wlHandle, dataAddr, data, dataSize);
         return (res == ESP_OK);
     }
+
+    Flash flash;
 }

@@ -2,7 +2,7 @@
 
 #include <FS.h>
 
-namespace driver::details
+namespace fatfs
 {
     class FatFS : public fs::FS
     {
@@ -32,4 +32,6 @@ namespace driver::details
     private:
         uint8_t m_pdrv;
     };
+
+    extern FatFS invalid;
 }
