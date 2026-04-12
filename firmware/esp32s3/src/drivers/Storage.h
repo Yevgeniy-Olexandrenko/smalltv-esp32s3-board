@@ -28,12 +28,15 @@ namespace driver
         bool isUSBMounted() const { return bool(USB); }
 
     private:
-        fatfs::FatFS& MSC_FS() const;
+        static fatfs::FatFS& mscFS();
+        static bool mscOnStartStop(uint8_t power_condition, bool start, bool load_eject);
+        static int  mscOnRead(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize);
+        static int  mscOnWrite(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize);
 
     private:
         Type m_type;
-        mutable fatfs::FatFS* m_flashFS;
-        mutable fatfs::FatFS* m_sdcardFS;
+        mutable bool m_flashReady;
+        mutable bool m_sdcardReady;
         USBMSC m_usbMSC;
         bool m_runMSC;
     };
