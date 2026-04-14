@@ -15,6 +15,9 @@ namespace drivers
 {
     void begin()
     {
+        // init self reboot
+        driver::selfReboot.begin();
+
         // init power source
         #ifndef NO_VINSENSE
         driver::powerSource.begin();

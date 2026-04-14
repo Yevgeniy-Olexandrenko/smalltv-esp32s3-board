@@ -1,5 +1,10 @@
 #pragma once
 
+#if !defined(ARDUINO_SMALLTV_BOARD_REV)
+#undef  ARDUINO_SMALLTV_BOARD
+#define ARDUINO_SMALLTV_BOARD_REV -1
+#endif
+
 // PSRAM availability
 #if !defined(BOARD_HAS_PSRAM) || BOARD_HAS_PSRAM == 0
 #define NO_PSRAM
