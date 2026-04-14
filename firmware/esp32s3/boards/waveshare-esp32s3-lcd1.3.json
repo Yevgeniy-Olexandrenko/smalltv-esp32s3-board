@@ -1,0 +1,72 @@
+{
+    "build": {
+        "arduino":{
+            "ldscript": "esp32s3_out.ld",
+            "memory_type": "qio_opi"
+        },
+        "partitions": "boards/flash-16mb.csv",
+        "filesystem": "fatfs",
+        "core": "esp32",
+        "extra_flags": [
+            "-DBOARD_HAS_PSRAM",
+            "-DARDUINO_USB_MODE=0",
+            "-DARDUINO_USB_CDC_ON_BOOT=0",
+            "-DARDUINO_WAVESHARE_ESP32S3_LCD13",
+            "-DPIN_VIN_SEN=6",
+            "-DPIN_ESP_RES=19",
+            "-DNO_BUTTON",
+            "-DPIN_LED_DIN=15",
+            "-DSDCARD_SPI",
+            "-DPIN_SD_MISO=16",
+            "-DPIN_SD_MOSI=18",
+            "-DPIN_SD_SCK=21",
+            "-DPIN_SD_CS=17",
+            "-DPIN_LCD_RES=42",
+            "-DPIN_LCD_CS=39",
+            "-DPIN_LCD_SCL=40",
+            "-DPIN_LCD_SDA=41",
+            "-DPIN_LCD_DC=38",
+            "-DPIN_LCD_BL=20",
+            "-DNO_AUDIO",
+            "-DNO_MICROPHONE",
+            "-DNO_TOUCH0",
+            "-DNO_TOUCH1",
+            "-DNO_TOUCH2",
+            "-DNO_TOUCH3",
+            "-DNO_EXPANSION"
+        ],
+        "f_cpu": "240000000L",
+        "f_flash": "80000000L",
+        "flash_mode": "qio",
+        "psram_type": "opi",
+        "hwids": [
+            [
+                "0x1A86",
+                "0x7523"
+            ]
+        ],
+        "mcu": "esp32s3",
+        "variant": "esp32s3"
+    },
+    "connectivity": [
+        "wifi",
+        "bluetooth"
+    ],
+    "debug": {
+        "openocd_target": "esp32s3.cfg"
+    },
+    "frameworks": [
+        "arduino",
+        "espidf"
+    ],
+    "name": "ESP32-S3-LCD-1.3",
+    "upload": {
+        "flash_size": "16MB",
+        "maximum_ram_size": 327680,
+        "maximum_size": 16777216,
+        "require_upload_port": true,
+        "speed": 921600
+    },
+    "url": "https://www.waveshare.com/product/arduino/boards-kits/esp32-s3/esp32-s3-lcd-1.3.htm",
+    "vendor": "Waveshare"
+}
