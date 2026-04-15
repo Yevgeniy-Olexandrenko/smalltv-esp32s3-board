@@ -4,7 +4,7 @@
             "ldscript": "esp32s3_out.ld",
             "memory_type": "qio_opi"
         },
-        "partitions": "boards/flash-16mb.csv",
+        "partitions": "boards/flash16mb-ffat08mb.csv",
         "filesystem": "fatfs",
         "core": "esp32",
         "extra_flags": [
@@ -13,7 +13,7 @@
             "-DARDUINO_USB_CDC_ON_BOOT=0",
             "-DARDUINO_WAVESHARE_ESP32S3_LCD13",
             "-DPIN_VIN_SEN=6",
-            "-DPIN_ESP_RES=19",
+            "-DNO_SELFRES",
             "-DNO_BUTTON",
             "-DPIN_LED_DIN=15",
             "-DSDCARD_SPI",

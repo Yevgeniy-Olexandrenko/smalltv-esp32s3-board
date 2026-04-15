@@ -1,7 +1,8 @@
 #pragma once
 
+// Use invalid SmallTV board revision in
+// case of supported third-party boards
 #if !defined(ARDUINO_SMALLTV_BOARD_REV)
-#undef  ARDUINO_SMALLTV_BOARD
 #define ARDUINO_SMALLTV_BOARD_REV -1
 #endif
 
